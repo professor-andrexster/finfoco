@@ -106,18 +106,20 @@
     <nav class="bg-white sticky top-0 z-40" style="border-bottom: 1px solid #E4E4F0;">
         <div class="max-w-5xl mx-auto px-4 flex items-center justify-between h-14">
 
+            {{-- Logo --}}
             <a href="{{ route('dashboard') }}" class="flex items-center gap-2 shrink-0">
-                <svg width="28" height="28" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                <svg width="26" height="26" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="32" cy="32" r="26" fill="none" stroke="#E0DFFA" stroke-width="5"/>
                     <circle cx="32" cy="32" r="16" fill="none" stroke="#6366F1" stroke-width="5"/>
                     <circle cx="32" cy="32" r="7" fill="#22C55E"/>
                 </svg>
-                <span class="font-semibold text-base tracking-tight">
+                <span class="font-bold text-base tracking-tight hidden sm:inline">
                     <span style="color:#1E1B4B">Fin</span><span style="color:#6366F1">Foco</span>
                 </span>
             </a>
 
-            <div class="flex items-center gap-3">
+            {{-- Nav items --}}
+            <div class="flex items-center">
                 @php
                     $nav = [
                         ['route'=>'dashboard',           'pat'=>'dashboard',    'icon'=>'layout-dashboard','label'=>'Dashboard'],
@@ -126,39 +128,44 @@
                         ['route'=>'history.index',       'pat'=>'history*',     'icon'=>'clock',           'label'=>'Histórico'],
                         ['route'=>'categories.index',    'pat'=>'categories*',  'icon'=>'tag',             'label'=>'Categorias'],
                         ['route'=>'alerts.index',        'pat'=>'alerts*',      'icon'=>'bell',            'label'=>'Alertas'],
-                        ['route'=>'settings.show',       'pat'=>'settings*',    'icon'=>'settings-2',      'label'=>'Config'],
                     ];
                 @endphp
                 @foreach($nav as $item)
                 @php $active = request()->routeIs($item['pat']); @endphp
-                <a href="{{ route($item['route']) }}"
-                   class="relative flex items-center gap-1.5 px-3 py-4 text-sm font-medium transition-colors whitespace-nowrap
+                <a href="{{ route($item['route']) }}" title="{{ $item['label'] }}"
+                   class="group relative flex flex-col items-center gap-0.5 px-2.5 py-3 transition-colors
                           {{ $active ? 'nav-active' : 'text-foco-muted hover:text-foco-text' }}">
-                    <i data-lucide="{{ $item['icon'] }}" class="w-4 h-4 shrink-0"></i>
-                    <span class="hidden lg:inline">{{ $item['label'] }}</span>
+                    <i data-lucide="{{ $item['icon'] }}" class="w-4.5 h-4.5 shrink-0" style="width:18px;height:18px"></i>
+                    <span class="text-[10px] font-medium leading-none hidden md:block">{{ $item['label'] }}</span>
+                    {{-- tooltip mobile --}}
+                    <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-foco-text text-white text-xs px-2 py-1 rounded-md whitespace-nowrap
+                                 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity md:hidden">
+                        {{ $item['label'] }}
+                    </span>
                 </a>
                 @endforeach
 
-                {{-- Avatar / logout --}}
-                <div x-data="{ open: false }" class="relative ml-2">
+                {{-- Avatar / dropdown --}}
+                <div x-data="{ open: false }" class="relative ml-1">
                     <button @click="open = !open" @click.outside="open = false"
-                            class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                            class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ml-1"
                             style="background:#6366F1;letter-spacing:-.02em">
                         {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}
                     </button>
                     <div x-show="open" x-cloak style="display:none"
-                         class="absolute right-0 top-10 w-48 bg-white rounded-xl py-1"
+                         class="absolute right-0 top-10 w-52 bg-white rounded-xl py-1 z-50"
                          style="box-shadow:0 8px 24px rgba(99,102,241,.15),0 0 0 1px rgba(99,102,241,.08)">
-                        <p class="px-4 py-2 text-xs text-foco-muted font-medium truncate border-b border-foco-border">
-                            {{ auth()->user()->email }}
-                        </p>
+                        <div class="px-4 py-2.5 border-b border-foco-border">
+                            <p class="text-sm font-semibold text-foco-text truncate">{{ auth()->user()->name }}</p>
+                            <p class="text-xs text-foco-muted truncate mt-0.5">{{ auth()->user()->email }}</p>
+                        </div>
                         <a href="{{ route('settings.show') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm text-foco-text hover:bg-foco-surface transition-colors">
                             <i data-lucide="settings-2" class="w-4 h-4 text-foco-muted"></i> Configurações
                         </a>
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
                             <button type="submit" class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-foco-saida hover:bg-red-50 transition-colors">
-                                <i data-lucide="log-out" class="w-4 h-4"></i> Sair
+                                <i data-lucide="log-out" class="w-4 h-4"></i> Sair da conta
                             </button>
                         </form>
                     </div>

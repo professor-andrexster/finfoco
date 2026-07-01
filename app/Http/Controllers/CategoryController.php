@@ -9,7 +9,10 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        $categorias = Category::disponiveis()->orderBy('nome')->get();
+        $categorias = Category::disponiveis()
+            ->withCount('transactions')
+            ->orderByRaw('user_id IS NOT NULL, nome')
+            ->get();
         return view('categories.index', compact('categorias'));
     }
 
