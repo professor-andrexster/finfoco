@@ -6,17 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class Transaction extends Model
 {
-    protected $fillable = ['tipo', 'valor', 'descricao', 'categoria_id', 'data'];
+    protected $fillable = ['user_id', 'tipo', 'valor', 'descricao', 'categoria_id', 'data'];
+    protected $casts    = ['data' => 'date', 'valor' => 'decimal:2'];
 
-    protected $casts = [
-        'data'       => 'date',
-        'valor'      => 'decimal:2',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
+    public function categoria() { return $this->belongsTo(Category::class, 'categoria_id'); }
+    public function user()      { return $this->belongsTo(User::class); }
 
-    public function categoria()
+    protected static function booted(): void
     {
-        return $this->belongsTo(Category::class, 'categoria_id');
+        static::creating(function ($m) {
+            if (auth()->check()) $m->user_id ??= auth()->id();
+        });
     }
 }

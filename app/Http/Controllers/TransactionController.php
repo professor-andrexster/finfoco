@@ -5,13 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
 
 class TransactionController extends Controller
 {
     public function create()
     {
-        $categorias = Category::orderBy('nome')->get();
+        $categorias = Category::disponiveis()->orderBy('nome')->get();
         return view('transactions.create', compact('categorias'));
     }
 
@@ -28,45 +27,39 @@ class TransactionController extends Controller
             'valor.required'     => 'Informe o valor.',
             'valor.min'          => 'O valor deve ser maior que zero.',
             'descricao.required' => 'Informe uma descrição.',
-            'descricao.max'      => 'Descrição muito longa (máx. 60 caracteres).',
             'data.required'      => 'Informe a data.',
         ]);
 
-        Transaction::create($data);
-
+        Transaction::create($data + ['user_id' => auth()->id()]);
         return redirect()->route('dashboard')->with('sucesso', 'Lançamento salvo!');
     }
 
     public function edit(Transaction $transaction)
     {
-        $categorias = Category::orderBy('nome')->get();
+        abort_unless($transaction->user_id === auth()->id(), 403);
+        $categorias = Category::disponiveis()->orderBy('nome')->get();
         return view('transactions.edit', compact('transaction', 'categorias'));
     }
 
     public function update(Request $request, Transaction $transaction)
     {
+        abort_unless($transaction->user_id === auth()->id(), 403);
+
         $data = $request->validate([
             'tipo'         => ['required', 'in:entrada,saida'],
             'valor'        => ['required', 'numeric', 'min:0.01'],
             'descricao'    => ['required', 'string', 'max:60'],
             'categoria_id' => ['nullable', 'exists:categories,id'],
             'data'         => ['required', 'date'],
-        ], [
-            'tipo.required'      => 'Escolha entrada ou saída.',
-            'valor.required'     => 'Informe o valor.',
-            'valor.min'          => 'O valor deve ser maior que zero.',
-            'descricao.required' => 'Informe uma descrição.',
-            'descricao.max'      => 'Descrição muito longa (máx. 60 caracteres).',
-            'data.required'      => 'Informe a data.',
         ]);
 
         $transaction->update($data);
-
         return redirect()->route('history.index')->with('sucesso', 'Lançamento atualizado!');
     }
 
     public function destroy(Transaction $transaction)
     {
+        abort_unless($transaction->user_id === auth()->id(), 403);
         $transaction->delete();
         return redirect()->back()->with('sucesso', 'Lançamento excluído!');
     }
@@ -76,18 +69,15 @@ class TransactionController extends Controller
         $busca = $request->input('busca');
         $tipo  = $request->input('tipo');
 
-        $query = Transaction::with('categoria')->orderBy('data', 'desc')->orderBy('created_at', 'desc');
+        $query = Transaction::with('categoria')
+            ->where('user_id', auth()->id())
+            ->orderBy('data', 'desc')
+            ->orderBy('created_at', 'desc');
 
-        if ($busca) {
-            $query->where('descricao', 'like', "%{$busca}%");
-        }
-
-        if ($tipo && in_array($tipo, ['entrada', 'saida'])) {
-            $query->where('tipo', $tipo);
-        }
+        if ($busca) $query->where('descricao', 'like', "%{$busca}%");
+        if ($tipo && in_array($tipo, ['entrada', 'saida'])) $query->where('tipo', $tipo);
 
         $transactions = $query->paginate(20)->withQueryString();
-
         return view('history.index', compact('transactions', 'busca', 'tipo'));
     }
 }

@@ -9,7 +9,7 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        $categorias = Category::withCount('transactions')->orderBy('nome')->get();
+        $categorias = Category::disponiveis()->orderBy('nome')->get();
         return view('categories.index', compact('categorias'));
     }
 
@@ -21,54 +21,44 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'nome'  => ['required', 'string', 'max:60', 'unique:categories,nome'],
-            'cor'   => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'icone' => ['required', 'string', 'max:50'],
-            'tipo'  => ['required', 'in:entrada,saida,ambos'],
+            'nome'  => 'required|max:60',
+            'cor'   => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+            'icone' => 'required|max:50',
+            'tipo'  => 'required|in:entrada,saida,ambos',
         ], [
-            'nome.required'  => 'Informe o nome da categoria.',
-            'nome.unique'    => 'Já existe uma categoria com esse nome.',
-            'nome.max'       => 'Nome muito longo (máx. 60 caracteres).',
+            'nome.required'  => 'Informe o nome.',
             'cor.required'   => 'Escolha uma cor.',
-            'cor.regex'      => 'Cor inválida.',
             'icone.required' => 'Escolha um ícone.',
-            'tipo.required'  => 'Escolha o tipo.',
         ]);
 
-        Category::create($data);
-
+        Category::create($data + ['user_id' => auth()->id()]);
         return redirect()->route('categories.index')->with('sucesso', 'Categoria criada!');
     }
 
     public function edit(Category $category)
     {
+        abort_unless($category->user_id === auth()->id() || $category->user_id === null, 403);
         return view('categories.edit', compact('category'));
     }
 
     public function update(Request $request, Category $category)
     {
+        abort_unless($category->user_id === auth()->id(), 403);
+
         $data = $request->validate([
-            'nome'  => ['required', 'string', 'max:60', 'unique:categories,nome,' . $category->id],
-            'cor'   => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'icone' => ['required', 'string', 'max:50'],
-            'tipo'  => ['required', 'in:entrada,saida,ambos'],
-        ], [
-            'nome.required'  => 'Informe o nome da categoria.',
-            'nome.unique'    => 'Já existe uma categoria com esse nome.',
-            'nome.max'       => 'Nome muito longa (máx. 60 caracteres).',
-            'cor.required'   => 'Escolha uma cor.',
-            'cor.regex'      => 'Cor inválida.',
-            'icone.required' => 'Escolha um ícone.',
-            'tipo.required'  => 'Escolha o tipo.',
+            'nome'  => 'required|max:60',
+            'cor'   => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+            'icone' => 'required|max:50',
+            'tipo'  => 'required|in:entrada,saida,ambos',
         ]);
 
         $category->update($data);
-
         return redirect()->route('categories.index')->with('sucesso', 'Categoria atualizada!');
     }
 
     public function destroy(Category $category)
     {
+        abort_unless($category->user_id === auth()->id(), 403);
         $category->delete();
         return redirect()->route('categories.index')->with('sucesso', 'Categoria excluída!');
     }

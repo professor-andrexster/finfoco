@@ -6,19 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class Reminder extends Model
 {
-    public $timestamps = false;
+    protected $fillable = ['user_id', 'titulo', 'data_lembrete', 'concluido'];
+    protected $casts    = ['data_lembrete' => 'date', 'concluido' => 'boolean'];
 
-    const CREATED_AT = 'created_at';
-    const UPDATED_AT = null;
+    public function user() { return $this->belongsTo(User::class); }
 
-    protected $fillable = [
-        'titulo',
-        'data_lembrete',
-        'concluido',
-    ];
-
-    protected $casts = [
-        'data_lembrete' => 'date',
-        'concluido'     => 'boolean',
-    ];
+    protected static function booted(): void
+    {
+        static::creating(function ($m) {
+            if (auth()->check()) $m->user_id ??= auth()->id();
+        });
+    }
 }

@@ -6,29 +6,26 @@ use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
 {
-    protected $primaryKey = 'chave';
+    protected $primaryKey = null;
     public    $incrementing = false;
-    protected $keyType      = 'string';
-    public    $timestamps   = false;
-
-    protected $fillable = [
-        'chave',
-        'valor',
-    ];
+    public    $timestamps   = true;
+    protected $fillable     = ['user_id', 'chave', 'valor'];
 
     public static function get(string $chave, mixed $default = null): mixed
     {
-        $setting = static::find($chave);
-        if ($setting === null || $setting->valor === null) {
-            return $default;
-        }
-        return $setting->valor;
+        $userId = auth()->id();
+        return static::where('user_id', $userId)->where('chave', $chave)->value('valor') ?? $default;
     }
 
     public static function set(string $chave, mixed $valor): void
     {
+        $userId = auth()->id();
+        if ($valor === null) {
+            static::where('user_id', $userId)->where('chave', $chave)->delete();
+            return;
+        }
         static::updateOrCreate(
-            ['chave' => $chave],
+            ['user_id' => $userId, 'chave' => $chave],
             ['valor' => $valor]
         );
     }

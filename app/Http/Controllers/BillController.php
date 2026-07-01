@@ -13,25 +13,8 @@ class BillController extends Controller
     public function index()
     {
         $bills = Bill::with('categoria')
-            ->orderByRaw("CASE
-                WHEN status IN ('pendente','atrasado') AND vencimento < CURDATE() THEN 0
-                ELSE 1
-            END")
-            ->orderBy('vencimento', 'asc')
-            ->get();
-
-        // Atualizar status para 'atrasado' onde venceu e ainda está pendente
-        Bill::where('status', 'pendente')
-            ->where('vencimento', '<', Carbon::today())
-            ->update(['status' => 'atrasado']);
-
-        // Recarregar após update
-        $bills = Bill::with('categoria')
-            ->orderByRaw("CASE
-                WHEN status IN ('pendente','atrasado') AND vencimento < CURDATE() THEN 0
-                ELSE 1
-            END")
-            ->orderBy('vencimento', 'asc')
+            ->where('user_id', auth()->id())
+            ->orderBy('vencimento')
             ->get();
 
         return view('bills.index', compact('bills'));
@@ -39,85 +22,110 @@ class BillController extends Controller
 
     public function create()
     {
-        $categorias = Category::orderBy('nome')->get();
+        $categorias = Category::disponiveis()->orderBy('nome')->get();
         return view('bills.create', compact('categorias'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'tipo'        => 'required|in:pagar,receber',
-            'descricao'   => 'required|max:60',
-            'valor'       => 'required|numeric|min:0.01',
-            'vencimento'  => 'required|date',
-            'categoria_id'=> 'nullable|exists:categories,id',
-            'recorrente'  => 'boolean',
-            'recorrencia' => 'nullable|in:mensal,semanal,anual|required_if:recorrente,1',
+            'tipo'           => 'required|in:pagar,receber',
+            'descricao'      => 'required|max:60',
+            'valor'          => 'required|numeric|min:0.01',
+            'vencimento'     => 'required|date',
+            'categoria_id'   => 'nullable|exists:categories,id',
+            'recorrente'     => 'nullable|boolean',
+            'recorrencia'    => 'nullable|in:semanal,mensal,anual',
+            'parcelas_total' => 'nullable|integer|min:2|max:360',
         ], [
-            'tipo.required'         => 'O tipo é obrigatório.',
-            'tipo.in'               => 'O tipo deve ser pagar ou receber.',
-            'descricao.required'    => 'A descrição é obrigatória.',
-            'descricao.max'         => 'Máximo 60 caracteres.',
-            'valor.required'        => 'O valor é obrigatório.',
-            'valor.numeric'         => 'O valor deve ser numérico.',
-            'valor.min'             => 'O valor deve ser maior que zero.',
-            'vencimento.required'   => 'A data de vencimento é obrigatória.',
-            'vencimento.date'       => 'Data de vencimento inválida.',
-            'categoria_id.exists'   => 'Categoria inválida.',
-            'recorrencia.required_if' => 'Informe a frequência de recorrência.',
+            'tipo.required'       => 'Escolha pagar ou receber.',
+            'descricao.required'  => 'Informe a descrição.',
+            'valor.required'      => 'Informe o valor.',
+            'vencimento.required' => 'Informe a data de vencimento.',
         ]);
 
-        $data['recorrente'] = $request->boolean('recorrente');
-        $data['status']     = 'pendente';
+        $parcelasTotal = $data['parcelas_total'] ?? null;
+        $recorrente    = (bool) ($data['recorrente'] ?? false);
 
-        Bill::create($data);
+        // Parcelado e recorrente são mutuamente exclusivos
+        if ($parcelasTotal) $recorrente = false;
 
-        return redirect()->route('bills.index')
-            ->with('sucesso', 'Conta cadastrada com sucesso!');
+        Bill::create([
+            'user_id'        => auth()->id(),
+            'tipo'           => $data['tipo'],
+            'descricao'      => $data['descricao'],
+            'valor'          => $data['valor'],
+            'vencimento'     => $data['vencimento'],
+            'status'         => 'pendente',
+            'categoria_id'   => $data['categoria_id'] ?? null,
+            'recorrente'     => $recorrente,
+            'recorrencia'    => $recorrente ? ($data['recorrencia'] ?? 'mensal') : null,
+            'parcelas_total' => $parcelasTotal,
+            'parcela_atual'  => 1,
+        ]);
+
+        return redirect()->route('bills.index')->with('sucesso', 'Conta salva!');
     }
 
     public function marcarPago(Bill $bill)
     {
-        $novoStatus = $bill->tipo === 'pagar' ? 'pago' : 'recebido';
-        $tipoTransacao = $bill->tipo === 'pagar' ? 'saida' : 'entrada';
+        abort_unless($bill->user_id === auth()->id(), 403);
 
-        $bill->update([
-            'status'  => $novoStatus,
-            'pago_em' => Carbon::today(),
-        ]);
+        $statusPago = $bill->tipo === 'pagar' ? 'pago' : 'recebido';
+        $bill->update(['status' => $statusPago, 'pago_em' => Carbon::today()]);
 
-        // Criar transação correspondente
+        // Criar transação automaticamente
         Transaction::create([
-            'tipo'         => $tipoTransacao,
+            'user_id'      => auth()->id(),
+            'tipo'         => $bill->tipo === 'pagar' ? 'saida' : 'entrada',
             'valor'        => $bill->valor,
             'descricao'    => $bill->descricao,
             'categoria_id' => $bill->categoria_id,
             'data'         => Carbon::today(),
         ]);
 
-        // Se recorrente, criar próxima ocorrência
-        if ($bill->recorrente) {
-            $proxima = $bill->calcularProximaOcorrencia();
+        // Próxima parcela
+        if ($bill->isParcelado() && $bill->parcela_atual < $bill->parcelas_total) {
             Bill::create([
+                'user_id'        => auth()->id(),
+                'tipo'           => $bill->tipo,
+                'descricao'      => $bill->descricao,
+                'valor'          => $bill->valor,
+                'vencimento'     => $bill->vencimento->copy()->addMonth(),
+                'status'         => 'pendente',
+                'categoria_id'   => $bill->categoria_id,
+                'recorrente'     => false,
+                'parcelas_total' => $bill->parcelas_total,
+                'parcela_atual'  => $bill->parcela_atual + 1,
+            ]);
+        }
+
+        // Próxima ocorrência recorrente
+        if ($bill->recorrente && !$bill->isParcelado()) {
+            Bill::create([
+                'user_id'     => auth()->id(),
                 'tipo'        => $bill->tipo,
                 'descricao'   => $bill->descricao,
                 'valor'       => $bill->valor,
-                'categoria_id'=> $bill->categoria_id,
-                'vencimento'  => $proxima,
+                'vencimento'  => $bill->calcularProximaOcorrencia(),
                 'status'      => 'pendente',
+                'categoria_id'=> $bill->categoria_id,
                 'recorrente'  => true,
                 'recorrencia' => $bill->recorrencia,
             ]);
         }
 
-        $label = $bill->tipo === 'pagar' ? 'Conta marcada como paga!' : 'Recebimento registrado!';
-        return redirect()->route('bills.index')->with('sucesso', $label);
+        $msg = $bill->isParcelado()
+            ? "Parcela {$bill->parcela_atual}/{$bill->parcelas_total} paga!"
+            : ($statusPago === 'pago' ? 'Conta marcada como paga!' : 'Conta marcada como recebida!');
+
+        return redirect()->route('bills.index')->with('sucesso', $msg);
     }
 
     public function destroy(Bill $bill)
     {
+        abort_unless($bill->user_id === auth()->id(), 403);
         $bill->delete();
-        return redirect()->route('bills.index')
-            ->with('sucesso', 'Conta removida.');
+        return redirect()->route('bills.index')->with('sucesso', 'Conta excluída!');
     }
 }

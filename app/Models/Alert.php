@@ -6,18 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class Alert extends Model
 {
-    public $timestamps = false;
+    public $timestamps  = false;
+    protected $fillable = ['user_id', 'categoria_id', 'limite_valor', 'periodo', 'ativo'];
+    protected $casts    = ['ativo' => 'boolean', 'limite_valor' => 'decimal:2'];
 
-    protected $fillable = ['categoria_id', 'limite_valor', 'periodo', 'ativo'];
+    public function categoria() { return $this->belongsTo(Category::class, 'categoria_id'); }
 
-    protected $casts = [
-        'limite_valor' => 'decimal:2',
-        'ativo'        => 'boolean',
-        'created_at'   => 'datetime',
-    ];
-
-    public function categoria()
+    protected static function booted(): void
     {
-        return $this->belongsTo(Category::class, 'categoria_id');
+        static::creating(function ($m) {
+            if (auth()->check()) $m->user_id ??= auth()->id();
+        });
     }
 }

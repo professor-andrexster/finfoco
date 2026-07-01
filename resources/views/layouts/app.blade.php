@@ -117,7 +117,7 @@
                 </span>
             </a>
 
-            <div class="flex items-center">
+            <div class="flex items-center gap-3">
                 @php
                     $nav = [
                         ['route'=>'dashboard',           'pat'=>'dashboard',    'icon'=>'layout-dashboard','label'=>'Dashboard'],
@@ -138,6 +138,31 @@
                     <span class="hidden lg:inline">{{ $item['label'] }}</span>
                 </a>
                 @endforeach
+
+                {{-- Avatar / logout --}}
+                <div x-data="{ open: false }" class="relative ml-2">
+                    <button @click="open = !open" @click.outside="open = false"
+                            class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                            style="background:#6366F1;letter-spacing:-.02em">
+                        {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}
+                    </button>
+                    <div x-show="open" x-cloak style="display:none"
+                         class="absolute right-0 top-10 w-48 bg-white rounded-xl py-1"
+                         style="box-shadow:0 8px 24px rgba(99,102,241,.15),0 0 0 1px rgba(99,102,241,.08)">
+                        <p class="px-4 py-2 text-xs text-foco-muted font-medium truncate border-b border-foco-border">
+                            {{ auth()->user()->email }}
+                        </p>
+                        <a href="{{ route('settings.show') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm text-foco-text hover:bg-foco-surface transition-colors">
+                            <i data-lucide="settings-2" class="w-4 h-4 text-foco-muted"></i> Configurações
+                        </a>
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-foco-saida hover:bg-red-50 transition-colors">
+                                <i data-lucide="log-out" class="w-4 h-4"></i> Sair
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>

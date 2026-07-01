@@ -69,7 +69,10 @@
                         <div class="min-w-0">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <p class="font-semibold text-sm">{{ $bill->descricao }}</p>
-                                @if($bill->recorrente)
+                                @if($bill->isParcelado())
+                                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full" style="background:#EEF2FF;color:#6366F1">{{ $bill->parcela_atual }}/{{ $bill->parcelas_total }}</span>
+                                    @if($bill->parcelasRestantes() > 0)<span class="text-xs text-foco-muted">(faltam {{ $bill->parcelasRestantes() }})</span>@endif
+                                @elseif($bill->recorrente)
                                     <span class="text-xs bg-foco-accent/20 text-foco-accent px-2 py-0.5 rounded-full">
                                         {{ $bill->recorrencia }}
                                     </span>
