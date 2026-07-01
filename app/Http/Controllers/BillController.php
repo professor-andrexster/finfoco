@@ -12,12 +12,41 @@ class BillController extends Controller
 {
     public function index()
     {
-        $bills = Bill::with('categoria')
-            ->where('user_id', auth()->id())
+        $uid = auth()->id();
+
+        // Contas simples e recorrentes (pendentes/atrasadas)
+        $contasSimples = Bill::with('categoria')
+            ->where('user_id', $uid)
+            ->whereNull('parcelas_total')
+            ->whereIn('status', ['pendente', 'atrasado'])
             ->orderBy('vencimento')
             ->get();
 
-        return view('bills.index', compact('bills'));
+        // Parcelamentos: agrupar por descrição+total e pegar próxima parcela pendente
+        $parcelamentos = Bill::with('categoria')
+            ->where('user_id', $uid)
+            ->whereNotNull('parcelas_total')
+            ->whereIn('status', ['pendente', 'atrasado'])
+            ->orderBy('parcela_atual')
+            ->get()
+            ->groupBy(fn($b) => $b->descricao . '||' . $b->parcelas_total . '||' . $b->valor)
+            ->map(fn($grupo) => [
+                'proxima'   => $grupo->first(),
+                'pendentes' => $grupo->count(),
+                'total'     => $grupo->first()->parcelas_total,
+                'pagas'     => $grupo->first()->parcela_atual - 1,
+                'todas'     => $grupo,
+            ]);
+
+        // Contas pagas (todas)
+        $contasPagas = Bill::with('categoria')
+            ->where('user_id', $uid)
+            ->whereIn('status', ['pago', 'recebido'])
+            ->orderByDesc('pago_em')
+            ->limit(30)
+            ->get();
+
+        return view('bills.index', compact('contasSimples', 'parcelamentos', 'contasPagas'));
     }
 
     public function create()
@@ -38,33 +67,47 @@ class BillController extends Controller
             'recorrencia'    => 'nullable|in:semanal,mensal,anual',
             'parcelas_total' => 'nullable|integer|min:2|max:360',
         ], [
-            'tipo.required'       => 'Escolha pagar ou receber.',
-            'descricao.required'  => 'Informe a descrição.',
-            'valor.required'      => 'Informe o valor.',
-            'vencimento.required' => 'Informe a data de vencimento.',
+            'tipo.required'        => 'Escolha pagar ou receber.',
+            'descricao.required'   => 'Informe a descrição.',
+            'valor.required'       => 'Informe o valor.',
+            'vencimento.required'  => 'Informe a data de vencimento.',
+            'parcelas_total.max'   => 'Máximo de 360 parcelas.',
         ]);
 
+        $uid           = auth()->id();
         $parcelasTotal = $data['parcelas_total'] ?? null;
         $recorrente    = (bool) ($data['recorrente'] ?? false);
+        $vencimento    = Carbon::parse($data['vencimento']);
+        $base          = [
+            'user_id'      => $uid,
+            'tipo'         => $data['tipo'],
+            'descricao'    => $data['descricao'],
+            'valor'        => $data['valor'],
+            'categoria_id' => $data['categoria_id'] ?? null,
+            'status'       => 'pendente',
+        ];
 
-        // Parcelado e recorrente são mutuamente exclusivos
-        if ($parcelasTotal) $recorrente = false;
+        if ($parcelasTotal) {
+            // Criar TODAS as parcelas de uma vez
+            for ($i = 1; $i <= $parcelasTotal; $i++) {
+                Bill::create(array_merge($base, [
+                    'vencimento'     => $vencimento->copy()->addMonths($i - 1),
+                    'parcelas_total' => $parcelasTotal,
+                    'parcela_atual'  => $i,
+                    'recorrente'     => false,
+                ]));
+            }
+            $msg = "{$parcelasTotal} parcelas de \"{$data['descricao']}\" cadastradas!";
+        } else {
+            Bill::create(array_merge($base, [
+                'vencimento'  => $vencimento,
+                'recorrente'  => $recorrente,
+                'recorrencia' => $recorrente ? ($data['recorrencia'] ?? 'mensal') : null,
+            ]));
+            $msg = 'Conta cadastrada!';
+        }
 
-        Bill::create([
-            'user_id'        => auth()->id(),
-            'tipo'           => $data['tipo'],
-            'descricao'      => $data['descricao'],
-            'valor'          => $data['valor'],
-            'vencimento'     => $data['vencimento'],
-            'status'         => 'pendente',
-            'categoria_id'   => $data['categoria_id'] ?? null,
-            'recorrente'     => $recorrente,
-            'recorrencia'    => $recorrente ? ($data['recorrencia'] ?? 'mensal') : null,
-            'parcelas_total' => $parcelasTotal,
-            'parcela_atual'  => 1,
-        ]);
-
-        return redirect()->route('bills.index')->with('sucesso', 'Conta salva!');
+        return redirect()->route('bills.index')->with('sucesso', $msg);
     }
 
     public function marcarPago(Bill $bill)
@@ -74,33 +117,18 @@ class BillController extends Controller
         $statusPago = $bill->tipo === 'pagar' ? 'pago' : 'recebido';
         $bill->update(['status' => $statusPago, 'pago_em' => Carbon::today()]);
 
-        // Criar transação automaticamente
         Transaction::create([
             'user_id'      => auth()->id(),
             'tipo'         => $bill->tipo === 'pagar' ? 'saida' : 'entrada',
             'valor'        => $bill->valor,
-            'descricao'    => $bill->descricao,
+            'descricao'    => $bill->isParcelado()
+                ? "{$bill->descricao} ({$bill->parcela_atual}/{$bill->parcelas_total})"
+                : $bill->descricao,
             'categoria_id' => $bill->categoria_id,
             'data'         => Carbon::today(),
         ]);
 
-        // Próxima parcela
-        if ($bill->isParcelado() && $bill->parcela_atual < $bill->parcelas_total) {
-            Bill::create([
-                'user_id'        => auth()->id(),
-                'tipo'           => $bill->tipo,
-                'descricao'      => $bill->descricao,
-                'valor'          => $bill->valor,
-                'vencimento'     => $bill->vencimento->copy()->addMonth(),
-                'status'         => 'pendente',
-                'categoria_id'   => $bill->categoria_id,
-                'recorrente'     => false,
-                'parcelas_total' => $bill->parcelas_total,
-                'parcela_atual'  => $bill->parcela_atual + 1,
-            ]);
-        }
-
-        // Próxima ocorrência recorrente
+        // Recorrente sem parcelas: criar próxima ocorrência
         if ($bill->recorrente && !$bill->isParcelado()) {
             Bill::create([
                 'user_id'     => auth()->id(),
@@ -117,7 +145,7 @@ class BillController extends Controller
 
         $msg = $bill->isParcelado()
             ? "Parcela {$bill->parcela_atual}/{$bill->parcelas_total} paga!"
-            : ($statusPago === 'pago' ? 'Conta marcada como paga!' : 'Conta marcada como recebida!');
+            : ($statusPago === 'pago' ? 'Pago!' : 'Recebido!');
 
         return redirect()->route('bills.index')->with('sucesso', $msg);
     }
@@ -127,5 +155,19 @@ class BillController extends Controller
         abort_unless($bill->user_id === auth()->id(), 403);
         $bill->delete();
         return redirect()->route('bills.index')->with('sucesso', 'Conta excluída!');
+    }
+
+    public function destroyParcelamento(Request $request)
+    {
+        $uid = auth()->id();
+        $request->validate(['descricao' => 'required', 'parcelas_total' => 'required|integer']);
+
+        Bill::where('user_id', $uid)
+            ->where('descricao', $request->descricao)
+            ->where('parcelas_total', $request->parcelas_total)
+            ->whereIn('status', ['pendente', 'atrasado'])
+            ->delete();
+
+        return redirect()->route('bills.index')->with('sucesso', 'Parcelamento excluído!');
     }
 }

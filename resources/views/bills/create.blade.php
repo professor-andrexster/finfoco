@@ -75,7 +75,7 @@
                            class="w-28 border border-foco-border rounded-xl px-4 py-3 text-foco-text font-bold text-xl text-center focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-foco-accent">
                     <span class="text-foco-muted text-sm">parcelas mensais</span>
                 </div>
-                <p class="text-xs text-foco-muted mt-2">A próxima parcela é criada automaticamente ao marcar como paga.</p>
+                <p class="text-xs text-foco-muted mt-2">Todas as parcelas são criadas de uma vez com vencimentos mensais a partir da data informada.</p>
             </div>
 
             <div x-show="modo==='recorrente'" x-cloak style="display:none" class="mt-4">
