@@ -27,8 +27,8 @@ class DateHelper
         $hoje = Carbon::today();
         $diff = $hoje->diffInDays($data, false);
 
-        if ($diff < 0)  return 'red';    // vencida
-        if ($diff <= 3) return 'yellow'; // vence em até 3 dias (ou hoje)
+        if ($diff <= 0) return 'red';    // vencida ou vence hoje
+        if ($diff <= 3) return 'yellow'; // vence em 1–3 dias
         return 'green';                  // mais de 3 dias
     }
 }

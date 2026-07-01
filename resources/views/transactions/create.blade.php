@@ -17,6 +17,8 @@
         tipo: '{{ old('tipo','saida') }}',
         valor: {{ old('valor', 0) }},
         mostrarPausa: false,
+        countdown: 10,
+        countdownTimer: null,
         limiteImpulso: {{ $limiteImpulso }},
         valorHora: {{ $valorHora }},
 
@@ -30,21 +32,36 @@
             if (this.tipo === 'saida' && parseFloat(this.valor) > this.limiteImpulso) {
                 e.preventDefault();
                 this.mostrarPausa = true;
+                this.countdown = 10;
+                this.countdownTimer = setInterval(() => {
+                    this.countdown--;
+                    if (this.countdown <= 0) clearInterval(this.countdownTimer);
+                }, 1000);
             }
         },
 
+        fecharPausa() {
+            clearInterval(this.countdownTimer);
+            this.mostrarPausa = false;
+        },
+
         confirmarEnvio() {
+            clearInterval(this.countdownTimer);
             this.mostrarPausa = false;
             this.$refs.formLancamento.submit();
         }
     }">
 
-        {{-- Modal anti-impulso --}}
+        {{-- Modal anti-impulso com countdown --}}
         <div x-show="mostrarPausa" x-cloak style="display:none"
              class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
             <div class="card rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
-                <div class="w-16 h-16 rounded-full bg-foco-alerta/20 flex items-center justify-center mx-auto mb-4">
-                    <i data-lucide="pause-circle" class="w-8 h-8 text-foco-alerta"></i>
+                {{-- Countdown ring --}}
+                <div class="relative w-16 h-16 mx-auto mb-4">
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center"
+                         style="background: rgba(217,119,6,.12)">
+                        <span x-text="countdown" class="text-2xl font-bold" style="color:#D97706"></span>
+                    </div>
                 </div>
                 <h3 class="text-xl font-bold mb-2">Isso é necessário agora?</h3>
                 <p class="text-foco-muted text-sm mb-6">
@@ -52,13 +69,14 @@
                     Só um respiro antes de lançar. 🧘
                 </p>
                 <div class="grid grid-cols-2 gap-3">
-                    <button @click="mostrarPausa = false"
+                    <button @click="fecharPausa()"
                             class="py-3 rounded-xl border border-foco-border text-foco-muted hover:text-foco-text hover:border-foco-text transition-colors font-semibold">
                         Vou esperar
                     </button>
-                    <button @click="confirmarEnvio()"
-                            class="py-3 rounded-xl bg-foco-accent hover:bg-foco-accent/80 text-white font-semibold transition-colors">
-                        Sim, lançar
+                    <button @click="confirmarEnvio()" :disabled="countdown > 0"
+                            :class="countdown > 0 ? 'opacity-40 cursor-not-allowed' : 'hover:opacity-80'"
+                            class="py-3 rounded-xl bg-foco-accent text-white font-semibold transition-all">
+                        <span x-text="countdown > 0 ? 'Aguarde ' + countdown + 's…' : 'Sim, lançar'"></span>
                     </button>
                 </div>
             </div>

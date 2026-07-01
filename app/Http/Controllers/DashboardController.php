@@ -14,6 +14,8 @@ class DashboardController extends Controller
     {
         $uid  = auth()->id();
         $hoje = Carbon::today();
+        $semanaInicio = Carbon::now()->startOfWeek();
+        $semanaFim    = Carbon::now()->endOfWeek();
         $mesInicio = Carbon::now()->startOfMonth();
         $mesFim    = Carbon::now()->endOfMonth();
 
@@ -22,16 +24,23 @@ class DashboardController extends Controller
             ->value('saldo') ?? 0;
 
         $gastosHoje     = Transaction::where('user_id', $uid)->where('tipo','saida')->whereDate('data',$hoje)->sum('valor');
-        $gastosSemanais = Transaction::where('user_id', $uid)->where('tipo','saida')->whereDate('data','>=',Carbon::now()->startOfWeek())->sum('valor');
+        $gastosSemanais = Transaction::where('user_id', $uid)->where('tipo','saida')->whereDate('data','>=',$semanaInicio)->sum('valor');
+        $entradasSemana = Transaction::where('user_id', $uid)->where('tipo','entrada')->whereDate('data','>=',$semanaInicio)->sum('valor');
         $entradaMes     = Transaction::where('user_id', $uid)->where('tipo','entrada')->whereDate('data','>=',$mesInicio)->sum('valor');
         $saidaMes       = Transaction::where('user_id', $uid)->where('tipo','saida')->whereDate('data','>=',$mesInicio)->sum('valor');
 
+        // Safe-to-spend mensal
         $contasPendentesMes   = Bill::where('user_id',$uid)->where('status','pendente')->whereBetween('vencimento',[$hoje,$mesFim])->where('tipo','pagar')->sum('valor');
         $entradasEsperadasMes = Bill::where('user_id',$uid)->where('status','pendente')->whereBetween('vencimento',[$hoje,$mesFim])->where('tipo','receber')->sum('valor');
+        $diasRestantesMes     = $hoje->diffInDays($mesFim) + 1;
+        $podeGastarMes        = (float)$saldoTotal + (float)$entradasEsperadasMes - (float)$contasPendentesMes;
+        $podeGastarHoje       = $diasRestantesMes > 0 ? $podeGastarMes / $diasRestantesMes : 0;
 
-        $diasRestantes  = $hoje->diffInDays($mesFim) + 1;
-        $podeGastarMes  = (float)$saldoTotal + (float)$entradasEsperadasMes - (float)$contasPendentesMes;
-        $podeGastarHoje = $diasRestantes > 0 ? $podeGastarMes / $diasRestantes : 0;
+        // Safe-to-spend semanal
+        $contasPendentesSemana   = Bill::where('user_id',$uid)->where('status','pendente')->whereBetween('vencimento',[$hoje,$semanaFim])->where('tipo','pagar')->sum('valor');
+        $entradasEsperadasSemana = Bill::where('user_id',$uid)->where('status','pendente')->whereBetween('vencimento',[$hoje,$semanaFim])->where('tipo','receber')->sum('valor');
+        $diasRestantesSemana     = max(1, $hoje->diffInDays($semanaFim) + 1);
+        $podeGastarSemana        = ((float)$saldoTotal + (float)$entradasEsperadasSemana - (float)$contasPendentesSemana) / $diasRestantesSemana;
 
         $semaforoPodeGastar = $podeGastarHoje < 0 ? ($podeGastarHoje < -50 ? 'red' : 'yellow') : 'green';
 
@@ -48,8 +57,9 @@ class DashboardController extends Controller
             ->limit(5)->get();
 
         return view('dashboard.index', compact(
-            'saldoTotal','gastosHoje','gastosSemanais','entradaMes','saidaMes',
-            'podeGastarHoje','semaforoPodeGastar','avisos','lembretes','ultimasTransacoes'
+            'saldoTotal','gastosHoje','gastosSemanais','entradasSemana','entradaMes','saidaMes',
+            'podeGastarHoje','podeGastarSemana','semaforoPodeGastar',
+            'avisos','lembretes','ultimasTransacoes'
         ));
     }
 

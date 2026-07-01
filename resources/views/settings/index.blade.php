@@ -27,7 +27,7 @@
                 </p>
                 <input type="number" id="valor_hora" name="valor_hora" step="0.01" min="0"
                        value="{{ old('valor_hora', $valorHora) }}" placeholder="Ex: 50,00"
-                       class="w-full bg-foco-bg border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                       class="w-full bg-white border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
             </div>
 
             {{-- Limite anti-impulso --}}
@@ -40,7 +40,7 @@
                 </p>
                 <input type="number" id="limite_impulso" name="limite_impulso" step="0.01" min="0"
                        value="{{ old('limite_impulso', $limiteImpulso) }}" placeholder="150,00"
-                       class="w-full bg-foco-bg border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                       class="w-full bg-white border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
             </div>
         </div>
 

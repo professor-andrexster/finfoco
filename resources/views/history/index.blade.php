@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Histórico')
+@php use App\Helpers\DateHelper; @endphp
 
 @section('content')
 <div class="flex items-center justify-between mb-6">
@@ -55,7 +56,7 @@
                         <p class="font-medium">{{ $t->descricao }}</p>
                         <p class="text-foco-muted text-xs">
                             {{ $t->categoria?->nome ?? '—' }}
-                            · {{ $t->data->format('d/m/Y') }}
+                            · <span title="{{ $t->data->format('d/m/Y') }}">{{ DateHelper::formatarDataRelativa($t->data) }}</span>
                         </p>
                     </div>
                 </div>
@@ -64,9 +65,16 @@
                         {{ $t->tipo === 'entrada' ? '+' : '-' }}R$ {{ number_format($t->valor, 2, ',', '.') }}
                     </span>
                     <a href="{{ route('transactions.edit', $t) }}"
-                       class="text-foco-muted hover:text-foco-accent transition-colors">
+                       class="text-foco-muted hover:text-foco-accent transition-colors p-1">
                         <i data-lucide="pencil" class="w-4 h-4"></i>
                     </a>
+                    <form action="{{ route('transactions.destroy', $t) }}" method="POST"
+                          onsubmit="return confirm('Excluir este lançamento?')">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="text-foco-muted hover:text-foco-saida transition-colors p-1">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </form>
                 </div>
             </li>
             @endforeach

@@ -18,7 +18,7 @@
     @php
         $borderColor = $aviso['tipo'] === 'danger' ? '#DC2626' : '#D97706';
         $bgColor     = $aviso['tipo'] === 'danger' ? '#FEF2F2' : '#FFFBEB';
-        $textColor   = $aviso['tipo'] === 'danger' ? '#991B1B' : '#92400E';
+        $textColor   = $aviso['tipo'] === 'danger' ? '#DC2626' : '#D97706';
     @endphp
     @if($aviso['link'])
     <a href="{{ $aviso['link'] }}"
@@ -40,73 +40,126 @@
 </div>
 @endif
 
-{{-- HERO: SALDO + PODE GASTAR --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+{{-- TOGGLE DIA / SEMANA --}}
+<div x-data="{ visao: localStorage.getItem('finfoco_visao') || 'dia' }"
+     x-init="$watch('visao', v => localStorage.setItem('finfoco_visao', v))"
+     class="mb-6">
 
-    {{-- Saldo --}}
-    <div class="card p-7">
-        <p class="text-xs font-semibold uppercase tracking-widest text-foco-muted mb-3">Saldo atual</p>
-        <p class="font-bold leading-none {{ $saldoTotal >= 0 ? 'text-foco-accent' : 'text-foco-saida' }}"
-           style="font-size: 2.75rem; letter-spacing: -0.03em">
-            {{ $saldoTotal < 0 ? '−' : '' }}R$&nbsp;{{ number_format(abs($saldoTotal), 2, ',', '.') }}
-        </p>
-        @if($saldoTotal >= 0)
-        <p class="mt-3 text-xs text-foco-muted flex items-center gap-1">
-            <i data-lucide="trending-up" class="w-3 h-3 text-foco-entrada"></i>
-            Positivo
-        </p>
-        @else
-        <p class="mt-3 text-xs text-foco-saida flex items-center gap-1">
-            <i data-lucide="trending-down" class="w-3 h-3"></i>
-            Atenção: saldo negativo
-        </p>
-        @endif
-    </div>
-
-    {{-- Pode Gastar --}}
-    @php
-        $pgColor = match($semaforoPodeGastar) {
-            'red'    => '#DC2626',
-            'yellow' => '#D97706',
-            default  => '#6366F1',
-        };
-        $pgLabel = match($semaforoPodeGastar) {
-            'red'    => 'Atenção: margem negativa',
-            'yellow' => 'Margem apertada',
-            default  => 'Pode gastar por dia',
-        };
-    @endphp
-    <div class="card p-7" style="border-top: 3px solid {{ $pgColor }}">
-        <p class="text-xs font-semibold uppercase tracking-widest text-foco-muted mb-3">{{ $pgLabel }}</p>
-        <p class="font-bold leading-none" style="font-size: 2.75rem; letter-spacing: -0.03em; color:{{ $pgColor }}">
-            {{ $podeGastarHoje < 0 ? '−' : '' }}R$&nbsp;{{ number_format(abs($podeGastarHoje), 2, ',', '.') }}
-        </p>
-        <p class="mt-3 text-xs text-foco-muted">saldo − contas pendentes ÷ dias restantes</p>
-    </div>
-</div>
-
-{{-- STATS --}}
-<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-7">
-    @php
-        $stats = [
-            ['label'=>'Hoje',         'icon'=>'sun',          'valor'=>$gastosHoje,    'cor'=>'#DC2626', 'sinal'=>'−'],
-            ['label'=>'Esta semana',  'icon'=>'calendar',     'valor'=>$gastosSemanais,'cor'=>'#DC2626', 'sinal'=>'−'],
-            ['label'=>'Entrou no mês','icon'=>'arrow-down-circle','valor'=>$entradaMes,'cor'=>'#16A34A', 'sinal'=>'+'],
-            ['label'=>'Saiu no mês', 'icon'=>'arrow-up-circle',  'valor'=>$saidaMes,  'cor'=>'#DC2626', 'sinal'=>'−'],
-        ];
-    @endphp
-    @foreach($stats as $s)
-    <div class="card p-4">
-        <div class="flex items-center gap-1.5 mb-2">
-            <i data-lucide="{{ $s['icon'] }}" class="w-3.5 h-3.5" style="color:{{ $s['cor'] }}"></i>
-            <p class="text-xs text-foco-muted font-medium">{{ $s['label'] }}</p>
+    {{-- Selector --}}
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-semibold text-foco-text">Visão geral</h2>
+        <div class="flex items-center gap-1 bg-foco-surface rounded-xl p-1" style="border:1px solid #E4E4F0">
+            <button @click="visao='dia'"
+                    :class="visao==='dia' ? 'bg-white text-foco-accent shadow-sm' : 'text-foco-muted'"
+                    class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all">
+                Hoje
+            </button>
+            <button @click="visao='semana'"
+                    :class="visao==='semana' ? 'bg-white text-foco-accent shadow-sm' : 'text-foco-muted'"
+                    class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all">
+                Esta semana
+            </button>
         </div>
-        <p class="text-xl font-bold" style="color:{{ $s['cor'] }}; letter-spacing:-0.02em">
-            {{ $s['sinal'] }}&nbsp;{{ number_format($s['valor'], 2, ',', '.') }}
-        </p>
     </div>
-    @endforeach
-</div>
+
+    {{-- HERO: SALDO + PODE GASTAR --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+
+        {{-- Saldo --}}
+        <div class="card p-7">
+            <p class="text-xs font-semibold uppercase tracking-widest text-foco-muted mb-3">Saldo atual</p>
+            <p class="font-bold leading-none {{ $saldoTotal >= 0 ? 'text-foco-accent' : 'text-foco-saida' }}"
+               style="font-size: 2.75rem; letter-spacing: -0.03em">
+                {{ $saldoTotal < 0 ? '−' : '' }}R$&nbsp;{{ number_format(abs($saldoTotal), 2, ',', '.') }}
+            </p>
+            @if($saldoTotal >= 0)
+            <p class="mt-3 text-xs text-foco-muted flex items-center gap-1">
+                <i data-lucide="trending-up" class="w-3 h-3 text-foco-entrada"></i>
+                Positivo
+            </p>
+            @else
+            <p class="mt-3 text-xs text-foco-saida flex items-center gap-1">
+                <i data-lucide="trending-down" class="w-3 h-3"></i>
+                Atenção: saldo negativo
+            </p>
+            @endif
+        </div>
+
+        {{-- Pode Gastar --}}
+        @php
+            $pgColor = match($semaforoPodeGastar) {
+                'red'    => '#DC2626',
+                'yellow' => '#D97706',
+                default  => '#6366F1',
+            };
+        @endphp
+        <div class="card p-7" style="border-top: 3px solid {{ $pgColor }}">
+            {{-- Label muda com visão --}}
+            <p class="text-xs font-semibold uppercase tracking-widest text-foco-muted mb-3">
+                <span x-show="visao==='dia'">Pode gastar hoje</span>
+                <span x-show="visao==='semana'" x-cloak>Pode gastar esta semana (por dia)</span>
+            </p>
+            {{-- Valor muda com visão --}}
+            <p class="font-bold leading-none" style="font-size: 2.75rem; letter-spacing: -0.03em; color:{{ $pgColor }}">
+                <span x-show="visao==='dia'">
+                    {{ $podeGastarHoje < 0 ? '−' : '' }}R$&nbsp;{{ number_format(abs($podeGastarHoje), 2, ',', '.') }}
+                </span>
+                <span x-show="visao==='semana'" x-cloak>
+                    {{ $podeGastarSemana < 0 ? '−' : '' }}R$&nbsp;{{ number_format(abs($podeGastarSemana), 2, ',', '.') }}
+                </span>
+            </p>
+            <p class="mt-3 text-xs text-foco-muted">saldo − contas pendentes ÷ dias restantes</p>
+        </div>
+    </div>
+
+    {{-- STATS --}}
+    {{-- Dia --}}
+    <div x-show="visao==='dia'" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        @php
+            $statsDia = [
+                ['label'=>'Saídas hoje',   'icon'=>'sun',              'valor'=>$gastosHoje, 'cor'=>'#DC2626','sinal'=>'−'],
+                ['label'=>'Saídas semana', 'icon'=>'calendar',         'valor'=>$gastosSemanais,'cor'=>'#DC2626','sinal'=>'−'],
+                ['label'=>'Entrou no mês', 'icon'=>'arrow-down-circle','valor'=>$entradaMes,'cor'=>'#16A34A','sinal'=>'+'],
+                ['label'=>'Saiu no mês',   'icon'=>'arrow-up-circle',  'valor'=>$saidaMes,  'cor'=>'#DC2626','sinal'=>'−'],
+            ];
+        @endphp
+        @foreach($statsDia as $s)
+        <div class="card p-4">
+            <div class="flex items-center gap-1.5 mb-2">
+                <i data-lucide="{{ $s['icon'] }}" class="w-3.5 h-3.5" style="color:{{ $s['cor'] }}"></i>
+                <p class="text-xs text-foco-muted font-medium">{{ $s['label'] }}</p>
+            </div>
+            <p class="text-xl font-bold" style="color:{{ $s['cor'] }}; letter-spacing:-0.02em">
+                {{ $s['sinal'] }}&nbsp;{{ number_format($s['valor'], 2, ',', '.') }}
+            </p>
+        </div>
+        @endforeach
+    </div>
+
+    {{-- Semana --}}
+    <div x-show="visao==='semana'" x-cloak class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        @php
+            $statsSemana = [
+                ['label'=>'Saídas semana',  'icon'=>'trending-down',    'valor'=>$gastosSemanais,'cor'=>'#DC2626','sinal'=>'−'],
+                ['label'=>'Entradas semana','icon'=>'trending-up',      'valor'=>$entradasSemana,'cor'=>'#16A34A','sinal'=>'+'],
+                ['label'=>'Entrou no mês',  'icon'=>'arrow-down-circle','valor'=>$entradaMes,    'cor'=>'#16A34A','sinal'=>'+'],
+                ['label'=>'Saiu no mês',    'icon'=>'arrow-up-circle',  'valor'=>$saidaMes,      'cor'=>'#DC2626','sinal'=>'−'],
+            ];
+        @endphp
+        @foreach($statsSemana as $s)
+        <div class="card p-4">
+            <div class="flex items-center gap-1.5 mb-2">
+                <i data-lucide="{{ $s['icon'] }}" class="w-3.5 h-3.5" style="color:{{ $s['cor'] }}"></i>
+                <p class="text-xs text-foco-muted font-medium">{{ $s['label'] }}</p>
+            </div>
+            <p class="text-xl font-bold" style="color:{{ $s['cor'] }}; letter-spacing:-0.02em">
+                {{ $s['sinal'] }}&nbsp;{{ number_format($s['valor'], 2, ',', '.') }}
+            </p>
+        </div>
+        @endforeach
+    </div>
+
+</div>{{-- /x-data visao --}}
 
 {{-- CTA --}}
 <div class="flex justify-center mb-8">
