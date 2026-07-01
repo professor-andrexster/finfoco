@@ -22,7 +22,7 @@
                class="w-full bg-foco-surface border border-foco-border rounded-xl pl-10 pr-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
     </div>
     <select name="tipo"
-            class="bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+            class="card rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
         <option value="">Todos</option>
         <option value="entrada" {{ $tipo === 'entrada' ? 'selected' : '' }}>Entradas</option>
         <option value="saida"   {{ $tipo === 'saida'   ? 'selected' : '' }}>Saídas</option>
@@ -40,7 +40,7 @@
         <p>Nenhum lançamento encontrado.</p>
     </div>
 @else
-    <div class="bg-foco-surface border border-foco-border rounded-2xl overflow-hidden">
+    <div class="card rounded-2xl overflow-hidden">
         <ul class="divide-y divide-foco-border">
             @foreach($transactions as $t)
             <li class="flex items-center justify-between px-5 py-4 hover:bg-foco-border/30 transition-colors">

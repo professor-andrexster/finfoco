@@ -11,7 +11,7 @@
     <form action="{{ route('settings.update') }}" method="POST" class="space-y-5">
         @csrf
 
-        <div class="bg-foco-surface border border-foco-border rounded-2xl p-6 space-y-5">
+        <div class="card rounded-2xl p-6 space-y-5">
             <h2 class="font-semibold text-foco-text flex items-center gap-2">
                 <i data-lucide="brain" class="w-4 h-4 text-foco-accent"></i>
                 Recursos TDAH

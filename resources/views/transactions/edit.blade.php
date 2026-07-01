@@ -44,7 +44,7 @@
             <label for="valor" class="block text-sm font-medium mb-2 text-foco-muted">Valor (R$)</label>
             <input type="number" id="valor" name="valor" step="0.01" min="0.01"
                    value="{{ old('valor', $transaction->valor) }}"
-                   class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-2xl font-bold text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                   class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-2xl font-bold text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
         </div>
 
         {{-- Descrição --}}
@@ -52,14 +52,14 @@
             <label for="descricao" class="block text-sm font-medium mb-2 text-foco-muted">Descrição</label>
             <input type="text" id="descricao" name="descricao" maxlength="60"
                    value="{{ old('descricao', $transaction->descricao) }}"
-                   class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                   class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
         </div>
 
         {{-- Categoria --}}
         <div>
             <label for="categoria_id" class="block text-sm font-medium mb-2 text-foco-muted">Categoria</label>
             <select id="categoria_id" name="categoria_id"
-                    class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                    class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
                 <option value="">— Sem categoria —</option>
                 @foreach($categorias as $cat)
                     <option value="{{ $cat->id }}"
@@ -75,7 +75,7 @@
             <label for="data" class="block text-sm font-medium mb-2 text-foco-muted">Data</label>
             <input type="date" id="data" name="data"
                    value="{{ old('data', $transaction->data->format('Y-m-d')) }}"
-                   class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                   class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
         </div>
 
         <div class="flex gap-3">

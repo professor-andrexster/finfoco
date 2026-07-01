@@ -4,150 +4,191 @@
 @section('content')
 @php use App\Helpers\DateHelper; @endphp
 
-{{-- AVISOS INTELIGENTES --}}
+{{-- AVISOS --}}
+@php
+    $danger  = collect($avisos)->where('tipo','danger')->first();
+    $warning = collect($avisos)->where('tipo','warning')->first();
+    $hasAlert = $danger || $warning;
+@endphp
+
+@if($hasAlert)
 <div class="space-y-2 mb-6">
     @foreach($avisos as $aviso)
+    @if($aviso['tipo'] !== 'success')
     @php
-        $cores = match($aviso['tipo']) {
-            'danger'  => 'border-foco-saida/40 bg-foco-saida/10 text-foco-saida',
-            'warning' => 'border-foco-alerta/40 bg-foco-alerta/10 text-foco-alerta',
-            default   => 'border-foco-entrada/40 bg-foco-entrada/10 text-foco-entrada',
-        };
+        $borderColor = $aviso['tipo'] === 'danger' ? '#DC2626' : '#D97706';
+        $bgColor     = $aviso['tipo'] === 'danger' ? '#FEF2F2' : '#FFFBEB';
+        $textColor   = $aviso['tipo'] === 'danger' ? '#991B1B' : '#92400E';
     @endphp
     @if($aviso['link'])
     <a href="{{ $aviso['link'] }}"
-       class="flex items-center gap-3 border rounded-xl px-4 py-3 transition-opacity hover:opacity-80 {{ $cores }}">
-        <i data-lucide="{{ $aviso['icone'] }}" class="w-5 h-5 shrink-0"></i>
-        <span class="text-sm font-semibold flex-1">{{ $aviso['mensagem'] }}</span>
-        <i data-lucide="chevron-right" class="w-4 h-4 shrink-0 opacity-60"></i>
+       class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
+       style="background:{{ $bgColor }}; color:{{ $textColor }}; border-left: 3px solid {{ $borderColor }}">
+        <i data-lucide="{{ $aviso['icone'] }}" class="w-4 h-4 shrink-0"></i>
+        <span class="flex-1">{{ $aviso['mensagem'] }}</span>
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5 shrink-0 opacity-60"></i>
     </a>
     @else
-    <div class="flex items-center gap-3 border rounded-xl px-4 py-3 {{ $cores }}">
-        <i data-lucide="{{ $aviso['icone'] }}" class="w-5 h-5 shrink-0"></i>
-        <span class="text-sm font-semibold">{{ $aviso['mensagem'] }} 🎯</span>
+    <div class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium"
+         style="background:{{ $bgColor }}; color:{{ $textColor }}; border-left: 3px solid {{ $borderColor }}">
+        <i data-lucide="{{ $aviso['icone'] }}" class="w-4 h-4 shrink-0"></i>
+        <span>{{ $aviso['mensagem'] }}</span>
     </div>
+    @endif
     @endif
     @endforeach
 </div>
+@endif
 
-{{-- SALDO + PODE GASTAR --}}
+{{-- HERO: SALDO + PODE GASTAR --}}
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-    <div class="bg-foco-surface border border-foco-border rounded-2xl p-6 text-center">
-        <p class="text-foco-muted text-sm mb-1">Saldo atual</p>
-        <p class="text-5xl font-bold {{ $saldoTotal >= 0 ? 'text-foco-entrada' : 'text-foco-saida' }}">
-            {{ $saldoTotal < 0 ? '-' : '' }}R$ {{ number_format(abs($saldoTotal), 2, ',', '.') }}
+
+    {{-- Saldo --}}
+    <div class="card p-7">
+        <p class="text-xs font-semibold uppercase tracking-widest text-foco-muted mb-3">Saldo atual</p>
+        <p class="font-bold leading-none {{ $saldoTotal >= 0 ? 'text-foco-accent' : 'text-foco-saida' }}"
+           style="font-size: 2.75rem; letter-spacing: -0.03em">
+            {{ $saldoTotal < 0 ? '−' : '' }}R$&nbsp;{{ number_format(abs($saldoTotal), 2, ',', '.') }}
         </p>
+        @if($saldoTotal >= 0)
+        <p class="mt-3 text-xs text-foco-muted flex items-center gap-1">
+            <i data-lucide="trending-up" class="w-3 h-3 text-foco-entrada"></i>
+            Positivo
+        </p>
+        @else
+        <p class="mt-3 text-xs text-foco-saida flex items-center gap-1">
+            <i data-lucide="trending-down" class="w-3 h-3"></i>
+            Atenção: saldo negativo
+        </p>
+        @endif
     </div>
+
+    {{-- Pode Gastar --}}
     @php
-        $semaforoClasses = match($semaforoPodeGastar) {
-            'red'    => 'text-foco-saida',
-            'yellow' => 'text-foco-alerta',
-            default  => 'text-foco-entrada',
+        $pgColor = match($semaforoPodeGastar) {
+            'red'    => '#DC2626',
+            'yellow' => '#D97706',
+            default  => '#6366F1',
         };
-        $semaforoEmoji = match($semaforoPodeGastar) { 'red'=>'🔴','yellow'=>'🟡',default=>'🟢' };
+        $pgLabel = match($semaforoPodeGastar) {
+            'red'    => 'Atenção: margem negativa',
+            'yellow' => 'Margem apertada',
+            default  => 'Pode gastar por dia',
+        };
     @endphp
-    <div class="bg-foco-surface border border-foco-border rounded-2xl p-6 text-center">
-        <p class="text-foco-muted text-sm mb-1">{{ $semaforoEmoji }} Pode gastar hoje</p>
-        <p class="text-5xl font-bold {{ $semaforoClasses }}">
-            {{ $podeGastarHoje < 0 ? '-' : '' }}R$ {{ number_format(abs($podeGastarHoje), 2, ',', '.') }}
+    <div class="card p-7" style="border-top: 3px solid {{ $pgColor }}">
+        <p class="text-xs font-semibold uppercase tracking-widest text-foco-muted mb-3">{{ $pgLabel }}</p>
+        <p class="font-bold leading-none" style="font-size: 2.75rem; letter-spacing: -0.03em; color:{{ $pgColor }}">
+            {{ $podeGastarHoje < 0 ? '−' : '' }}R$&nbsp;{{ number_format(abs($podeGastarHoje), 2, ',', '.') }}
         </p>
-        <p class="text-foco-muted text-xs mt-1">saldo − contas do mês ÷ dias restantes</p>
+        <p class="mt-3 text-xs text-foco-muted">saldo − contas pendentes ÷ dias restantes</p>
     </div>
 </div>
 
-{{-- CARDS RESUMO --}}
-<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-    <div class="bg-foco-surface border border-foco-border rounded-xl p-4">
-        <p class="text-foco-muted text-xs mb-1 flex items-center gap-1"><i data-lucide="sun" class="w-3 h-3"></i> Gastos hoje</p>
-        <p class="text-2xl font-bold text-foco-saida">R$ {{ number_format($gastosHoje, 2, ',', '.') }}</p>
+{{-- STATS --}}
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-7">
+    @php
+        $stats = [
+            ['label'=>'Hoje',         'icon'=>'sun',          'valor'=>$gastosHoje,    'cor'=>'#DC2626', 'sinal'=>'−'],
+            ['label'=>'Esta semana',  'icon'=>'calendar',     'valor'=>$gastosSemanais,'cor'=>'#DC2626', 'sinal'=>'−'],
+            ['label'=>'Entrou no mês','icon'=>'arrow-down-circle','valor'=>$entradaMes,'cor'=>'#16A34A', 'sinal'=>'+'],
+            ['label'=>'Saiu no mês', 'icon'=>'arrow-up-circle',  'valor'=>$saidaMes,  'cor'=>'#DC2626', 'sinal'=>'−'],
+        ];
+    @endphp
+    @foreach($stats as $s)
+    <div class="card p-4">
+        <div class="flex items-center gap-1.5 mb-2">
+            <i data-lucide="{{ $s['icon'] }}" class="w-3.5 h-3.5" style="color:{{ $s['cor'] }}"></i>
+            <p class="text-xs text-foco-muted font-medium">{{ $s['label'] }}</p>
+        </div>
+        <p class="text-xl font-bold" style="color:{{ $s['cor'] }}; letter-spacing:-0.02em">
+            {{ $s['sinal'] }}&nbsp;{{ number_format($s['valor'], 2, ',', '.') }}
+        </p>
     </div>
-    <div class="bg-foco-surface border border-foco-border rounded-xl p-4">
-        <p class="text-foco-muted text-xs mb-1 flex items-center gap-1"><i data-lucide="calendar-days" class="w-3 h-3"></i> Gastos semana</p>
-        <p class="text-2xl font-bold text-foco-saida">R$ {{ number_format($gastosSemanais, 2, ',', '.') }}</p>
-    </div>
-    <div class="bg-foco-surface border border-foco-border rounded-xl p-4">
-        <p class="text-foco-muted text-xs mb-1 flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i> Entradas mês</p>
-        <p class="text-2xl font-bold text-foco-entrada">R$ {{ number_format($entradaMes, 2, ',', '.') }}</p>
-    </div>
-    <div class="bg-foco-surface border border-foco-border rounded-xl p-4">
-        <p class="text-foco-muted text-xs mb-1 flex items-center gap-1"><i data-lucide="trending-down" class="w-3 h-3"></i> Saídas mês</p>
-        <p class="text-2xl font-bold text-foco-saida">R$ {{ number_format($saidaMes, 2, ',', '.') }}</p>
-    </div>
+    @endforeach
 </div>
 
-{{-- AÇÃO PRINCIPAL --}}
+{{-- CTA --}}
 <div class="flex justify-center mb-8">
     <a href="{{ route('transactions.create') }}"
-       class="btn-primary bg-foco-accent hover:bg-foco-accent/80 text-white px-8 py-4 rounded-2xl flex items-center gap-3 transition-colors shadow-lg">
-        <i data-lucide="plus-circle" class="w-7 h-7"></i>
-        Novo Lançamento
+       class="btn-primary inline-flex items-center gap-2.5 text-white px-7 py-3.5 rounded-2xl transition-all"
+       style="background:#6366F1; box-shadow: 0 4px 14px rgba(99,102,241,.35);"
+       onmouseover="this.style.background='#4F46E5'"
+       onmouseout="this.style.background='#6366F1'">
+        <i data-lucide="plus" class="w-5 h-5"></i>
+        Novo lançamento
     </a>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+{{-- GRID INFERIOR --}}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
     {{-- LEMBRETES --}}
-    <div class="bg-foco-surface border border-foco-border rounded-2xl overflow-hidden"
-         x-data="{ novoLembrete: false }">
-        <div class="flex items-center justify-between px-5 py-4 border-b border-foco-border">
-            <h2 class="font-semibold flex items-center gap-2">
+    <div class="card overflow-hidden" x-data="{ novoLembrete: false }">
+        <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid #E4E4F0">
+            <h2 class="text-sm font-semibold flex items-center gap-2 text-foco-text">
                 <i data-lucide="bookmark" class="w-4 h-4 text-foco-accent"></i>
                 Lembretes
             </h2>
             <button @click="novoLembrete = !novoLembrete"
-                    class="text-foco-accent text-sm flex items-center gap-1 font-medium hover:opacity-80 transition-opacity">
-                <i data-lucide="plus" class="w-4 h-4"></i> Adicionar
+                    class="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                    style="color:#6366F1; background:#EEF2FF"
+                    onmouseover="this.style.background='#E0E7FF'"
+                    onmouseout="this.style.background='#EEF2FF'">
+                + Adicionar
             </button>
         </div>
 
-        <div x-show="novoLembrete" x-cloak style="display:none">
-            <form action="{{ route('reminders.store') }}" method="POST"
-                  class="px-5 py-4 border-b border-foco-border bg-foco-bg/40">
+        <div x-show="novoLembrete" x-cloak style="display:none; border-bottom:1px solid #E4E4F0">
+            <form action="{{ route('reminders.store') }}" method="POST" class="px-5 py-4 bg-foco-surface">
                 @csrf
                 <div class="flex flex-col sm:flex-row gap-2">
                     <input type="text" name="titulo" maxlength="60" placeholder="O que lembrar?"
-                           class="flex-1 bg-foco-surface border border-foco-border rounded-xl px-3 py-2 text-sm text-foco-text focus:outline-none focus:border-foco-accent" required>
+                           class="flex-1 border border-foco-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foco-accent/30" required>
                     <input type="date" name="data_lembrete" value="{{ date('Y-m-d') }}"
-                           class="bg-foco-surface border border-foco-border rounded-xl px-3 py-2 text-sm text-foco-text focus:outline-none focus:border-foco-accent" required>
+                           class="border border-foco-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foco-accent/30" required>
                     <button type="submit"
-                            class="bg-foco-accent text-white px-3 py-2 rounded-xl text-sm font-semibold hover:bg-foco-accent/80 transition-colors">
-                        Salvar lembrete
+                            class="text-white text-sm font-semibold px-4 py-2 rounded-xl"
+                            style="background:#6366F1">
+                        Salvar
                     </button>
                 </div>
             </form>
         </div>
 
         @if($lembretes->isEmpty())
-        <div class="px-5 py-8 text-center text-foco-muted">
-            <i data-lucide="check-circle" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>
-            <p class="text-sm">Nenhum lembrete ativo — mente livre! 😄</p>
+        <div class="px-5 py-10 text-center">
+            <div class="w-10 h-10 rounded-full bg-foco-surface mx-auto mb-3 flex items-center justify-center">
+                <i data-lucide="check" class="w-5 h-5 text-foco-accent"></i>
+            </div>
+            <p class="text-sm text-foco-muted">Nenhum lembrete ativo.</p>
         </div>
         @else
-        <ul class="divide-y divide-foco-border">
+        <ul>
             @foreach($lembretes as $lembrete)
-            <li class="flex items-center gap-3 px-5 py-3 {{ $lembrete->concluido ? 'opacity-50' : '' }}">
+            <li class="flex items-center gap-3 px-5 py-3 {{ $lembrete->concluido ? 'opacity-40' : '' }}"
+                style="border-bottom:1px solid #F3F3FB">
                 <form action="{{ route('reminders.toggle', $lembrete) }}" method="POST">
                     @csrf
                     <button type="submit"
-                            class="w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors
-                                   {{ $lembrete->concluido ? 'bg-foco-entrada border-foco-entrada' : 'border-foco-muted hover:border-foco-accent' }}">
+                            class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors"
+                            style="{{ $lembrete->concluido ? 'background:#16A34A; border-color:#16A34A' : 'border-color:#E4E4F0' }}">
                         @if($lembrete->concluido)
                             <i data-lucide="check" class="w-3 h-3 text-white"></i>
                         @endif
                     </button>
                 </form>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium truncate {{ $lembrete->concluido ? 'line-through text-foco-muted' : '' }}">
+                    <p class="text-sm font-medium truncate {{ $lembrete->concluido ? 'line-through text-foco-muted' : 'text-foco-text' }}">
                         {{ $lembrete->titulo }}
                     </p>
-                    <p class="text-xs text-foco-muted">
-                        {{ \App\Helpers\DateHelper::formatarDataRelativa($lembrete->data_lembrete) }}
-                        · {{ $lembrete->data_lembrete->format('d/m') }}
+                    <p class="text-xs text-foco-muted mt-0.5">
+                        {{ DateHelper::formatarDataRelativa($lembrete->data_lembrete) }}
                     </p>
                 </div>
                 <form action="{{ route('reminders.destroy', $lembrete) }}" method="POST">
                     @csrf @method('DELETE')
-                    <button type="submit" class="text-foco-muted hover:text-foco-saida transition-colors p-1">
+                    <button type="submit" class="p-1 text-foco-muted hover:text-foco-saida transition-colors">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </form>
@@ -158,45 +199,49 @@
     </div>
 
     {{-- ÚLTIMAS TRANSAÇÕES --}}
-    <div class="bg-foco-surface border border-foco-border rounded-2xl overflow-hidden">
-        <div class="flex items-center justify-between px-5 py-4 border-b border-foco-border">
-            <h2 class="font-semibold flex items-center gap-2">
-                <i data-lucide="clock" class="w-4 h-4 text-foco-muted"></i>
+    <div class="card overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid #E4E4F0">
+            <h2 class="text-sm font-semibold flex items-center gap-2 text-foco-text">
+                <i data-lucide="layers" class="w-4 h-4 text-foco-muted"></i>
                 Últimos lançamentos
             </h2>
-            <a href="{{ route('history.index') }}" class="text-foco-accent text-sm hover:underline flex items-center gap-1">
+            <a href="{{ route('history.index') }}"
+               class="text-xs font-semibold text-foco-accent hover:text-foco-accent/70 flex items-center gap-1 transition-opacity">
                 Ver todos <i data-lucide="arrow-right" class="w-3 h-3"></i>
             </a>
         </div>
 
         @if($ultimasTransacoes->isEmpty())
-        <div class="px-5 py-8 text-center text-foco-muted">
-            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>
-            <p class="text-sm">Nenhum lançamento ainda.</p>
-            <a href="{{ route('transactions.create') }}" class="mt-2 inline-block text-foco-accent text-sm hover:underline">
-                Criar o primeiro agora
+        <div class="px-5 py-10 text-center">
+            <div class="w-10 h-10 rounded-full bg-foco-surface mx-auto mb-3 flex items-center justify-center">
+                <i data-lucide="inbox" class="w-5 h-5 text-foco-muted"></i>
+            </div>
+            <p class="text-sm text-foco-muted mb-2">Nenhum lançamento ainda.</p>
+            <a href="{{ route('transactions.create') }}" class="text-sm text-foco-accent font-medium hover:underline">
+                Criar o primeiro
             </a>
         </div>
         @else
-        <ul class="divide-y divide-foco-border">
+        <ul>
             @foreach($ultimasTransacoes as $t)
-            <li class="flex items-center justify-between px-5 py-3 hover:bg-foco-border/20 transition-colors">
+            <li class="flex items-center justify-between px-5 py-3 transition-colors hover:bg-foco-surface"
+                style="border-bottom:1px solid #F3F3FB">
                 <div class="flex items-center gap-3 min-w-0">
                     <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                         style="background-color:{{ $t->categoria?->cor ?? '#64748B' }}22">
+                         style="background:{{ ($t->categoria?->cor ?? '#6366F1') }}18">
                         <i data-lucide="{{ $t->categoria?->icone ?? 'tag' }}" class="w-4 h-4"
-                           style="color:{{ $t->categoria?->cor ?? '#64748B' }}"></i>
+                           style="color:{{ $t->categoria?->cor ?? '#6366F1' }}"></i>
                     </div>
                     <div class="min-w-0">
-                        <p class="text-sm font-medium truncate">{{ $t->descricao }}</p>
-                        <p class="text-foco-muted text-xs">
-                            {{ $t->categoria?->nome ?? '—' }}
-                            · {{ \App\Helpers\DateHelper::formatarDataRelativa($t->data) }}
+                        <p class="text-sm font-medium truncate text-foco-text">{{ $t->descricao }}</p>
+                        <p class="text-xs text-foco-muted mt-0.5">
+                            {{ $t->categoria?->nome ?? '—' }} · {{ DateHelper::formatarDataRelativa($t->data) }}
                         </p>
                     </div>
                 </div>
-                <span class="font-bold text-sm shrink-0 ml-2 {{ $t->tipo === 'entrada' ? 'text-foco-entrada' : 'text-foco-saida' }}">
-                    {{ $t->tipo === 'entrada' ? '+' : '-' }}R$ {{ number_format($t->valor, 2, ',', '.') }}
+                <span class="font-semibold text-sm shrink-0 ml-3"
+                      style="color:{{ $t->tipo === 'entrada' ? '#16A34A' : '#DC2626' }}">
+                    {{ $t->tipo === 'entrada' ? '+' : '−' }}&nbsp;{{ number_format($t->valor, 2, ',', '.') }}
                 </span>
             </li>
             @endforeach

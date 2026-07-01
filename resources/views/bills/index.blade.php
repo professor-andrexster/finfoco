@@ -55,7 +55,7 @@
             </a>
         </div>
         @else
-        <div class="bg-foco-surface border border-foco-border rounded-2xl overflow-hidden">
+        <div class="card rounded-2xl overflow-hidden">
             <ul class="divide-y divide-foco-border">
                 @foreach($lista as $bill)
                 @php

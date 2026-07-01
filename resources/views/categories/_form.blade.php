@@ -4,7 +4,7 @@
     <input type="text" id="nome" name="nome" maxlength="60"
            value="{{ old('nome', $category->nome ?? '') }}"
            placeholder="Ex: Alimentação, Transporte..."
-           class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors"
+           class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors"
            autofocus>
 </div>
 
@@ -12,7 +12,7 @@
 <div>
     <label for="tipo" class="block text-sm font-medium mb-2 text-foco-muted">Tipo</label>
     <select id="tipo" name="tipo"
-            class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+            class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
         <option value="saida"  {{ old('tipo', $category->tipo ?? 'saida') === 'saida'  ? 'selected' : '' }}>Saída</option>
         <option value="entrada"{{ old('tipo', $category->tipo ?? '') === 'entrada' ? 'selected' : '' }}>Entrada</option>
         <option value="ambos"  {{ old('tipo', $category->tipo ?? '') === 'ambos'   ? 'selected' : '' }}>Ambos</option>

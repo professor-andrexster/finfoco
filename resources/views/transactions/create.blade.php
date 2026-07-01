@@ -42,7 +42,7 @@
         {{-- Modal anti-impulso --}}
         <div x-show="mostrarPausa" x-cloak style="display:none"
              class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-            <div class="bg-foco-surface border border-foco-border rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+            <div class="card rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
                 <div class="w-16 h-16 rounded-full bg-foco-alerta/20 flex items-center justify-center mx-auto mb-4">
                     <i data-lucide="pause-circle" class="w-8 h-8 text-foco-alerta"></i>
                 </div>
@@ -95,7 +95,7 @@
                 <input type="number" id="valor" name="valor" step="0.01" min="0.01"
                        x-model="valor"
                        value="{{ old('valor') }}" placeholder="0,00"
-                       class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-2xl font-bold text-foco-text focus:outline-none focus:border-foco-accent transition-colors"
+                       class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-2xl font-bold text-foco-text focus:outline-none focus:border-foco-accent transition-colors"
                        autofocus>
                 {{-- Custo em horas --}}
                 <p x-show="tipo === 'saida' && custoEmHoras !== null" x-cloak style="display:none"
@@ -110,14 +110,14 @@
                 <label for="descricao" class="block text-sm font-medium mb-2 text-foco-muted">Descrição</label>
                 <input type="text" id="descricao" name="descricao" maxlength="60"
                        value="{{ old('descricao') }}" placeholder="Ex: Mercado, Salário..."
-                       class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                       class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
             </div>
 
             {{-- Categoria --}}
             <div>
                 <label for="categoria_id" class="block text-sm font-medium mb-2 text-foco-muted">Categoria</label>
                 <select id="categoria_id" name="categoria_id"
-                        class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                        class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
                     <option value="">— Sem categoria —</option>
                     @foreach($categorias as $cat)
                         <option value="{{ $cat->id }}" {{ old('categoria_id') == $cat->id ? 'selected' : '' }}>
@@ -132,7 +132,7 @@
                 <label for="data" class="block text-sm font-medium mb-2 text-foco-muted">Data</label>
                 <input type="date" id="data" name="data"
                        value="{{ old('data', date('Y-m-d')) }}"
-                       class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                       class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
             </div>
 
             <button type="submit"

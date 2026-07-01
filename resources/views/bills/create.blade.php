@@ -38,7 +38,7 @@
             <label for="descricao" class="block text-sm font-medium mb-2 text-foco-muted">Descrição</label>
             <input type="text" id="descricao" name="descricao" maxlength="60"
                    value="{{ old('descricao') }}" placeholder="Ex: Aluguel, Freelance..."
-                   class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors"
+                   class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors"
                    autofocus required>
         </div>
 
@@ -47,7 +47,7 @@
             <label for="valor" class="block text-sm font-medium mb-2 text-foco-muted">Valor (R$)</label>
             <input type="number" id="valor" name="valor" step="0.01" min="0.01"
                    value="{{ old('valor') }}" placeholder="0,00"
-                   class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-2xl font-bold text-foco-text focus:outline-none focus:border-foco-accent transition-colors"
+                   class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-2xl font-bold text-foco-text focus:outline-none focus:border-foco-accent transition-colors"
                    required>
         </div>
 
@@ -56,7 +56,7 @@
             <label for="vencimento" class="block text-sm font-medium mb-2 text-foco-muted">Data de Vencimento</label>
             <input type="date" id="vencimento" name="vencimento"
                    value="{{ old('vencimento', date('Y-m-d')) }}"
-                   class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors"
+                   class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors"
                    required>
         </div>
 
@@ -72,7 +72,7 @@
             <div>
                 <label for="categoria_id" class="block text-sm font-medium mb-2 text-foco-muted">Categoria</label>
                 <select id="categoria_id" name="categoria_id"
-                        class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                        class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
                     <option value="">— Sem categoria —</option>
                     @foreach($categorias as $cat)
                         <option value="{{ $cat->id }}" {{ old('categoria_id') == $cat->id ? 'selected' : '' }}>

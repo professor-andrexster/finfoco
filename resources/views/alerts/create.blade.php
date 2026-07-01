@@ -15,7 +15,7 @@
         <div>
             <label for="categoria_id" class="block text-sm font-medium mb-2 text-foco-muted">Categoria</label>
             <select id="categoria_id" name="categoria_id"
-                    class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                    class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
                 <option value="">— Escolha uma categoria —</option>
                 @foreach($categorias as $cat)
                     <option value="{{ $cat->id }}" {{ old('categoria_id') == $cat->id ? 'selected' : '' }}>
@@ -30,7 +30,7 @@
             <label for="limite_valor" class="block text-sm font-medium mb-2 text-foco-muted">Limite (R$)</label>
             <input type="number" id="limite_valor" name="limite_valor" step="0.01" min="0.01"
                    value="{{ old('limite_valor') }}" placeholder="0,00"
-                   class="w-full bg-foco-surface border border-foco-border rounded-xl px-4 py-3 text-2xl font-bold text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                   class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-2xl font-bold text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
         </div>
 
         {{-- Período --}}

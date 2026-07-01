@@ -22,7 +22,7 @@
 @else
     <div class="grid gap-3">
         @foreach($categorias as $cat)
-        <div class="bg-foco-surface border border-foco-border rounded-xl flex items-center justify-between px-5 py-4">
+        <div class="card rounded-xl flex items-center justify-between px-5 py-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                      style="background-color: {{ $cat->cor }}22;">
