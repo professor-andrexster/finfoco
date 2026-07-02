@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-01
+Última atualização: 2026-07-02
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -183,6 +183,8 @@ Migrations rodadas em produção:
 - `DateHelper::semaforo()`: hoje = red (não yellow)
 - DateHelper como classe de métodos estáticos (não Facade)
 - `--ignore-platform-reqs` no `composer install` do servidor (symfony/clock declara PHP 8.4 mas funciona no 8.2)
+- Bills (contas): edição permite alterar apenas descrição, valor, vencimento e categoria — tipo/parcelas/recorrência são imutáveis após criação, para não quebrar a consistência de parcelamentos já gerados
+- Categorias globais (`user_id IS NULL`): não editáveis/não excluíveis por nenhum usuário, por design (compartilhadas); para customizar, o usuário deve criar sua própria categoria
 
 ---
 
@@ -208,6 +210,17 @@ Migrations rodadas em produção:
 ---
 
 ## HISTÓRICO
+
+### 2026-07-02 — Fix: edição de Contas + inconsistência de autorização em Categorias
+- Bug: módulo Contas (Bills) nunca teve edição — só create/store/marcarPago/destroy; usuário não conseguia mudar data de vencimento
+  - Rotas `bills.edit` (GET /contas/{bill}/editar) e `bills.update` (PUT /contas/{bill})
+  - `BillController::edit()`/`update()` — atualiza descrição, valor, vencimento e categoria; tipo/parcelas/recorrência permanecem imutáveis
+  - Nova view `resources/views/bills/edit.blade.php`
+  - Link "Editar" adicionado em `bills/index.blade.php` (contas simples e parcelas dentro do detalhe expandível)
+- Bug: `CategoryController::edit()` permitia abrir o formulário de edição de categorias globais, mas `update()`/`destroy()` bloqueavam com 403 — usuário só descobria ao tentar salvar
+  - `edit()` corrigido para usar a mesma checagem de `update()`/`destroy()`, bloqueando categorias globais desde o início
+- Lançamentos (transactions): investigados, edição/exclusão já estavam corretos — não era bug
+- QA aprovado
 
 ### 2026-07-01 — Diagnóstico ESTADO_ATUAL + 7 correções
 - Lido `PROMPT_DIAGNOSTICO_ESTADO_ATUAL.md`, gerado `DIAGNOSTICO_ESTADO_ATUAL.md`

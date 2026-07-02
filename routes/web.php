@@ -55,6 +55,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/contas',                     [BillController::class, 'index'])->name('bills.index');
     Route::get('/contas/nova',                [BillController::class, 'create'])->name('bills.create');
     Route::post('/contas',                    [BillController::class, 'store'])->name('bills.store');
+    Route::get('/contas/{bill}/editar',       [BillController::class, 'edit'])->name('bills.edit');
+    Route::put('/contas/{bill}',              [BillController::class, 'update'])->name('bills.update');
     Route::post('/contas/{bill}/pagar',       [BillController::class, 'marcarPago'])->name('bills.marcarPago');
     Route::delete('/contas/{bill}',           [BillController::class, 'destroy'])->name('bills.destroy');
     Route::delete('/contas-parcelamento',     [BillController::class, 'destroyParcelamento'])->name('bills.destroyParcelamento');

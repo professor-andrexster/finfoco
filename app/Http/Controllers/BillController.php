@@ -110,6 +110,35 @@ class BillController extends Controller
         return redirect()->route('bills.index')->with('sucesso', $msg);
     }
 
+    public function edit(Bill $bill)
+    {
+        abort_unless($bill->user_id === auth()->id(), 403);
+
+        $categorias = Category::disponiveis()->orderBy('nome')->get();
+
+        return view('bills.edit', compact('bill', 'categorias'));
+    }
+
+    public function update(Request $request, Bill $bill)
+    {
+        abort_unless($bill->user_id === auth()->id(), 403);
+
+        $data = $request->validate([
+            'descricao'    => 'required|max:60',
+            'valor'        => 'required|numeric|min:0.01',
+            'vencimento'   => 'required|date',
+            'categoria_id' => 'nullable|exists:categories,id',
+        ], [
+            'descricao.required'  => 'Informe a descrição.',
+            'valor.required'      => 'Informe o valor.',
+            'vencimento.required' => 'Informe a data de vencimento.',
+        ]);
+
+        $bill->update($data);
+
+        return redirect()->route('bills.index')->with('sucesso', 'Conta atualizada!');
+    }
+
     public function marcarPago(Bill $bill)
     {
         abort_unless($bill->user_id === auth()->id(), 403);

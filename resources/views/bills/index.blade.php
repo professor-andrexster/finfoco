@@ -138,6 +138,10 @@
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="text-sm font-semibold text-foco-text">R$&nbsp;{{ number_format($parcela->valor, 2, ',', '.') }}</span>
+                            <a href="{{ route('bills.edit', $parcela) }}"
+                               class="text-foco-muted hover:text-foco-accent transition-colors p-1">
+                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                            </a>
                             <form action="{{ route('bills.destroy', $parcela) }}" method="POST">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="text-foco-muted hover:text-foco-saida transition-colors p-1">
@@ -217,6 +221,10 @@
                     {{ $bill->tipo === 'pagar' ? 'Pago' : 'Recebido' }}
                 </button>
             </form>
+            <a href="{{ route('bills.edit', $bill) }}"
+               class="p-2 rounded-lg text-foco-muted hover:text-foco-accent hover:bg-foco-surface transition-colors">
+                <i data-lucide="pencil" class="w-4 h-4"></i>
+            </a>
             <form action="{{ route('bills.destroy', $bill) }}" method="POST">
                 @csrf @method('DELETE')
                 <button type="submit" class="p-2 text-foco-muted hover:text-foco-saida transition-colors rounded-lg hover:bg-foco-surface">

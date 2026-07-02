@@ -40,7 +40,7 @@ class CategoryController extends Controller
 
     public function edit(Category $category)
     {
-        abort_unless($category->user_id === auth()->id() || $category->user_id === null, 403);
+        abort_unless($category->user_id === auth()->id(), 403);
         return view('categories.edit', compact('category'));
     }
 
