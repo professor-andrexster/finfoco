@@ -59,6 +59,11 @@
                     class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all">
                 Esta semana
             </button>
+            <button @click="visao='mes'"
+                    :class="visao==='mes' ? 'bg-white text-foco-accent shadow-sm' : 'text-foco-muted'"
+                    class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all">
+                Este mês
+            </button>
         </div>
     </div>
 
@@ -98,6 +103,7 @@
             <p class="text-xs font-semibold uppercase tracking-widest text-foco-muted mb-3">
                 <span x-show="visao==='dia'">Pode gastar hoje</span>
                 <span x-show="visao==='semana'" x-cloak>Pode gastar esta semana (por dia)</span>
+                <span x-show="visao==='mes'" x-cloak>Pode gastar este mês (total)</span>
             </p>
             {{-- Valor muda com visão --}}
             <p class="font-bold leading-none" style="font-size: 2.75rem; letter-spacing: -0.03em; color:{{ $pgColor }}">
@@ -107,8 +113,15 @@
                 <span x-show="visao==='semana'" x-cloak>
                     {{ $podeGastarSemana < 0 ? '−' : '' }}R$&nbsp;{{ number_format(abs($podeGastarSemana), 2, ',', '.') }}
                 </span>
+                <span x-show="visao==='mes'" x-cloak>
+                    {{ $podeGastarMes < 0 ? '−' : '' }}R$&nbsp;{{ number_format(abs($podeGastarMes), 2, ',', '.') }}
+                </span>
             </p>
-            <p class="mt-3 text-xs text-foco-muted">saldo − contas pendentes ÷ dias restantes</p>
+            <p class="mt-3 text-xs text-foco-muted">
+                <span x-show="visao==='dia'">saldo − contas pendentes ÷ dias restantes</span>
+                <span x-show="visao==='semana'" x-cloak>saldo − contas pendentes ÷ dias restantes</span>
+                <span x-show="visao==='mes'" x-cloak>saldo + a receber − contas a pagar do mês</span>
+            </p>
         </div>
     </div>
 
@@ -155,6 +168,32 @@
             <p class="text-xl font-bold" style="color:{{ $s['cor'] }}; letter-spacing:-0.02em">
                 {{ $s['sinal'] }}&nbsp;{{ number_format($s['valor'], 2, ',', '.') }}
             </p>
+        </div>
+        @endforeach
+    </div>
+
+    {{-- Mês --}}
+    <div x-show="visao==='mes'" x-cloak class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        @php
+            $statsMes = [
+                ['label'=>'Entrou no mês',       'icon'=>'arrow-down-circle','valor'=>$entradaMes,               'cor'=>'#16A34A','sinal'=>'+'],
+                ['label'=>'Saiu no mês',         'icon'=>'arrow-up-circle',  'valor'=>$saidaMes,                 'cor'=>'#DC2626','sinal'=>'−'],
+                ['label'=>'Gastos recorrentes',  'icon'=>'repeat',           'valor'=>$gastosRecorrentes['total'],'cor'=>'#DC2626','sinal'=>'−'],
+                ['label'=>'Contas pendentes',    'icon'=>'receipt',          'valor'=>$contasPendentesMes,       'cor'=>'#D97706','sinal'=>'−'],
+            ];
+        @endphp
+        @foreach($statsMes as $s)
+        <div class="card p-4">
+            <div class="flex items-center gap-1.5 mb-2">
+                <i data-lucide="{{ $s['icon'] }}" class="w-3.5 h-3.5" style="color:{{ $s['cor'] }}"></i>
+                <p class="text-xs text-foco-muted font-medium">{{ $s['label'] }}</p>
+            </div>
+            <p class="text-xl font-bold" style="color:{{ $s['cor'] }}; letter-spacing:-0.02em">
+                {{ $s['sinal'] }}&nbsp;{{ number_format($s['valor'], 2, ',', '.') }}
+            </p>
+            @if($s['label'] === 'Gastos recorrentes' && $gastosRecorrentes['qtd'] > 0)
+            <p class="text-[11px] text-foco-muted mt-1">{{ $gastosRecorrentes['qtd'] }} {{ $gastosRecorrentes['qtd'] == 1 ? 'conta fixa' : 'contas fixas' }}</p>
+            @endif
         </div>
         @endforeach
     </div>

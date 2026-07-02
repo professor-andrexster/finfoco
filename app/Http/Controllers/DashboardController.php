@@ -46,6 +46,8 @@ class DashboardController extends Controller
 
         $avisos = $this->gerarAvisos($uid, $hoje, $mesFim);
 
+        $gastosRecorrentes = $this->calcularGastosRecorrentes($uid);
+
         $lembretes = Reminder::where('user_id', $uid)
             ->where('data_lembrete', '>=', $hoje)
             ->orderBy('data_lembrete')
@@ -58,7 +60,8 @@ class DashboardController extends Controller
 
         return view('dashboard.index', compact(
             'saldoTotal','gastosHoje','gastosSemanais','entradasSemana','entradaMes','saidaMes',
-            'podeGastarHoje','podeGastarSemana','semaforoPodeGastar',
+            'podeGastarHoje','podeGastarSemana','podeGastarMes','semaforoPodeGastar',
+            'contasPendentesMes','gastosRecorrentes',
             'avisos','lembretes','ultimasTransacoes'
         ));
     }
@@ -94,5 +97,29 @@ class DashboardController extends Controller
         }
 
         return $avisos;
+    }
+
+    private function calcularGastosRecorrentes(int $uid): array
+    {
+        $recorrentes = Bill::where('user_id', $uid)
+            ->where('recorrente', true)
+            ->where('tipo', 'pagar')
+            ->orderByDesc('vencimento')
+            ->get()
+            ->unique('descricao'); // mantém só a ocorrência mais recente de cada conta recorrente
+
+        $totalMensal = $recorrentes->sum(function ($bill) {
+            $multiplicador = match ($bill->recorrencia) {
+                'semanal' => 52 / 12,
+                'anual'   => 1 / 12,
+                default   => 1, // mensal
+            };
+            return $bill->valor * $multiplicador;
+        });
+
+        return [
+            'total' => round($totalMensal, 2),
+            'qtd'   => $recorrentes->count(),
+        ];
     }
 }

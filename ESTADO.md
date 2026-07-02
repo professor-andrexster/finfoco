@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-02 (feature: código de resgate de acesso vitalício)
+Última atualização: 2026-07-02 (feature: visão mensal no Dashboard + gastos recorrentes)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -11,7 +11,7 @@ acessíveis durante o trial, bloqueio correto após expiração) — não é só
 ## MÓDULOS
 - [x] 1. Setup Laravel + MySQL + Deploy Hostinger
 - [x] 2. Lançamento Rápido (entrada/saída em < 3 cliques)
-- [x] 3. Dashboard Visual (saldo, safe-to-spend, toggle dia/semana)
+- [x] 3. Dashboard Visual (saldo, safe-to-spend, toggle dia/semana/mês, gastos recorrentes)
 - [x] 4. Categorias com Cores e Ícones
 - [x] 5. Alertas Simples (gasto excessivo por categoria)
 - [x] 6. Histórico com Busca Rápida + datas relativas + delete inline
@@ -72,6 +72,7 @@ Migrations rodadas em produção:
 - `2024_01_01_000006` — settings
 - `2024_01_02_000001` — add_user_id_to_all_tables
 - `2024_01_02_000002` — add_parcelas_to_bills
+- `2026_07_02_183440` — add_updated_at_to_bills_table (guarda `Schema::hasColumn`, corrige schema drift)
 
 ---
 
@@ -199,6 +200,26 @@ Migrations rodadas em produção:
   do usuário, pra validar a tela de bloqueio/paywall na prática antes de resgatar o próprio código
 - QA aprovado
 
+### V6 — Dashboard: visão mensal + gastos recorrentes (2026-07-02)
+- Toggle "Hoje / Esta semana" no dashboard ganhou terceira opção **"Este mês"** (persistência em `localStorage`)
+- Card "Pode gastar" na visão mensal mostra o total seguro pra gastar no resto do mês, sem dividir por dias
+  restantes (diferente da visão "Hoje"), com legenda própria: "saldo + a receber − contas a pagar do mês"
+- Novo grid de 4 stats na visão mensal: Entrou no mês, Saiu no mês, **Gastos recorrentes** (novo), Contas
+  pendentes
+- `DashboardController::calcularGastosRecorrentes()`: soma normalizada mensal de todas as `bills` marcadas
+  como recorrentes. Deduplica com `unique('descricao')` pegando só a ocorrência mais recente de cada conta
+  (uma recorrente paga gera automaticamente a próxima linha, criando histórico duplicado por descrição) e
+  normaliza pra equivalente mensal (semanal ×52/12, anual ×1/12, mensal ×1)
+- **Bug real de schema drift corrigido**: migration original de `bills` nunca criou `updated_at`, mas o
+  banco de produção já tinha essa coluna (drift de um import SQL anterior via phpMyAdmin, divergente do
+  arquivo de migration commitado). Isso quebrava `Bill::create()` com `SQLSTATE[42S22]` em qualquer ambiente
+  criado do zero a partir das migrations (local, staging, ou um futuro `migrate:fresh`) — só não quebrava em
+  produção por acidente do drift. Corrigido com `database/migrations/2026_07_02_183440_add_updated_at_to_bills_table.php`,
+  que usa `Schema::hasColumn('bills','updated_at')` como guarda: cria a coluna onde falta, não faz nada
+  (só marca como rodada) onde já existe via drift
+- QA aprovado em 2 rodadas
+- **Deploy em produção concluído**: migration rodada, site validado (home 302, login 200)
+
 ---
 
 ## PALETA DE CORES (atual)
@@ -257,6 +278,12 @@ Migrations rodadas em produção:
   pra impedir que um usuário malicioso tente injetar `lifetime_access=1` num POST qualquer
 - `LIFETIME_ACCESS_CODE` é um segredo de infraestrutura (como `STRIPE_SECRET`): vive só no `.env` do
   servidor, nunca em código, `ESTADO.md` ou histórico de commit; comparação sempre com `hash_equals()`
+- **Gastos recorrentes**: deduplicação por `unique('descricao')` (não por um campo de "grupo recorrente"
+  dedicado) — assume que a descrição da conta recorrente não muda entre ocorrências; se isso deixar de ser
+  verdade no futuro, revisar `calcularGastosRecorrentes()`
+- Migrations que alteram tabelas já existentes em produção devem sempre checar `Schema::hasColumn()` antes
+  de adicionar coluna, pois o schema de produção pode ter divergido do arquivo de migration commitado
+  (drift histórico via import SQL manual no phpMyAdmin) — ver bug do `updated_at` em `bills` (V6)
 
 ---
 
@@ -265,7 +292,11 @@ Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HIST
 
 ---
 
-## QA — Último resultado (2026-07-01)
+## QA — Último resultado (2026-07-02)
+- Dashboard: visão mensal + gastos recorrentes aprovados em 2 rodadas de QA
+- Pós-deploy: home 302 (redireciona pra login sem sessão), login 200
+
+## QA — Resultado anterior (2026-07-01)
 - 7/7 rotas HTTP 200 após login: `/`, `/lancamento`, `/contas`, `/historico`, `/categorias`, `/alertas`, `/configuracoes`
 - `/login` e `/register` retornam 200 sem autenticação
 - `/` sem autenticação retorna 302 → `/login`
@@ -287,6 +318,16 @@ Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HIST
 ---
 
 ## HISTÓRICO
+
+### 2026-07-02 — Dashboard: visão mensal + gastos recorrentes + fix de schema drift em `bills`
+- Terceira opção "Este mês" no toggle do dashboard (além de Hoje/Esta semana)
+- Card "Pode gastar" na visão mensal: total seguro sem dividir por dias restantes, legenda própria
+- Grid de 4 stats mensais, incluindo novo card "Gastos recorrentes" (`calcularGastosRecorrentes()`),
+  que normaliza contas recorrentes (semanal/mensal/anual) pra equivalente mensal, deduplicando por descrição
+- Bug de schema drift encontrado em QA: `bills.updated_at` faltava no arquivo de migration mas existia em
+  produção por drift de import SQL manual antigo; `Bill::create()` quebrava com `SQLSTATE[42S22]` em
+  qualquer ambiente criado do zero. Corrigido com migration nova usando `Schema::hasColumn()` como guarda
+- QA aprovado em 2 rodadas; deploy e migration aplicados em produção; site validado (302/200)
 
 ### 2026-07-02 — Feature: código de resgate para acesso vitalício (bypass da assinatura Stripe)
 - Nova coluna `users.lifetime_access` (boolean, default false) via migration
