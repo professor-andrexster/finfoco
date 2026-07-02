@@ -1,11 +1,12 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-02
+Última atualização: 2026-07-02 (hotfix trial_ends_at)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
 Sistema SaaS multi-usuário com autenticação, 9 módulos, parcelamentos e diagnóstico completo aplicado.
 **Cobrança recorrente via Stripe (Laravel Cashier) está 100% funcional em produção**, modo LIVE,
-validada end-to-end (checkout, webhook assinado, portal de billing).
+testada de ponta a ponta com fluxo real de trial em produção (registro real via HTTP, dashboard/`/assinatura`
+acessíveis durante o trial, bloqueio correto após expiração) — não é só "deployada", é validada com uso real.
 
 ## MÓDULOS
 - [x] 1. Setup Laravel + MySQL + Deploy Hostinger
@@ -227,6 +228,12 @@ Migrations rodadas em produção:
   bloquear o usuário que acabou de pagar
 - `users:grant-trial --days=14`: usuários pré-existentes ganham 14 dias de graça no dia em que a feature
   de cobrança for ativada em produção, para não bloquear ninguém de surpresa
+- **CRÍTICO**: `User::casts()` DEVE incluir `'trial_ends_at' => 'datetime'`. Sem esse cast, o Eloquent
+  retorna a coluna como string, e o Cashier (`onGenericTrial()`, chamado internamente por `onTrial()`)
+  quebra com erro fatal `Call to a member function isFuture() on string` ao tentar comparar a data. Como
+  `EnsureSubscribed` chama `onTrial()` em toda rota protegida, a ausência desse cast derruba o app inteiro
+  com HTTP 500 para qualquer usuário em trial. Se esse cast for removido/alterado no futuro por engano,
+  este é o sintoma a procurar.
 
 ---
 
@@ -257,6 +264,25 @@ Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HIST
 ---
 
 ## HISTÓRICO
+
+### 2026-07-02 — HOTFIX CRÍTICO pós-deploy: cast de `trial_ends_at` ausente derrubava app com 500 pra usuários em trial
+- **Como foi encontrado**: teste de ponta a ponta do fluxo de trial em produção real (registro via HTTP real
+  com usuário de teste descartável, criado e removido logo depois — sem rastro em produção). O registro
+  funcionou, mas o dashboard e `/assinatura` retornaram 500.
+- **Causa raiz**: `app/Models/User.php` não tinha `trial_ends_at` no método `casts()`. Sem o cast, o Eloquent
+  devolvia a coluna como string em vez de instância `Carbon`, e o Cashier (`onGenericTrial()`, chamado
+  internamente por `onTrial()`) quebrava com `Call to a member function isFuture() on string`. Como o
+  middleware `EnsureSubscribed` chama `onTrial()` em toda rota protegida do app, isso derrubava com HTTP 500
+  qualquer usuário em trial — incluindo os 3 usuários reais graduados com trial via `users:grant-trial` no
+  deploy de hoje mesmo, que ficaram bloqueados por um período curto até a detecção.
+- **Correção**: adicionado `'trial_ends_at' => 'datetime'` ao array de `casts()` em `app/Models/User.php`
+  (uma linha). Deploy do fix imediato (scp do arquivo + `config:clear`/`config:cache` em produção).
+- **Validação pós-fix**: dashboard e `/assinatura` voltaram a 200 pro usuário de teste; trial forçado a
+  expirar via tinker confirmou bloqueio correto (302 → `/assinatura`, tela "período gratuito acabou"); os
+  3 usuários reais conferidos via tinker (`onTrial()` true sem erro, `trial_ends_at` correto) — nenhum dado
+  real perdido, nenhuma conta real afetada além do período curto de instabilidade, já sanado.
+- Registrado como decisão técnica permanente (ver seção DECISÕES) para não se repetir se o cast for
+  removido por engano no futuro.
 
 ### 2026-07-02 — Deploy real do Stripe em produção (modo LIVE) + 3 bugs corrigidos
 - **Deploy**: código enviado via rsync pra `/home/u137664132/finfoco/` e `public/` pra
