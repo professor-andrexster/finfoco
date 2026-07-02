@@ -95,6 +95,41 @@ php artisan view:cache
 
 ---
 
+## Cobrança via Stripe (setup único, primeira vez)
+
+Depois de subir o código desta feature (Laravel Cashier + gate de assinatura), antes de considerar o deploy concluído:
+
+### 1. Variáveis de ambiente
+No `.env` do servidor, preencher (modo Live, não teste):
+```
+STRIPE_KEY=pk_live_...
+STRIPE_SECRET=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...   (ver passo 3)
+CASHIER_CURRENCY=brl
+STRIPE_PRICE_MENSAL=price_...    (Price criado em modo Live no Dashboard Stripe)
+```
+
+### 2. Migrations + graduação dos usuários existentes
+**Nesta ordem, sem pular etapa** — se algum usuário já cadastrado ficar sem `trial_ends_at`, ele é bloqueado na próxima visita:
+```bash
+php artisan migrate --force
+php artisan users:grant-trial --days=14
+php artisan config:cache
+```
+
+### 3. Webhook do Stripe
+No Dashboard Stripe (modo **Live**) → Developers → Webhooks → Add endpoint:
+- URL: `https://finfoco.nexialabs.com.br/stripe/webhook`
+- Eventos: `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`
+- Copiar o `whsec_...` gerado (é diferente do `whsec_` usado em dev com `stripe listen`) e colar em `STRIPE_WEBHOOK_SECRET` no `.env`, depois `php artisan config:cache` de novo.
+
+### 4. Validação
+- `curl -I https://finfoco.nexialabs.com.br/stripe/webhook` — não deve dar 404 (Cashier responde 400/405 a GET, o que já confirma que a rota existe).
+- Dashboard Stripe → botão "Send test webhook" no endpoint recém-criado → confirmar 200 OK.
+- Fazer login com um usuário de teste, confirmar que `/assinatura` carrega e reflete o estado correto (trial ou bloqueado).
+
+---
+
 ## Rollback
 Restaure os arquivos anteriores via FTP e execute:
 ```bash

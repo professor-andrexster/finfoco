@@ -159,6 +159,13 @@
                             <p class="text-sm font-semibold text-foco-text truncate">{{ auth()->user()->name }}</p>
                             <p class="text-xs text-foco-muted truncate mt-0.5">{{ auth()->user()->email }}</p>
                         </div>
+                        <a href="{{ route('billing.index') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm text-foco-text hover:bg-foco-surface transition-colors">
+                            <i data-lucide="credit-card" class="w-4 h-4 text-foco-muted"></i>
+                            Assinatura
+                            @if(auth()->user()->onTrial())
+                                <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded" style="color:#D97706;background:#D9770618">TRIAL</span>
+                            @endif
+                        </a>
                         <a href="{{ route('settings.show') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm text-foco-text hover:bg-foco-surface transition-colors">
                             <i data-lucide="settings-2" class="w-4 h-4 text-foco-muted"></i> Configurações
                         </a>

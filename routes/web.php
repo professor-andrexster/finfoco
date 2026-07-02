@@ -4,6 +4,7 @@ use App\Http\Controllers\AlertController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BillController;
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReminderController;
@@ -21,8 +22,16 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [LoginController::class, 'destroy'])->name('logout')->middleware('auth');
 
-// ─── App (requer autenticação) ────────────────────────────────────────────────
+// ─── Assinatura (requer autenticação, mas não bloqueia sem assinatura) ────────
 Route::middleware('auth')->group(function () {
+    Route::get('/assinatura',           [BillingController::class, 'index'])->name('billing.index');
+    Route::post('/assinatura/checkout', [BillingController::class, 'checkout'])->name('billing.checkout');
+    Route::get('/assinatura/sucesso',   [BillingController::class, 'success'])->name('billing.success');
+    Route::post('/assinatura/portal',   [BillingController::class, 'portal'])->name('billing.portal');
+});
+
+// ─── App (requer autenticação + assinatura ativa) ─────────────────────────────
+Route::middleware(['auth', 'subscribed'])->group(function () {
 
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 

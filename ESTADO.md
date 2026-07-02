@@ -4,6 +4,8 @@
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
 Sistema SaaS multi-usuário com autenticação, 9 módulos, parcelamentos e diagnóstico completo aplicado.
+Base de cobrança recorrente via Stripe (Laravel Cashier) implementada e aprovada em QA — falta apenas
+o setup manual de credenciais/produto Stripe em produção antes de virar cobrança real (ver PENDÊNCIAS).
 
 ## MÓDULOS
 - [x] 1. Setup Laravel + MySQL + Deploy Hostinger
@@ -16,6 +18,7 @@ Sistema SaaS multi-usuário com autenticação, 9 módulos, parcelamentos e diag
 - [x] 8. Lembretes (widget no dashboard + avisos inteligentes)
 - [x] 9. Configurações (valor_hora + limite_impulso)
 - [x] SaaS: Auth login/registro + multi-tenant user_id em todas as tabelas
+- [x] SaaS: Cobrança recorrente via Stripe (Laravel Cashier) — trial 7 dias + assinatura mensal
 
 ---
 
@@ -153,6 +156,30 @@ Migrations rodadas em produção:
 - Histórico: botão excluir inline adicionado em cada lançamento
 - Modal anti-impulso: countdown de 10s obrigatório (antes era só psicológico)
 
+### V4 — Cobrança recorrente via Stripe / Laravel Cashier (2026-07-02)
+- Pacote `laravel/cashier` v16.6 instalado
+- Migrations do Cashier rodadas (local): `stripe_id`, `pm_type`, `pm_last_four`, `trial_ends_at` em `users`;
+  tabelas `subscriptions` e `subscription_items`
+- `User` model: trait `Billable` do Cashier
+- Modelo de acesso: trial grátis de 7 dias sem cartão no cadastro (`RegisterController` seta `trial_ends_at`),
+  depois exige assinatura ativa
+- Novo middleware `App\Http\Middleware\EnsureSubscribed` (alias `subscribed`, registrado em `bootstrap/app.php`)
+  — bloqueia acesso ao app quando trial expira e não há assinatura ativa; redireciona pra `/assinatura`
+- `routes/web.php`: grupo `/assinatura*` só com `auth` (sem gate); resto do app exige `['auth','subscribed']`
+- Novo `BillingController` (index/checkout/success/portal) — Stripe Checkout Session + Billing Portal via Cashier
+- Grace period de 5 min em sessão pós-checkout (`billing_grace_until`) pra cobrir o intervalo até o webhook chegar
+- Nova view `resources/views/billing/index.blade.php` com 4 estados visuais: assinante ativo (verde),
+  trial tranquilo (neutro), trial acabando ≤3 dias (âmbar), bloqueado/expirado (vermelho)
+- Link "Assinatura" + badge TRIAL no dropdown do avatar (`layouts/app.blade.php`)
+- Comando `php artisan users:grant-trial --days=14` (idempotente) — dá 14 dias de graça aos usuários já
+  existentes em produção antes desta feature entrar no ar
+- `config/services.php`: bloco `stripe` (key/secret/price_mensal via env)
+- `.env.example`: `STRIPE_KEY`, `STRIPE_SECRET`, `STRIPE_WEBHOOK_SECRET`, `CASHIER_CURRENCY=brl`,
+  `STRIPE_PRICE_MENSAL` (placeholders vazios)
+- `bootstrap/app.php`: exceção de CSRF pra `stripe/*` (rota de webhook do Cashier) + alias `subscribed`
+- `DEPLOY.md`: nova seção "Cobrança via Stripe (setup único, primeira vez)" com passo a passo de produção
+- QA aprovado
+
 ---
 
 ## PALETA DE CORES (atual)
@@ -185,6 +212,23 @@ Migrations rodadas em produção:
 - `--ignore-platform-reqs` no `composer install` do servidor (symfony/clock declara PHP 8.4 mas funciona no 8.2)
 - Bills (contas): edição permite alterar apenas descrição, valor, vencimento e categoria — tipo/parcelas/recorrência são imutáveis após criação, para não quebrar a consistência de parcelamentos já gerados
 - Categorias globais (`user_id IS NULL`): não editáveis/não excluíveis por nenhum usuário, por design (compartilhadas); para customizar, o usuário deve criar sua própria categoria
+- **Cobrança**: trial de 7 dias sem exigir cartão de crédito no cadastro (menor fricção no onboarding)
+- `EnsureSubscribed` bloqueia só o "app" (dashboard/lançamentos/contas/etc); rotas de `/assinatura` ficam
+  fora do gate para o usuário bloqueado sempre conseguir pagar e se desbloquear
+- Grace period de 5 min em sessão após checkout, pra tolerar o delay assíncrono do webhook do Stripe sem
+  bloquear o usuário que acabou de pagar
+- `users:grant-trial --days=14`: usuários pré-existentes ganham 14 dias de graça no dia em que a feature
+  de cobrança for ativada em produção, para não bloquear ninguém de surpresa
+
+---
+
+## PENDÊNCIAS / BLOQUEIOS
+Setup manual do Stripe em produção (não é código) antes da cobrança funcionar de verdade:
+1. Criar conta Stripe + produto/Price mensal em BRL no Dashboard (modo Live) → preencher `STRIPE_PRICE_MENSAL` real no `.env` do servidor
+2. Preencher `STRIPE_KEY`/`STRIPE_SECRET` reais (Live) no `.env` do servidor
+3. Configurar endpoint de webhook em produção (`https://finfoco.nexialabs.com.br/stripe/webhook`) no Dashboard e copiar `STRIPE_WEBHOOK_SECRET` real
+4. Rodar `php artisan migrate --force` + `php artisan users:grant-trial --days=14` no primeiro deploy desta feature, ANTES de liberar pros usuários
+5. Preço de exibição na view (`R$ 19,90/mês`) é placeholder — ajustar em `resources/views/billing/index.blade.php` pro valor real escolhido
 
 ---
 
@@ -210,6 +254,18 @@ Migrations rodadas em produção:
 ---
 
 ## HISTÓRICO
+
+### 2026-07-02 — SaaS: cobrança recorrente via Stripe (Laravel Cashier)
+- `laravel/cashier` v16.6 instalado, migrations rodadas (`stripe_id`, `pm_type`, `pm_last_four`,
+  `trial_ends_at` em `users` + tabelas `subscriptions`/`subscription_items`)
+- Trial de 7 dias sem cartão no cadastro; `EnsureSubscribed` (middleware `subscribed`) bloqueia o app
+  após trial expirado sem assinatura ativa, redirecionando pra `/assinatura`
+- `BillingController` (checkout/success/portal) via Stripe Checkout Session + Billing Portal
+- Grace period de 5 min pós-checkout em sessão, pra tolerar delay do webhook
+- View `billing/index.blade.php` com 4 estados (ativo/trial ok/trial acabando/bloqueado)
+- Comando `users:grant-trial --days=14` pra não bloquear usuários já existentes
+- `DEPLOY.md` atualizado com passo a passo de setup do Stripe em produção
+- QA aprovado. Pendente apenas setup manual de credenciais/produto Stripe reais em produção
 
 ### 2026-07-02 — Fix: edição de Contas + inconsistência de autorização em Categorias
 - Bug: módulo Contas (Bills) nunca teve edição — só create/store/marcarPago/destroy; usuário não conseguia mudar data de vencimento
