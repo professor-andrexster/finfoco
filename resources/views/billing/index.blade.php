@@ -105,7 +105,7 @@
                         class="btn-primary w-full text-white py-4 rounded-2xl flex items-center justify-center gap-3"
                         style="background:#6366F1;box-shadow:0 4px 14px rgba(99,102,241,.3)">
                     <i data-lucide="credit-card" class="w-5 h-5"></i>
-                    Assinar agora — R$ 19,90/mês
+                    Assinar agora — R$ 19,98/mês
                 </button>
             </form>
         </div>

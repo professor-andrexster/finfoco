@@ -4,8 +4,8 @@
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
 Sistema SaaS multi-usuário com autenticação, 9 módulos, parcelamentos e diagnóstico completo aplicado.
-Base de cobrança recorrente via Stripe (Laravel Cashier) implementada e aprovada em QA — falta apenas
-o setup manual de credenciais/produto Stripe em produção antes de virar cobrança real (ver PENDÊNCIAS).
+**Cobrança recorrente via Stripe (Laravel Cashier) está 100% funcional em produção**, modo LIVE,
+validada end-to-end (checkout, webhook assinado, portal de billing).
 
 ## MÓDULOS
 - [x] 1. Setup Laravel + MySQL + Deploy Hostinger
@@ -199,6 +199,14 @@ Migrations rodadas em produção:
 ---
 
 ## DECISÕES TÉCNICAS
+- Pasta `stripe/` (com chaves reais do Stripe em texto plano, usada só como referência local pro deploy)
+  protegida no `.gitignore` — nunca deve ser commitada
+- `composer.lock` deve ser sempre regenerado/validado rodando `composer update` diretamente no servidor de
+  produção (PHP 8.2.30 real + extensões corretas), não em ambiente com `--ignore-platform-reqs`, pra evitar
+  resolver pacotes (ex: symfony/* v8.x) incompatíveis com a versão real do PHP em produção
+- `deploy_hostinger.sh`: caminho relativo de `public_html/` até `~/finfoco/` no servidor Hostinger é de
+  **3 níveis** (`../../../finfoco/`), não 2 — estrutura real é
+  `/home/USER/domains/DOMINIO/public_html/` → `/home/USER/finfoco/`
 - Laravel 12 + PHP 8.2/8.3 + Blade + Tailwind/Alpine/Lucide via CDN
 - **SaaS**: auth session-based Laravel, `user_id` em todas as tabelas
 - `User::$fillable` em array clássico (não `#[Fillable]` — PHP attribute não funciona no PHP 8.2 da Hostinger)
@@ -223,12 +231,7 @@ Migrations rodadas em produção:
 ---
 
 ## PENDÊNCIAS / BLOQUEIOS
-Setup manual do Stripe em produção (não é código) antes da cobrança funcionar de verdade:
-1. Criar conta Stripe + produto/Price mensal em BRL no Dashboard (modo Live) → preencher `STRIPE_PRICE_MENSAL` real no `.env` do servidor
-2. Preencher `STRIPE_KEY`/`STRIPE_SECRET` reais (Live) no `.env` do servidor
-3. Configurar endpoint de webhook em produção (`https://finfoco.nexialabs.com.br/stripe/webhook`) no Dashboard e copiar `STRIPE_WEBHOOK_SECRET` real
-4. Rodar `php artisan migrate --force` + `php artisan users:grant-trial --days=14` no primeiro deploy desta feature, ANTES de liberar pros usuários
-5. Preço de exibição na view (`R$ 19,90/mês`) é placeholder — ajustar em `resources/views/billing/index.blade.php` pro valor real escolhido
+Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HISTÓRICO).
 
 ---
 
@@ -254,6 +257,32 @@ Setup manual do Stripe em produção (não é código) antes da cobrança funcio
 ---
 
 ## HISTÓRICO
+
+### 2026-07-02 — Deploy real do Stripe em produção (modo LIVE) + 3 bugs corrigidos
+- **Deploy**: código enviado via rsync pra `/home/u137664132/finfoco/` e `public/` pra
+  `domains/finfoco.nexialabs.com.br/public_html/`; `composer install`/`update --no-dev` rodado direto no
+  servidor; `.env` de produção recebeu as 5 variáveis reais do Stripe em modo LIVE (`STRIPE_KEY`,
+  `STRIPE_SECRET`, `STRIPE_WEBHOOK_SECRET`, `CASHIER_CURRENCY=brl`, `STRIPE_PRICE_MENSAL`); migrations do
+  Cashier rodadas (`migrate --force`); `users:grant-trial --days=14` deu 14 dias de graça aos 3 usuários
+  já existentes; endpoint de webhook criado via API do Stripe (Live) apontando pra
+  `https://finfoco.nexialabs.com.br/stripe/webhook`
+- **Bug 1 — vazamento de credenciais**: pasta `stripe/keys.txt` (chaves reais Live) não estava protegida
+  no git. Corrigido adicionando `/stripe/` ao `.gitignore` antes de qualquer commit
+- **Bug 2 — `composer.lock` incompatível**: lock anterior tinha sido gerado com `--ignore-platform-reqs`
+  e resolveu symfony/css-selector, symfony/event-dispatcher, symfony/string, symfony/translation,
+  symfony/yaml em v8.x (exigem PHP >=8.4), incompatíveis com produção (PHP 8.2.30). Corrigido rodando
+  `composer update --no-dev` direto no servidor (downgrade automático pra v7.4.x); lock corrigido trazido
+  de volta pro repositório
+- **Bug 3 — 500 em produção durante o deploy**: `deploy_hostinger.sh` ajustava `public_html/index.php`
+  assumindo 2 níveis até `~/finfoco/` (`../vendor/autoload.php`), mas a estrutura real do servidor exige
+  3 níveis (`../../../finfoco/`). Causou um 500 real durante o deploy de hoje; diagnosticado e corrigido
+  na hora (site restabelecido, validado com curl). Aproveitado pra também corrigir o caminho de
+  `storage/framework/maintenance.php`, que o script não ajustava antes
+- **Preço real**: texto do botão em `billing/index.blade.php` corrigido de "R$ 19,90/mês" (placeholder)
+  pra "R$ 19,98/mês" (valor real do Price `price_1TonlqFnZLWuEQvnD0qfN8OM`, confirmado via API do Stripe)
+- **Validação end-to-end**: webhook com assinatura válida → 200 "Webhook Handled"; assinatura inválida →
+  403 (rejeitado corretamente)
+- SaaS Stripe está 100% funcional em produção agora
 
 ### 2026-07-02 — SaaS: cobrança recorrente via Stripe (Laravel Cashier)
 - `laravel/cashier` v16.6 instalado, migrations rodadas (`stripe_id`, `pm_type`, `pm_last_four`,

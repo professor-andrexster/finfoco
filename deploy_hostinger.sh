@@ -75,8 +75,9 @@ ok "Arquivos públicos enviados"
 echo ""
 echo "🔧 Ajustando index.php..."
 ssh $SSH_OPTS ${SSH_USER}@${SSH_HOST} "
-sed -i \"s|require __DIR__.'/../vendor/autoload.php'|require __DIR__.'/../../finfoco/vendor/autoload.php'|g\" ${REMOTE_PUBLIC}/index.php
-sed -i \"s|require_once __DIR__.'/../bootstrap/app.php'|require_once __DIR__.'/../../finfoco/bootstrap/app.php'|g\" ${REMOTE_PUBLIC}/index.php
+sed -i \"s|__DIR__.'/../vendor/autoload.php'|__DIR__.'/../../../finfoco/vendor/autoload.php'|g\" ${REMOTE_PUBLIC}/index.php
+sed -i \"s|__DIR__.'/../bootstrap/app.php'|__DIR__.'/../../../finfoco/bootstrap/app.php'|g\" ${REMOTE_PUBLIC}/index.php
+sed -i \"s|__DIR__.'/../storage/framework/maintenance.php'|__DIR__.'/../../../finfoco/storage/framework/maintenance.php'|g\" ${REMOTE_PUBLIC}/index.php
 "
 ok "index.php ajustado"
 
