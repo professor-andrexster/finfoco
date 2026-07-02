@@ -36,9 +36,10 @@ return [
     ],
 
     'stripe' => [
-        'key'          => env('STRIPE_KEY'),
-        'secret'       => env('STRIPE_SECRET'),
-        'price_mensal' => env('STRIPE_PRICE_MENSAL'),
+        'key'                  => env('STRIPE_KEY'),
+        'secret'               => env('STRIPE_SECRET'),
+        'price_mensal'         => env('STRIPE_PRICE_MENSAL'),
+        'lifetime_access_code' => env('LIFETIME_ACCESS_CODE'),
     ],
 
 ];

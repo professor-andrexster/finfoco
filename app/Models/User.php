@@ -20,6 +20,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'trial_ends_at'     => 'datetime',
             'password'          => 'hashed',
+            'lifetime_access'   => 'boolean',
         ];
     }
 }

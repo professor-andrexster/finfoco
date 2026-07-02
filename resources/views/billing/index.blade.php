@@ -7,7 +7,23 @@
         Assinatura
     </h1>
 
-    @if($assinante)
+    @if($vitalicio)
+        {{-- Estado: acesso vitalício --}}
+        <div class="card rounded-2xl p-6 space-y-4" style="background:#EEF2FF;box-shadow:0 1px 4px rgba(99,102,241,.08),0 0 0 1px rgba(99,102,241,.15)">
+            <div class="flex items-start gap-3">
+                <div class="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-foco-accent">
+                    <i data-lucide="crown" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <p class="font-semibold text-foco-text">Acesso vitalício ativado</p>
+                    <p class="text-sm text-foco-muted mt-1">
+                        Você tem acesso permanente ao FinFoco, sem mensalidade.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    @elseif($assinante)
         {{-- Estado: assinante ativo --}}
         <div class="card rounded-2xl p-6 space-y-4" style="background:#F0FDF4;box-shadow:0 1px 4px rgba(22,163,74,.08),0 0 0 1px rgba(22,163,74,.15)">
             <div class="flex items-start gap-3">
@@ -56,6 +72,18 @@
                     Assinar agora
                 </button>
             </form>
+
+            <div class="mt-4 pt-4 border-t border-foco-border">
+                <form action="{{ route('billing.redeem') }}" method="POST" class="flex items-center gap-2">
+                    @csrf
+                    <input type="text" name="codigo" placeholder="Tem um código de acesso?"
+                           class="flex-1 border border-foco-border rounded-xl px-3 py-2 text-sm text-foco-text focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-foco-accent">
+                    <button type="submit"
+                            class="text-sm font-semibold px-4 py-2 rounded-xl text-foco-accent border border-foco-accent hover:bg-indigo-50 transition-colors whitespace-nowrap">
+                        Resgatar
+                    </button>
+                </form>
+            </div>
         </div>
 
     @elseif($emTrial)
@@ -82,6 +110,18 @@
                     Assinar agora
                 </button>
             </form>
+
+            <div class="mt-4 pt-4 border-t border-foco-border">
+                <form action="{{ route('billing.redeem') }}" method="POST" class="flex items-center gap-2">
+                    @csrf
+                    <input type="text" name="codigo" placeholder="Tem um código de acesso?"
+                           class="flex-1 border border-foco-border rounded-xl px-3 py-2 text-sm text-foco-text focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-foco-accent">
+                    <button type="submit"
+                            class="text-sm font-semibold px-4 py-2 rounded-xl text-foco-accent border border-foco-accent hover:bg-indigo-50 transition-colors whitespace-nowrap">
+                        Resgatar
+                    </button>
+                </form>
+            </div>
         </div>
 
     @else
@@ -108,6 +148,18 @@
                     Assinar agora — R$ 19,98/mês
                 </button>
             </form>
+
+            <div class="mt-4 pt-4 border-t border-foco-border">
+                <form action="{{ route('billing.redeem') }}" method="POST" class="flex items-center gap-2">
+                    @csrf
+                    <input type="text" name="codigo" placeholder="Tem um código de acesso?"
+                           class="flex-1 border border-foco-border rounded-xl px-3 py-2 text-sm text-foco-text focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-foco-accent">
+                    <button type="submit"
+                            class="text-sm font-semibold px-4 py-2 rounded-xl text-foco-accent border border-foco-accent hover:bg-indigo-50 transition-colors whitespace-nowrap">
+                        Resgatar
+                    </button>
+                </form>
+            </div>
         </div>
     @endif
 </div>

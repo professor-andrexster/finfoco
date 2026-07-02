@@ -11,13 +11,36 @@ class BillingController extends Controller
         $user = $request->user();
 
         $assinante = $user->subscribed('default');
-        $emTrial   = ! $assinante && $user->onTrial();
+        $emTrial   = ! $assinante && ! $user->lifetime_access && $user->onTrial();
 
         return view('billing.index', [
-            'assinante'     => $assinante,
-            'emTrial'       => $emTrial,
-            'diasRestantes' => $emTrial ? now()->diffInDays($user->trial_ends_at, false) : null,
+            'assinante'      => $assinante,
+            'vitalicio'      => $user->lifetime_access,
+            'emTrial'        => $emTrial,
+            'diasRestantes'  => $emTrial ? now()->diffInDays($user->trial_ends_at, false) : null,
         ]);
+    }
+
+    public function redeem(Request $request)
+    {
+        $data = $request->validate([
+            'codigo' => 'required|string',
+        ], [
+            'codigo.required' => 'Informe o código.',
+        ]);
+
+        $codigoValido = config('services.stripe.lifetime_access_code');
+
+        if (! $codigoValido || ! hash_equals($codigoValido, trim($data['codigo']))) {
+            return redirect()->route('billing.index')
+                ->with('erro', 'Código inválido.');
+        }
+
+        $request->user()->lifetime_access = true;
+        $request->user()->save();
+
+        return redirect()->route('billing.index')
+            ->with('sucesso', 'Acesso vitalício liberado! Obrigado.');
     }
 
     public function checkout(Request $request)

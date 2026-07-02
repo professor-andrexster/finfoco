@@ -12,7 +12,7 @@ class EnsureSubscribed
     {
         $user = $request->user();
 
-        if ($user->subscribed('default') || $user->onTrial()) {
+        if ($user->lifetime_access || $user->subscribed('default') || $user->onTrial()) {
             return $next($request);
         }
 

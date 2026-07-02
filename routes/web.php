@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/assinatura/checkout', [BillingController::class, 'checkout'])->name('billing.checkout');
     Route::get('/assinatura/sucesso',   [BillingController::class, 'success'])->name('billing.success');
     Route::post('/assinatura/portal',   [BillingController::class, 'portal'])->name('billing.portal');
+    Route::post('/assinatura/resgatar', [BillingController::class, 'redeem'])->name('billing.redeem');
 });
 
 // ─── App (requer autenticação + assinatura ativa) ─────────────────────────────

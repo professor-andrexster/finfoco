@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-02 (hotfix trial_ends_at)
+Última atualização: 2026-07-02 (feature: código de resgate de acesso vitalício)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -181,6 +181,24 @@ Migrations rodadas em produção:
 - `DEPLOY.md`: nova seção "Cobrança via Stripe (setup único, primeira vez)" com passo a passo de produção
 - QA aprovado
 
+### V5 — Código de resgate para acesso vitalício (2026-07-02)
+- Migration `add_lifetime_access_to_users_table`: coluna `users.lifetime_access` (boolean, default false)
+- `User::casts()` inclui `'lifetime_access' => 'boolean'`; **não** está em `$fillable` (só via atribuição
+  direta + `save()`, nunca mass assignment)
+- `config('services.stripe.lifetime_access_code')` lê `LIFETIME_ACCESS_CODE` do `.env` — código fixo
+  definido pelo dono do app (não gerado por usuário)
+- `EnsureSubscribed`: libera acesso se `lifetime_access` for true, além de assinatura ativa/trial/grace period
+- `BillingController::redeem()` (rota `POST /assinatura/resgatar`, nome `billing.redeem`) — valida o código
+  com `hash_equals()` (evita timing attack); se bater, seta `lifetime_access = true` no usuário logado
+- View `billing/index.blade.php`: novo estado "Acesso vitalício ativado" (cor accent/roxo, ícone crown, sem
+  CTA — informativo), com prioridade sobre os outros 3 estados; formulário discreto de resgate de código
+  aparece nos 3 estados que ainda pedem assinatura (trial tranquilo, trial acabando, bloqueado)
+- **Deploy em produção concluído**: migration rodada, `.env` de produção com `LIFETIME_ACCESS_CODE` real
+  preenchido (código informado ao usuário fora do repositório/chat de código — nunca commitado)
+- Conta pessoal (`andrexster@gmail.com`) teve `trial_ends_at` forçado pra ontem propositalmente, a pedido
+  do usuário, pra validar a tela de bloqueio/paywall na prática antes de resgatar o próprio código
+- QA aprovado
+
 ---
 
 ## PALETA DE CORES (atual)
@@ -234,6 +252,11 @@ Migrations rodadas em produção:
   `EnsureSubscribed` chama `onTrial()` em toda rota protegida, a ausência desse cast derruba o app inteiro
   com HTTP 500 para qualquer usuário em trial. Se esse cast for removido/alterado no futuro por engano,
   este é o sintoma a procurar.
+- **Acesso vitalício**: `lifetime_access` fica de fora de `$fillable` de propósito — só pode ser setado por
+  código de servidor (`redeem()` via atribuição direta + `save()`), nunca por input de formulário direto,
+  pra impedir que um usuário malicioso tente injetar `lifetime_access=1` num POST qualquer
+- `LIFETIME_ACCESS_CODE` é um segredo de infraestrutura (como `STRIPE_SECRET`): vive só no `.env` do
+  servidor, nunca em código, `ESTADO.md` ou histórico de commit; comparação sempre com `hash_equals()`
 
 ---
 
@@ -264,6 +287,19 @@ Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HIST
 ---
 
 ## HISTÓRICO
+
+### 2026-07-02 — Feature: código de resgate para acesso vitalício (bypass da assinatura Stripe)
+- Nova coluna `users.lifetime_access` (boolean, default false) via migration
+- `EnsureSubscribed` libera acesso quando `lifetime_access = true`, sem depender de Stripe
+- `BillingController::redeem()` (`POST /assinatura/resgatar`) valida código fixo do `.env`
+  (`LIFETIME_ACCESS_CODE`) com `hash_equals()` e ativa o acesso vitalício do usuário logado
+- `billing/index.blade.php`: novo estado visual "Acesso vitalício ativado" (prioridade sobre os outros
+  3 estados) + formulário discreto de resgate nos estados que ainda pedem assinatura
+- Deployado e configurado em produção: migration rodada, `.env` de produção com o código real (não
+  documentado em nenhum arquivo do repo, só informado ao usuário fora do código)
+- A pedido do usuário, `trial_ends_at` da conta `andrexster@gmail.com` foi forçado pra ontem, de propósito,
+  pra ele testar a tela de paywall/bloqueio na prática antes de resgatar o próprio código
+- QA aprovado
 
 ### 2026-07-02 — HOTFIX CRÍTICO pós-deploy: cast de `trial_ends_at` ausente derrubava app com 500 pra usuários em trial
 - **Como foi encontrado**: teste de ponta a ponta do fluxo de trial em produção real (registro via HTTP real
