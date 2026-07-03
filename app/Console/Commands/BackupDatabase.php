@@ -19,31 +19,40 @@ class BackupDatabase extends Command
 
         File::ensureDirectoryExists($dir);
 
-        // mysqldump (ou mariadb-dump) precisa estar no PATH — presente na Hostinger e no dev
-        $bin = trim((string) shell_exec('command -v mysqldump || command -v mariadb-dump'));
-        if ($bin === '') {
-            $this->error('mysqldump/mariadb-dump não encontrado no PATH.');
+        // Hostinger bloqueia shell_exec/exec — só proc_open é permitido.
+        // Por isso: binário localizado por caminho direto e gzip feito em PHP.
+        $bin = collect(['/usr/bin/mysqldump', '/usr/bin/mariadb-dump', '/usr/sbin/mysqldump'])
+            ->first(fn($p) => is_executable($p));
+        if (!$bin) {
+            $this->error('mysqldump/mariadb-dump não encontrado.');
             return self::FAILURE;
         }
 
-        // Credenciais via variáveis de ambiente do processo (não aparecem em `ps`)
-        $env = [
-            'MYSQL_PWD' => $db['password'],
-        ];
-        $socket = !empty($db['unix_socket']) ? '--socket=' . escapeshellarg($db['unix_socket'])
-                                             : '--host=' . escapeshellarg($db['host']) . ' --port=' . escapeshellarg((string) $db['port']);
+        $cmd = [$bin, '--single-transaction', '--skip-lock-tables',
+                '--user=' . $db['username'], $db['database']];
+        if (!empty($db['unix_socket'])) {
+            array_splice($cmd, 1, 0, ['--socket=' . $db['unix_socket']]);
+        } else {
+            array_splice($cmd, 1, 0, ['--host=' . $db['host'], '--port=' . (string) $db['port']]);
+        }
 
-        $cmd = sprintf(
-            '%s %s --user=%s --single-transaction --skip-lock-tables %s | gzip > %s',
-            escapeshellcmd($bin),
-            $socket,
-            escapeshellarg($db['username']),
-            escapeshellarg($db['database']),
-            escapeshellarg($file)
-        );
+        // Senha via env do processo — não aparece na lista de processos
+        $process = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes,
+                             null, getenv() + ['MYSQL_PWD' => $db['password']]);
+        if (!is_resource($process)) {
+            $this->error('Não foi possível iniciar o mysqldump.');
+            return self::FAILURE;
+        }
 
-        $process = proc_open($cmd, [2 => ['pipe', 'w']], $pipes, null, $env + getenv());
-        $stderr  = stream_get_contents($pipes[2]);
+        $gz = gzopen($file, 'wb6');
+        while (!feof($pipes[1])) {
+            $chunk = fread($pipes[1], 1024 * 512);
+            if ($chunk !== false && $chunk !== '') gzwrite($gz, $chunk);
+        }
+        gzclose($gz);
+        fclose($pipes[1]);
+
+        $stderr = stream_get_contents($pipes[2]);
         fclose($pipes[2]);
         $exit = proc_close($process);
 
