@@ -59,52 +59,25 @@
         @php
             $catAtual = $categorias->firstWhere('id', old('categoria_id', $transaction->categoria_id));
         @endphp
-        <div x-data="{
-                aberto: false,
-                catId: '{{ $catAtual?->id ?? '' }}',
-                catNome: '{{ addslashes($catAtual?->nome ?? '') }}',
-                catCor: '{{ $catAtual?->cor ?? '' }}',
-                catIcone: '{{ $catAtual?->icone ?? '' }}',
-                selecionar(id, nome, cor, icone) {
-                    this.catId = id; this.catNome = nome; this.catCor = cor; this.catIcone = icone;
-                    this.aberto = false;
-                    this.$nextTick(() => lucide.createIcons());
-                }
-            }" @click.outside="aberto = false">
-            <label class="block text-sm font-medium mb-2 text-foco-muted">Categoria</label>
+        {{-- Categoria: chips sempre visíveis — 1 clique, nada escondido (memória zero) --}}
+        <div x-data="{ catId: '{{ $catAtual?->id ?? '' }}' }">
+            <label class="block text-sm font-medium mb-2 text-foco-muted">Categoria <span class="opacity-70">(opcional)</span></label>
             <input type="hidden" name="categoria_id" :value="catId">
-            <button type="button" @click="aberto = !aberto"
-                    class="w-full flex items-center gap-3 border border-foco-border rounded-xl px-4 py-3 bg-white text-left transition-colors hover:border-foco-accent/50 focus:outline-none focus:border-foco-accent">
-                <template x-if="catId">
-                    <div class="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
-                         :style="'background:' + catCor + '20'">
-                        <i :data-lucide="catIcone" class="w-3.5 h-3.5" :style="'color:' + catCor"></i>
-                    </div>
-                </template>
-                <span x-text="catNome || '— Sem categoria —'"
-                      :class="catNome ? 'text-foco-text' : 'text-foco-muted'"
-                      class="flex-1 text-sm"></span>
-                <i data-lucide="chevron-down" class="w-4 h-4 text-foco-muted shrink-0"
-                   :class="aberto ? 'rotate-180' : ''" style="transition:transform .2s"></i>
-            </button>
-            <div x-show="aberto" x-cloak style="display:none"
-                 class="mt-1 rounded-xl border border-foco-border bg-white shadow-lg overflow-hidden z-20 relative"
-                 style="max-height:260px;overflow-y:auto">
-                <button type="button" @click="selecionar('','','','')"
-                        class="w-full flex items-center gap-3 px-4 py-3 text-sm text-foco-muted hover:bg-foco-surface transition-colors text-left">
-                    <div class="w-6 h-6 rounded-lg bg-foco-border shrink-0"></div>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" @click="catId = ''"
+                        :class="catId === '' ? 'border-foco-text bg-foco-surface text-foco-text font-semibold' : 'border-foco-border text-foco-muted hover:border-foco-text/40'"
+                        class="border-2 rounded-full px-4 py-2 text-sm flex items-center gap-1.5 transition-colors">
                     Sem categoria
                 </button>
                 @foreach($categorias as $cat)
-                <button type="button"
-                        @click="selecionar('{{ $cat->id }}','{{ addslashes($cat->nome) }}','{{ $cat->cor }}','{{ $cat->icone }}')"
-                        class="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-foco-surface transition-colors text-left"
-                        :class="catId == '{{ $cat->id }}' ? 'bg-foco-surface font-semibold' : ''">
-                    <div class="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
-                         style="background:{{ $cat->cor }}20">
-                        <i data-lucide="{{ $cat->icone }}" class="w-3.5 h-3.5" style="color:{{ $cat->cor }}"></i>
-                    </div>
-                    <span class="text-foco-text">{{ $cat->nome }}</span>
+                <button type="button" @click="catId = '{{ $cat->id }}'"
+                        :class="catId == '{{ $cat->id }}' ? 'font-semibold' : ''"
+                        :style="catId == '{{ $cat->id }}'
+                            ? 'border-color:{{ $cat->cor }}; background:{{ $cat->cor }}18; color:{{ $cat->cor }}'
+                            : 'border-color:#E4E4F0; color:#9794B8'"
+                        class="border-2 rounded-full px-4 py-2 text-sm flex items-center gap-1.5 transition-colors">
+                    <i data-lucide="{{ $cat->icone }}" class="w-3.5 h-3.5 shrink-0" style="color:{{ $cat->cor }}"></i>
+                    {{ $cat->nome }}
                 </button>
                 @endforeach
             </div>

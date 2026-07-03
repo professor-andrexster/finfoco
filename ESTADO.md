@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-02 (feature: visão mensal no Dashboard + gastos recorrentes)
+Última atualização: 2026-07-03 (V7: auditoria completa — 14 correções + módulo Relatórios + passe UX TDAH)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -199,6 +199,76 @@ Migrations rodadas em produção:
 - Conta pessoal (`andrexster@gmail.com`) teve `trial_ends_at` forçado pra ontem propositalmente, a pedido
   do usuário, pra validar a tela de bloqueio/paywall na prática antes de resgatar o próprio código
 - QA aprovado
+
+### V7 — Auditoria completa + Relatórios + UX TDAH (2026-07-03)
+
+#### Bugs críticos corrigidos
+- **Toda conta nova virava parcelamento 12x**: o form `bills/create` mantinha
+  `parcelas_total=12` e `recorrente=1` no DOM (x-show só esconde visualmente) e o POST
+  enviava tudo. Produção tinha 397/397 contas parceladas e 0 recorrentes por causa disso.
+  Correção dupla: `:disabled` nos inputs de modos inativos (input disabled não é enviado)
+  + guarda server-side no `BillController::store()` que só honra os campos do `_modo` escolhido
+- **Setting quebrado**: model com `$primaryKey = null` + `updateOrCreate` não consegue fazer
+  UPDATE (não sabe montar o WHERE); e `$timestamps = true` sem colunas na migration
+  (produção tem as colunas por drift). `set()` reescrito com `upsert()` do query builder;
+  migration de settings alinhada ao schema real de produção (chave 60, valor TEXT, timestamps)
+- **`migrate:fresh` quebrava em ambiente limpo**: linhas legadas single-user de `settings`
+  impediam a PK composta NOT NULL; migration agora limpa antes do ALTER
+- **`/relatorios` dava 500**: rota apontava para `ReportController` inexistente (trabalho
+  inacabado de sessão anterior) — controller e view criados
+- **Drift em `reminders`**: produção tem `updated_at`, migration não criava — criar lembrete
+  quebrava em ambiente novo. Migration corrigida para `timestamps()`
+
+#### Bugs altos corrigidos
+- `marcarPago()`: guarda de status contra duplo clique (duplicava Transaction e, em
+  recorrentes, gerava duas próximas ocorrências)
+- `categoria_id` cross-tenant: validação `exists` simples aceitava categoria de outro
+  usuário. Nova regra `Controller::categoriaDisponivel()` (globais + próprias) aplicada
+  em transactions, bills e alerts
+- Dashboard: stats de semana/mês sem limite superior de data — lançamentos futuros contavam
+  no período atual. Agora sempre com whereDate >= e <=
+- Lembretes vencidos sumiam do dashboard (query só pegava `data_lembrete >= hoje`) — agora
+  pendentes NUNCA somem e vencidos aparecem destacados em vermelho com ícone
+
+#### Bugs médios corrigidos
+- `destroyParcelamento` não considerava `valor` (podia excluir parcelamento homônimo errado)
+- Login/registro sem rate limit → `throttle:10,1`
+- Alertas duplicados (mesma categoria+período) bloqueados com mensagem amigável
+- Leitura morta de `visao_padrao` removida do SettingController (dashboard usa localStorage)
+
+#### Módulo novo: Relatórios (`/relatorios`)
+- `ReportController::index` — mês navegável (?mes=Y-m validado por regex), totais de
+  entrada/saída/resultado, saídas agrupadas por categoria ordenadas por valor
+- View com navegação ‹ mês ›, 3 cards de resumo e barras por categoria (cor da categoria)
+- Link "Relatórios" no nav principal (ícone bar-chart-3)
+
+#### Passe UX TDAH
+- **Categoria em chips visíveis** no lançamento (create e edit): substitui o dropdown de
+  2 cliques — todas as opções sempre à vista (memória zero), 1 clique, cor/ícone da categoria
+- Campo Valor não inicia mais com "0" (x-model inicializava com 0 — obrigava apagar)
+- Histórico: filtros avançados escondidos atrás de botão "sliders" (não pesam a tela);
+  seleção em lote com barra flutuante "Excluir selecionados"
+- Cores de significado fixo: "Pode gastar" positivo agora verde (era roxo accent)
+- Botões verbo+substantivo: "Salvar lembrete", "Nova categoria", "Marcar pago"/"Marcar
+  recebido", "Resgatar código", "Novo lançamento" (histórico)
+- Toast de sucesso: 3s (spec) em vez de 2.5s
+- Lembretes vencidos destacados em vermelho no dashboard
+
+#### QA V7 (2026-07-03, local end-to-end com servidor real + MariaDB)
+- 14 rotas autenticadas 200; guest: / → 302, login/register 200
+- Conta à vista com payload "sujo" (parcelas+recorrente no POST) → cria 1 conta simples ✔
+- Conta recorrente → recorrente=1 mensal ✔; parcelada 3x → 3 parcelas ✔
+- Duplo POST em marcarPago → 1 transaction, 1 próxima ocorrência ✔
+- Lançamento com categoria de outro usuário → rejeitado, nada criado ✔
+- Settings salvos 2x → update funciona (era o caminho quebrado) ✔
+- Exclusão em lote via /historico/lote → 302 e registros removidos ✔
+- migrate:fresh --seed → 0 FAIL ✔
+
+#### Pendência conhecida (dados de produção)
+- As 397 contas existentes em produção foram criadas com o bug (todas parceladas 12x,
+  nenhuma recorrente de verdade). O código novo impede casos novos, mas os dados antigos
+  continuam como estão — reparo exige decisão do usuário (não dá pra inferir a intenção
+  original de cada conta).
 
 ### V6 — Dashboard: visão mensal + gastos recorrentes (2026-07-02)
 - Toggle "Hoje / Esta semana" no dashboard ganhou terceira opção **"Este mês"** (persistência em `localStorage`)

@@ -218,7 +218,7 @@
                         class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg text-white"
                         style="background:{{ $bill->tipo === 'pagar' ? '#16A34A' : '#6366F1' }}">
                     <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                    {{ $bill->tipo === 'pagar' ? 'Pago' : 'Recebido' }}
+                    {{ $bill->tipo === 'pagar' ? 'Marcar pago' : 'Marcar recebido' }}
                 </button>
             </form>
             <a href="{{ route('bills.edit', $bill) }}"

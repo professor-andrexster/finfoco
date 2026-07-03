@@ -13,7 +13,10 @@ return new class extends Migration
             $table->string('titulo', 60);
             $table->date('data_lembrete');
             $table->tinyInteger('concluido')->default(0);
-            $table->timestamp('created_at')->useCurrent();
+            // timestamps() completo: produção tem updated_at (drift de import manual)
+            // e o model Reminder preenche created_at/updated_at — sem as duas colunas,
+            // criar lembrete quebra em qualquer ambiente montado do zero
+            $table->timestamps();
         });
     }
 

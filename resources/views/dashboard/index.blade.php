@@ -92,10 +92,11 @@
 
         {{-- Pode Gastar --}}
         @php
+            // Cores fixas do semáforo: verde=ok, amarelo=atenção, vermelho=negativo
             $pgColor = match($semaforoPodeGastar) {
                 'red'    => '#DC2626',
                 'yellow' => '#D97706',
-                default  => '#6366F1',
+                default  => '#16A34A',
             };
         @endphp
         <div class="card p-7" style="border-top: 3px solid {{ $pgColor }}">
@@ -242,7 +243,7 @@
                     <button type="submit"
                             class="text-white text-sm font-semibold px-4 py-2 rounded-xl"
                             style="background:#6366F1">
-                        Salvar
+                        Salvar lembrete
                     </button>
                 </div>
             </form>
@@ -270,11 +271,14 @@
                         @endif
                     </button>
                 </form>
+                @php $vencido = !$lembrete->concluido && $lembrete->data_lembrete->lt(today()); @endphp
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium truncate {{ $lembrete->concluido ? 'line-through text-foco-muted' : 'text-foco-text' }}">
                         {{ $lembrete->titulo }}
                     </p>
-                    <p class="text-xs text-foco-muted mt-0.5">
+                    <p class="text-xs mt-0.5 {{ $vencido ? 'font-semibold' : 'text-foco-muted' }}"
+                       @if($vencido) style="color:#DC2626" @endif>
+                        @if($vencido)<i data-lucide="alert-circle" class="w-3 h-3 inline-block" style="vertical-align:-1px"></i>@endif
                         {{ DateHelper::formatarDataRelativa($lembrete->data_lembrete) }}
                     </p>
                 </div>

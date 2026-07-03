@@ -11,7 +11,7 @@
        class="inline-flex items-center gap-2 text-white text-sm font-semibold px-4 py-2.5 rounded-xl"
        style="background:#6366F1">
         <i data-lucide="plus" class="w-4 h-4"></i>
-        Nova
+        Nova categoria
     </a>
 </div>
 

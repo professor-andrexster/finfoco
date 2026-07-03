@@ -80,7 +80,7 @@
                            class="flex-1 border border-foco-border rounded-xl px-3 py-2 text-sm text-foco-text focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-foco-accent">
                     <button type="submit"
                             class="text-sm font-semibold px-4 py-2 rounded-xl text-foco-accent border border-foco-accent hover:bg-indigo-50 transition-colors whitespace-nowrap">
-                        Resgatar
+                        Resgatar código
                     </button>
                 </form>
             </div>
@@ -118,7 +118,7 @@
                            class="flex-1 border border-foco-border rounded-xl px-3 py-2 text-sm text-foco-text focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-foco-accent">
                     <button type="submit"
                             class="text-sm font-semibold px-4 py-2 rounded-xl text-foco-accent border border-foco-accent hover:bg-indigo-50 transition-colors whitespace-nowrap">
-                        Resgatar
+                        Resgatar código
                     </button>
                 </form>
             </div>
@@ -156,7 +156,7 @@
                            class="flex-1 border border-foco-border rounded-xl px-3 py-2 text-sm text-foco-text focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-foco-accent">
                     <button type="submit"
                             class="text-sm font-semibold px-4 py-2 rounded-xl text-foco-accent border border-foco-accent hover:bg-indigo-50 transition-colors whitespace-nowrap">
-                        Resgatar
+                        Resgatar código
                     </button>
                 </form>
             </div>

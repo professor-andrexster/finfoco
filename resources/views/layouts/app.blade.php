@@ -77,7 +77,7 @@
     {{-- Toast sucesso --}}
     @if(session('sucesso'))
     <div x-data="{ show: true }" x-show="show" x-transition x-cloak
-         x-init="setTimeout(() => show = false, 2500)"
+         x-init="setTimeout(() => show = false, 3000)"
          class="fixed top-5 right-5 z-50 bg-foco-entrada text-white px-5 py-3 rounded-2xl shadow-lg flex items-center gap-2 text-sm font-semibold">
         <i data-lucide="check-circle-2" class="w-4 h-4"></i>
         {{ session('sucesso') }}
