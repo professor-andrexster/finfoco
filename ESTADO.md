@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-03 (V7: auditoria completa — 14 correções + módulo Relatórios + passe UX TDAH)
+Última atualização: 2026-07-03 (V8: fixo × dia a dia, pagamento parcial, totais em Contas)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -199,6 +199,50 @@ Migrations rodadas em produção:
 - Conta pessoal (`andrexster@gmail.com`) teve `trial_ends_at` forçado pra ontem propositalmente, a pedido
   do usuário, pra validar a tela de bloqueio/paywall na prática antes de resgatar o próprio código
 - QA aprovado
+
+### V8 — Fixo × Dia a dia + Pagamento parcial + Totais (2026-07-03)
+
+#### Separação fixo × variável (base fixa mensal vs "gasto besta")
+- `transactions.bill_id` (FK nullable, nullOnDelete): cada pagamento registra de qual conta
+  veio — permite classificar saídas como fixas (conta recorrente), contas/parcelas ou dia a dia
+- `Bill::custoFixoMensal($uid)`: cálculo centralizado (era privado do DashboardController) —
+  soma normalizada mensal das recorrentes (semanal ×52/12, anual ÷12), dedup por descrição.
+  Retorna total + qtd + collection das contas. Usado por dashboard, contas e relatórios
+- `Bill::valorMensalNormalizado()`: equivalente mensal de uma conta individual
+- `/contas` reorganizada: seção **"Contas fixas mensais"** (recorrentes, com badge do total
+  R$/mês no header e "≈ R$/mês" nas semanais/anuais) separada de **"Contas avulsas"**;
+  linha de conta extraída pro partial `bills/_linha_conta.blade.php`
+- `/relatorios`: seção **"Fixo × Dia a dia"** — barra proporcional com 3 segmentos
+  (Contas fixas roxo / Contas e parcelas âmbar / Dia a dia vermelho), valores, % e a base
+  fixa cadastrada. Classificação via `bill_id` + `bill.recorrente`
+
+#### Pagamento parcial ("ir pagando a dívida e abatendo valor")
+- Coluna `bills.valor_pago` (decimal, default 0, guarda hasColumn) — `restante() = valor − valor_pago`
+- `POST /contas/{bill}/abater` (`bills.pagarParcial`): valida valor, cria Transaction
+  "(parcial)" ligada à conta, acumula em valor_pago; abater ≥ restante quita a conta
+  automaticamente (mesma lógica de conclusão do Marcar pago, extraída pra `concluirConta()`)
+- `marcarPago` paga só o restante (não duplica o que já foi abatido); transação criada
+  via `registrarPagamento()` compartilhado
+- Linha da conta: botão circle-minus abre form inline "Abater valor" com restante visível;
+  quando há abatimento mostra "R$ restante de R$ total · já abatido R$ X"
+- Dashboard e totais usam `valor − valor_pago` nas contas pendentes
+
+#### Totais na tela Contas
+- Strip de 3 cards no topo: **Total a pagar (pendente)** (vermelho, inclui parcelas,
+  desconta abatimentos), **Total a receber** (verde), **Custo fixo mensal** (roxo, com qtd)
+
+#### Fix regressão (mesma data): "não consigo excluir uma dívida"
+- A validação nova de `destroyParcelamento` passou a exigir `valor`, mas o form
+  "Excluir tudo" em bills/index não enviava o campo → exclusão de parcelamento falhava
+  silenciosamente (só um toast de erro). Hidden input `valor` adicionado ao form
+
+#### QA V8 (local + produção)
+- Abater 30 + 70 em conta de 100 → quita com 2 transactions somando exatamente 100 ✔
+- Excluir parcelamento e conta simples ✔
+- Produção: conta fixa criada → aparece em "Contas fixas mensais" com R$ 1.000,00/mês;
+  abater 250 → mostra "já abatido R$ 250,00", restante 750 ✔ (usuário QA descartável removido)
+- Migrations `bill_id` e `valor_pago` rodadas em produção ✔
+- Obs: usuários reais já recadastraram 139 contas com o form corrigido no mesmo dia
 
 ### V7 — Auditoria completa + Relatórios + UX TDAH (2026-07-03)
 
