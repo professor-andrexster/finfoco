@@ -24,9 +24,14 @@ class Setting extends Model
             static::where('user_id', $userId)->where('chave', $chave)->delete();
             return;
         }
-        static::updateOrCreate(
-            ['user_id' => $userId, 'chave' => $chave],
-            ['valor' => $valor]
+        // PK composta (user_id, chave) sem coluna id: o save() do Eloquent não sabe
+        // montar o WHERE do update — upsert resolve direto no banco.
+        $agora = now();
+        static::query()->toBase()->upsert(
+            [['user_id' => $userId, 'chave' => $chave, 'valor' => $valor,
+              'created_at' => $agora, 'updated_at' => $agora]],
+            ['user_id', 'chave'],
+            ['valor', 'updated_at']
         );
     }
 }

@@ -71,7 +71,10 @@
             <div x-show="modo==='parcelado'" x-cloak style="display:none" class="mt-4">
                 <label class="block text-xs font-semibold uppercase tracking-widest text-foco-muted mb-2">Número de parcelas</label>
                 <div class="flex items-center gap-3">
+                    {{-- :disabled é obrigatório: x-show só esconde visualmente e um input
+                         habilitado é enviado no POST mesmo no modo "à vista" --}}
                     <input type="number" name="parcelas_total" min="2" max="360" value="{{ old('parcelas_total', 12) }}"
+                           :disabled="modo!=='parcelado'"
                            class="w-28 border border-foco-border rounded-xl px-4 py-3 text-foco-text font-bold text-xl text-center focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-foco-accent">
                     <span class="text-foco-muted text-sm">parcelas mensais</span>
                 </div>
@@ -79,12 +82,12 @@
             </div>
 
             <div x-show="modo==='recorrente'" x-cloak style="display:none" class="mt-4">
-                <input type="hidden" name="recorrente" value="1">
                 <label class="block text-xs font-semibold uppercase tracking-widest text-foco-muted mb-2">Frequência</label>
                 <div class="grid grid-cols-3 gap-2">
                     @foreach(['mensal'=>'Mensal','semanal'=>'Semanal','anual'=>'Anual'] as $val=>$label)
                     <label class="cursor-pointer">
-                        <input type="radio" name="recorrencia" value="{{ $val }}" {{ old('recorrencia','mensal')===$val?'checked':'' }} class="sr-only peer">
+                        <input type="radio" name="recorrencia" value="{{ $val }}" {{ old('recorrencia','mensal')===$val?'checked':'' }}
+                               :disabled="modo!=='recorrente'" class="sr-only peer">
                         <div class="border-2 border-foco-border peer-checked:border-foco-accent peer-checked:bg-indigo-50 peer-checked:text-foco-accent rounded-xl p-3 text-center text-sm font-semibold transition-colors text-foco-muted">
                             {{ $label }}
                         </div>

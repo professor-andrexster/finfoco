@@ -11,6 +11,7 @@ class Alert extends Model
     protected $casts    = ['ativo' => 'boolean', 'limite_valor' => 'decimal:2'];
 
     public function categoria() { return $this->belongsTo(Category::class, 'categoria_id'); }
+    public function user()      { return $this->belongsTo(User::class); }
 
     protected static function booted(): void
     {

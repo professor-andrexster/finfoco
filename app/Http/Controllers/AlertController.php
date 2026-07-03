@@ -42,10 +42,23 @@ class AlertController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'categoria_id' => 'required|exists:categories,id',
+            'categoria_id' => ['required', $this->categoriaDisponivel()],
             'limite_valor' => 'required|numeric|min:1',
             'periodo'      => 'required|in:dia,semana,mes',
+        ], [
+            'categoria_id.required' => 'Escolha uma categoria.',
+            'limite_valor.required' => 'Informe o limite.',
         ]);
+
+        $jaExiste = Alert::where('user_id', auth()->id())
+            ->where('categoria_id', $data['categoria_id'])
+            ->where('periodo', $data['periodo'])
+            ->exists();
+
+        if ($jaExiste) {
+            return back()->withInput()
+                ->withErrors(['categoria_id' => 'Já existe um alerta para esta categoria neste período.']);
+        }
 
         Alert::create($data + ['user_id' => auth()->id(), 'ativo' => true]);
         return redirect()->route('alerts.index')->with('sucesso', 'Alerta criado!');

@@ -15,7 +15,7 @@
 
     <div x-data="{
         tipo: '{{ old('tipo','saida') }}',
-        valor: {{ old('valor', 0) }},
+        valor: '{{ old('valor') }}',
         mostrarPausa: false,
         countdown: 10,
         countdownTimer: null,
@@ -23,9 +23,9 @@
         valorHora: {{ $valorHora }},
 
         get custoEmHoras() {
-            if (this.valorHora <= 0 || this.valor <= 0) return null;
-            const h = Math.round((this.valor / this.valorHora) * 10) / 10;
-            return h;
+            const v = parseFloat(this.valor);
+            if (this.valorHora <= 0 || !v || v <= 0) return null;
+            return Math.round((v / this.valorHora) * 10) / 10;
         },
 
         tentarEnviar(e) {

@@ -23,11 +23,13 @@ class DashboardController extends Controller
             ->selectRaw("SUM(CASE WHEN tipo='entrada' THEN valor ELSE -valor END) as saldo")
             ->value('saldo') ?? 0;
 
+        // Sempre com limite inferior E superior — sem o superior, lançamentos
+        // com data futura contariam nas estatísticas do período atual.
         $gastosHoje     = Transaction::where('user_id', $uid)->where('tipo','saida')->whereDate('data',$hoje)->sum('valor');
-        $gastosSemanais = Transaction::where('user_id', $uid)->where('tipo','saida')->whereDate('data','>=',$semanaInicio)->sum('valor');
-        $entradasSemana = Transaction::where('user_id', $uid)->where('tipo','entrada')->whereDate('data','>=',$semanaInicio)->sum('valor');
-        $entradaMes     = Transaction::where('user_id', $uid)->where('tipo','entrada')->whereDate('data','>=',$mesInicio)->sum('valor');
-        $saidaMes       = Transaction::where('user_id', $uid)->where('tipo','saida')->whereDate('data','>=',$mesInicio)->sum('valor');
+        $gastosSemanais = Transaction::where('user_id', $uid)->where('tipo','saida')->whereDate('data','>=',$semanaInicio)->whereDate('data','<=',$semanaFim)->sum('valor');
+        $entradasSemana = Transaction::where('user_id', $uid)->where('tipo','entrada')->whereDate('data','>=',$semanaInicio)->whereDate('data','<=',$semanaFim)->sum('valor');
+        $entradaMes     = Transaction::where('user_id', $uid)->where('tipo','entrada')->whereDate('data','>=',$mesInicio)->whereDate('data','<=',$mesFim)->sum('valor');
+        $saidaMes       = Transaction::where('user_id', $uid)->where('tipo','saida')->whereDate('data','>=',$mesInicio)->whereDate('data','<=',$mesFim)->sum('valor');
 
         // Safe-to-spend mensal
         $contasPendentesMes   = Bill::where('user_id',$uid)->where('status','pendente')->whereBetween('vencimento',[$hoje,$mesFim])->where('tipo','pagar')->sum('valor');
@@ -48,8 +50,12 @@ class DashboardController extends Controller
 
         $gastosRecorrentes = $this->calcularGastosRecorrentes($uid);
 
+        // Lembretes pendentes NUNCA somem, mesmo vencidos (essencial pra TDAH);
+        // concluídos antigos saem da lista pra não acumular ruído.
         $lembretes = Reminder::where('user_id', $uid)
-            ->where('data_lembrete', '>=', $hoje)
+            ->where(fn($q) => $q->where('concluido', false)
+                                ->orWhere('data_lembrete', '>=', $hoje))
+            ->orderBy('concluido')
             ->orderBy('data_lembrete')
             ->get();
 

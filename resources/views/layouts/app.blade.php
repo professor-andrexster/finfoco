@@ -126,6 +126,7 @@
                         ['route'=>'transactions.create', 'pat'=>'transactions*','icon'=>'plus-circle',     'label'=>'Lançar'],
                         ['route'=>'bills.index',         'pat'=>'bills*',       'icon'=>'receipt',         'label'=>'Contas'],
                         ['route'=>'history.index',       'pat'=>'history*',     'icon'=>'clock',           'label'=>'Histórico'],
+                        ['route'=>'reports.index',       'pat'=>'reports*',     'icon'=>'bar-chart-3',     'label'=>'Relatórios'],
                         ['route'=>'categories.index',    'pat'=>'categories*',  'icon'=>'tag',             'label'=>'Categorias'],
                         ['route'=>'alerts.index',        'pat'=>'alerts*',      'icon'=>'bell',            'label'=>'Alertas'],
                     ];

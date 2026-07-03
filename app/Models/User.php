@@ -14,6 +14,12 @@ class User extends Authenticatable
     protected $fillable = ['name', 'email', 'password'];
     protected $hidden   = ['password', 'remember_token'];
 
+    public function transactions() { return $this->hasMany(Transaction::class); }
+    public function bills()        { return $this->hasMany(Bill::class); }
+    public function alerts()       { return $this->hasMany(Alert::class); }
+    public function reminders()    { return $this->hasMany(Reminder::class); }
+    public function categories()   { return $this->hasMany(Category::class); }
+
     protected function casts(): array
     {
         return [

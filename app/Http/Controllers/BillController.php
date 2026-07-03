@@ -62,8 +62,8 @@ class BillController extends Controller
             'descricao'      => 'required|max:60',
             'valor'          => 'required|numeric|min:0.01',
             'vencimento'     => 'required|date',
-            'categoria_id'   => 'nullable|exists:categories,id',
-            'recorrente'     => 'nullable|boolean',
+            'categoria_id'   => ['nullable', $this->categoriaDisponivel()],
+            '_modo'          => 'required|in:avista,parcelado,recorrente',
             'recorrencia'    => 'nullable|in:semanal,mensal,anual',
             'parcelas_total' => 'nullable|integer|min:2|max:360',
         ], [
@@ -71,12 +71,19 @@ class BillController extends Controller
             'descricao.required'   => 'Informe a descrição.',
             'valor.required'       => 'Informe o valor.',
             'vencimento.required'  => 'Informe a data de vencimento.',
+            '_modo.required'       => 'Escolha o tipo de cobrança.',
             'parcelas_total.max'   => 'Máximo de 360 parcelas.',
         ]);
 
+        // O modo escolhido manda: campos dos outros modos que vierem no POST
+        // (inputs escondidos por x-show ainda são enviados) são ignorados.
         $uid           = auth()->id();
-        $parcelasTotal = $data['parcelas_total'] ?? null;
-        $recorrente    = (bool) ($data['recorrente'] ?? false);
+        $parcelasTotal = $data['_modo'] === 'parcelado'  ? ($data['parcelas_total'] ?? null) : null;
+        $recorrente    = $data['_modo'] === 'recorrente';
+
+        if ($data['_modo'] === 'parcelado' && !$parcelasTotal) {
+            return back()->withInput()->withErrors(['parcelas_total' => 'Informe o número de parcelas.']);
+        }
         $vencimento    = Carbon::parse($data['vencimento']);
         $base          = [
             'user_id'      => $uid,
@@ -127,7 +134,7 @@ class BillController extends Controller
             'descricao'    => 'required|max:60',
             'valor'        => 'required|numeric|min:0.01',
             'vencimento'   => 'required|date',
-            'categoria_id' => 'nullable|exists:categories,id',
+            'categoria_id' => ['nullable', $this->categoriaDisponivel()],
         ], [
             'descricao.required'  => 'Informe a descrição.',
             'valor.required'      => 'Informe o valor.',
@@ -142,6 +149,12 @@ class BillController extends Controller
     public function marcarPago(Bill $bill)
     {
         abort_unless($bill->user_id === auth()->id(), 403);
+
+        // Guarda contra duplo clique: pagar duas vezes duplicaria a Transaction
+        // e, em recorrentes, geraria duas próximas ocorrências.
+        if (!in_array($bill->status, ['pendente', 'atrasado'])) {
+            return redirect()->route('bills.index');
+        }
 
         $statusPago = $bill->tipo === 'pagar' ? 'pago' : 'recebido';
         $bill->update(['status' => $statusPago, 'pago_em' => Carbon::today()]);
@@ -189,11 +202,18 @@ class BillController extends Controller
     public function destroyParcelamento(Request $request)
     {
         $uid = auth()->id();
-        $request->validate(['descricao' => 'required', 'parcelas_total' => 'required|integer']);
+        $request->validate([
+            'descricao'      => 'required',
+            'parcelas_total' => 'required|integer',
+            'valor'          => 'required|numeric',
+        ]);
 
+        // valor participa do agrupamento no index — sem ele, dois parcelamentos
+        // de mesma descrição/nº de parcelas e valores diferentes cairiam juntos
         Bill::where('user_id', $uid)
             ->where('descricao', $request->descricao)
             ->where('parcelas_total', $request->parcelas_total)
+            ->where('valor', $request->valor)
             ->whereIn('status', ['pendente', 'atrasado'])
             ->delete();
 

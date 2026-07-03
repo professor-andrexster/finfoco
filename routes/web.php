@@ -8,6 +8,7 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReminderController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
@@ -15,9 +16,9 @@ use Illuminate\Support\Facades\Route;
 // ─── Auth (público) ───────────────────────────────────────────────────────────
 Route::middleware('guest')->group(function () {
     Route::get('/login',    [LoginController::class,   'create'])->name('login');
-    Route::post('/login',   [LoginController::class,   'store']);
+    Route::post('/login',   [LoginController::class,   'store'])->middleware('throttle:10,1');
     Route::get('/register', [RegisterController::class,'create'])->name('register');
-    Route::post('/register',[RegisterController::class,'store']);
+    Route::post('/register',[RegisterController::class,'store'])->middleware('throttle:10,1');
 });
 
 Route::post('/logout', [LoginController::class, 'destroy'])->name('logout')->middleware('auth');
@@ -42,6 +43,7 @@ Route::middleware(['auth', 'subscribed'])->group(function () {
     Route::get('/lancamento/{transaction}/editar', [TransactionController::class, 'edit'])->name('transactions.edit');
     Route::put('/lancamento/{transaction}',        [TransactionController::class, 'update'])->name('transactions.update');
     Route::delete('/lancamento/{transaction}',     [TransactionController::class, 'destroy'])->name('transactions.destroy');
+    Route::delete('/historico/lote',               [TransactionController::class, 'bulkDestroy'])->name('transactions.bulkDestroy');
 
     // Histórico
     Route::get('/historico', [TransactionController::class, 'history'])->name('history.index');
@@ -60,6 +62,9 @@ Route::middleware(['auth', 'subscribed'])->group(function () {
     Route::post('/alertas',                [AlertController::class, 'store'])->name('alerts.store');
     Route::delete('/alertas/{alert}',      [AlertController::class, 'destroy'])->name('alerts.destroy');
     Route::post('/alertas/{alert}/toggle', [AlertController::class, 'toggle'])->name('alerts.toggle');
+
+    // Relatórios
+    Route::get('/relatorios', [ReportController::class, 'index'])->name('reports.index');
 
     // Contas a pagar/receber
     Route::get('/contas',                     [BillController::class, 'index'])->name('bills.index');

@@ -35,6 +35,10 @@ return new class extends Migration
         });
 
         // settings: trocar PK para (user_id, chave)
+        // Linhas legadas da era single-user (sem user_id) impedem a nova PK NOT NULL
+        // em ambientes criados do zero — em produção a tabela já foi migrada com drift.
+        \Illuminate\Support\Facades\DB::table('settings')->delete();
+
         Schema::table('settings', function (Blueprint $table) {
             $table->dropPrimary();
             $table->unsignedBigInteger('user_id')->nullable()->after('chave');

@@ -20,7 +20,7 @@ class TransactionController extends Controller
             'tipo'         => ['required', 'in:entrada,saida'],
             'valor'        => ['required', 'numeric', 'min:0.01'],
             'descricao'    => ['required', 'string', 'max:60'],
-            'categoria_id' => ['nullable', 'exists:categories,id'],
+            'categoria_id' => ['nullable', $this->categoriaDisponivel()],
             'data'         => ['required', 'date'],
         ], [
             'tipo.required'      => 'Escolha entrada ou saída.',
@@ -49,7 +49,7 @@ class TransactionController extends Controller
             'tipo'         => ['required', 'in:entrada,saida'],
             'valor'        => ['required', 'numeric', 'min:0.01'],
             'descricao'    => ['required', 'string', 'max:60'],
-            'categoria_id' => ['nullable', 'exists:categories,id'],
+            'categoria_id' => ['nullable', $this->categoriaDisponivel()],
             'data'         => ['required', 'date'],
         ]);
 
@@ -64,10 +64,30 @@ class TransactionController extends Controller
         return redirect()->back()->with('sucesso', 'Lançamento excluído!');
     }
 
+    public function bulkDestroy(Request $request)
+    {
+        $data = $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'integer',
+        ], [
+            'ids.required' => 'Selecione ao menos um lançamento.',
+        ]);
+
+        $excluidos = Transaction::where('user_id', auth()->id())
+            ->whereIn('id', $data['ids'])
+            ->delete();
+
+        return redirect()->route('history.index')
+            ->with('sucesso', "{$excluidos} lançamento(s) excluído(s)!");
+    }
+
     public function history(Request $request)
     {
-        $busca = $request->input('busca');
-        $tipo  = $request->input('tipo');
+        $busca       = $request->input('busca');
+        $tipo        = $request->input('tipo');
+        $categoriaId = $request->input('categoria_id');
+        $dataInicio  = $request->input('data_inicio');
+        $dataFim     = $request->input('data_fim');
 
         $query = Transaction::with('categoria')
             ->where('user_id', auth()->id())
@@ -76,8 +96,15 @@ class TransactionController extends Controller
 
         if ($busca) $query->where('descricao', 'like', "%{$busca}%");
         if ($tipo && in_array($tipo, ['entrada', 'saida'])) $query->where('tipo', $tipo);
+        if ($categoriaId) $query->where('categoria_id', $categoriaId);
+        if ($dataInicio) $query->whereDate('data', '>=', $dataInicio);
+        if ($dataFim) $query->whereDate('data', '<=', $dataFim);
 
         $transactions = $query->paginate(20)->withQueryString();
-        return view('history.index', compact('transactions', 'busca', 'tipo'));
+        $categorias   = Category::disponiveis()->orderBy('nome')->get();
+
+        return view('history.index', compact(
+            'transactions', 'busca', 'tipo', 'categoriaId', 'dataInicio', 'dataFim', 'categorias'
+        ));
     }
 }

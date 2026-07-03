@@ -11,9 +11,8 @@ class SettingController extends Controller
     {
         $valorHora     = Setting::get('valor_hora');
         $limiteImpulso = Setting::get('limite_impulso', '150.00');
-        $visaoPadrao   = Setting::get('visao_padrao', 'mensal');
 
-        return view('settings.index', compact('valorHora', 'limiteImpulso', 'visaoPadrao'));
+        return view('settings.index', compact('valorHora', 'limiteImpulso'));
     }
 
     public function update(Request $request)
