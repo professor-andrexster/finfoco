@@ -70,6 +70,56 @@
         </div>
     </div>
 
+    {{-- Fixo × Dia a dia: quanto do mês foi obrigação e quanto foi escolha --}}
+    @if($saidas > 0)
+    @php
+        $pctFixo   = round($gastoFixo   / $saidas * 100);
+        $pctContas = round($gastoContas / $saidas * 100);
+        $pctDia    = max(0, 100 - $pctFixo - $pctContas);
+        $buckets = [
+            ['label' => 'Contas fixas',      'valor' => $gastoFixo,    'pct' => $pctFixo,   'cor' => '#6366F1', 'icone' => 'repeat',      'hint' => 'aluguel, luz, internet...'],
+            ['label' => 'Contas e parcelas', 'valor' => $gastoContas,  'pct' => $pctContas, 'cor' => '#D97706', 'icone' => 'receipt',     'hint' => 'avulsas e parcelamentos'],
+            ['label' => 'Dia a dia',         'valor' => $gastoDiaADia, 'pct' => $pctDia,    'cor' => '#DC2626', 'icone' => 'shopping-cart','hint' => 'lançamentos do cotidiano'],
+        ];
+    @endphp
+    <div class="flex items-center gap-2 mb-3">
+        <i data-lucide="split" class="w-4 h-4 text-foco-accent"></i>
+        <h2 class="text-sm font-semibold text-foco-text uppercase tracking-wide">Fixo × Dia a dia</h2>
+    </div>
+    <div class="card p-5 mb-8">
+        {{-- Barra proporcional --}}
+        <div class="w-full h-4 rounded-full overflow-hidden flex mb-4" style="background:#E4E4F0">
+            @foreach($buckets as $b)
+            @if($b['valor'] > 0)
+            <div style="width:{{ $b['pct'] }}%; background:{{ $b['cor'] }}" title="{{ $b['label'] }}: {{ $b['pct'] }}%"></div>
+            @endif
+            @endforeach
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            @foreach($buckets as $b)
+            <div class="flex items-start gap-2.5">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                     style="background:{{ $b['cor'] }}18">
+                    <i data-lucide="{{ $b['icone'] }}" class="w-4 h-4" style="color:{{ $b['cor'] }}"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xs text-foco-muted font-medium">{{ $b['label'] }} · {{ $b['pct'] }}%</p>
+                    <p class="font-bold text-foco-text">R$&nbsp;{{ number_format($b['valor'], 2, ',', '.') }}</p>
+                    <p class="text-[11px] text-foco-muted">{{ $b['hint'] }}</p>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        @if($custoFixoBase['qtd'] > 0)
+        <p class="text-xs text-foco-muted mt-4 pt-3 flex items-center gap-1.5" style="border-top:1px solid #E4E4F0">
+            <i data-lucide="info" class="w-3.5 h-3.5"></i>
+            Sua base fixa cadastrada é <strong class="text-foco-text">R$&nbsp;{{ number_format($custoFixoBase['total'], 2, ',', '.') }}/mês</strong>
+            ({{ $custoFixoBase['qtd'] }} conta(s) fixa(s)).
+        </p>
+        @endif
+    </div>
+    @endif
+
     {{-- Para onde foi o dinheiro --}}
     <div class="flex items-center gap-2 mb-3">
         <i data-lucide="pie-chart" class="w-4 h-4 text-foco-saida"></i>

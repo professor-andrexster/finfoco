@@ -73,6 +73,7 @@ Route::middleware(['auth', 'subscribed'])->group(function () {
     Route::get('/contas/{bill}/editar',       [BillController::class, 'edit'])->name('bills.edit');
     Route::put('/contas/{bill}',              [BillController::class, 'update'])->name('bills.update');
     Route::post('/contas/{bill}/pagar',       [BillController::class, 'marcarPago'])->name('bills.marcarPago');
+    Route::post('/contas/{bill}/abater',      [BillController::class, 'pagarParcial'])->name('bills.pagarParcial');
     Route::delete('/contas/{bill}',           [BillController::class, 'destroy'])->name('bills.destroy');
     Route::delete('/contas-parcelamento',     [BillController::class, 'destroyParcelamento'])->name('bills.destroyParcelamento');
 

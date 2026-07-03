@@ -18,6 +18,40 @@
     </a>
 </div>
 
+{{-- RESUMO GERAL: total pendente + base fixa mensal --}}
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+    <div class="card p-4">
+        <div class="flex items-center gap-1.5 mb-1.5">
+            <i data-lucide="arrow-up-circle" class="w-3.5 h-3.5" style="color:#DC2626"></i>
+            <p class="text-xs text-foco-muted font-medium">Total a pagar (pendente)</p>
+        </div>
+        <p class="text-xl font-bold" style="color:#DC2626; letter-spacing:-0.02em">
+            −&nbsp;R$&nbsp;{{ number_format($totalAPagar, 2, ',', '.') }}
+        </p>
+    </div>
+    <div class="card p-4">
+        <div class="flex items-center gap-1.5 mb-1.5">
+            <i data-lucide="arrow-down-circle" class="w-3.5 h-3.5" style="color:#16A34A"></i>
+            <p class="text-xs text-foco-muted font-medium">Total a receber</p>
+        </div>
+        <p class="text-xl font-bold" style="color:#16A34A; letter-spacing:-0.02em">
+            +&nbsp;R$&nbsp;{{ number_format($totalAReceber, 2, ',', '.') }}
+        </p>
+    </div>
+    <div class="card p-4" style="border-top:3px solid #6366F1">
+        <div class="flex items-center gap-1.5 mb-1.5">
+            <i data-lucide="repeat" class="w-3.5 h-3.5" style="color:#6366F1"></i>
+            <p class="text-xs text-foco-muted font-medium">Custo fixo mensal</p>
+        </div>
+        <p class="text-xl font-bold" style="color:#6366F1; letter-spacing:-0.02em">
+            R$&nbsp;{{ number_format($custoFixo['total'], 2, ',', '.') }}<span class="text-sm font-semibold text-foco-muted">/mês</span>
+        </p>
+        @if($custoFixo['qtd'] > 0)
+        <p class="text-[11px] text-foco-muted mt-0.5">{{ $custoFixo['qtd'] }} conta(s) fixa(s)</p>
+        @endif
+    </div>
+</div>
+
 {{-- ════════════════════════════════════════════════════
      SEÇÃO 1 — PARCELAMENTOS ATIVOS
      Cada compra parcelada mostra UMA linha consolidada
@@ -40,7 +74,7 @@
         $pct        = $total > 0 ? round($pagas / $total * 100) : 0;
         $semaforo   = DateHelper::semaforo($proxima->vencimento);
         $corSema    = match($semaforo) { 'red' => '#DC2626', 'yellow' => '#D97706', default => '#16A34A' };
-        $totalDivida = $proxima->valor * $pendentes;
+        $totalDivida = $p['restante_total'];
     @endphp
     <div x-data="{ expandido: false }" class="card overflow-hidden">
 
@@ -119,6 +153,7 @@
                         @csrf @method('DELETE')
                         <input type="hidden" name="descricao" value="{{ $proxima->descricao }}">
                         <input type="hidden" name="parcelas_total" value="{{ $total }}">
+                        <input type="hidden" name="valor" value="{{ $proxima->valor }}">
                         <button type="submit"
                                 class="text-xs text-foco-saida font-medium flex items-center gap-1 hover:underline">
                             <i data-lucide="trash-2" class="w-3 h-3"></i> Excluir tudo
@@ -162,84 +197,56 @@
 @endif
 
 {{-- ════════════════════════════════════════════════════
-     SEÇÃO 2 — CONTAS SIMPLES (pendentes/atrasadas)
+     SEÇÃO 2 — CONTAS FIXAS MENSAIS (recorrentes)
+     A base do que sai todo mês: aluguel, água, luz, internet...
      ════════════════════════════════════════════════════ --}}
-@if($contasSimples->isNotEmpty())
+@if($contasFixas->isNotEmpty() || $custoFixo['qtd'] > 0)
+<div class="mb-6">
+    <div class="flex items-center gap-2 mb-3">
+        <i data-lucide="repeat" class="w-4 h-4 text-foco-accent"></i>
+        <h2 class="text-sm font-semibold text-foco-text uppercase tracking-wide">Contas fixas mensais</h2>
+        <span class="ml-auto text-xs font-bold px-2.5 py-1 rounded-full"
+              style="color:#6366F1; background:#EEF2FF">
+            R$&nbsp;{{ number_format($custoFixo['total'], 2, ',', '.') }}/mês
+        </span>
+    </div>
+
+    @if($contasFixas->isNotEmpty())
+    <div class="card overflow-hidden divide-y divide-foco-border">
+        @foreach($contasFixas as $bill)
+            @include('bills._linha_conta', ['bill' => $bill])
+        @endforeach
+    </div>
+    @else
+    <div class="card px-5 py-4 text-sm text-foco-muted flex items-center gap-2">
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-foco-entrada"></i>
+        Todas as contas fixas deste ciclo já foram pagas.
+    </div>
+    @endif
+</div>
+@endif
+
+{{-- ════════════════════════════════════════════════════
+     SEÇÃO 3 — CONTAS AVULSAS (pendentes/atrasadas, não recorrentes)
+     ════════════════════════════════════════════════════ --}}
+@if($contasAvulsas->isNotEmpty())
 <div class="mb-6">
     <div class="flex items-center gap-2 mb-3">
         <i data-lucide="receipt" class="w-4 h-4 text-foco-saida"></i>
-        <h2 class="text-sm font-semibold text-foco-text uppercase tracking-wide">Contas e recorrentes</h2>
-        <span class="text-xs text-foco-muted ml-auto">{{ $contasSimples->count() }} pendente(s)</span>
+        <h2 class="text-sm font-semibold text-foco-text uppercase tracking-wide">Contas avulsas</h2>
+        <span class="text-xs text-foco-muted ml-auto">{{ $contasAvulsas->count() }} pendente(s)</span>
     </div>
 
     <div class="card overflow-hidden divide-y divide-foco-border">
-    @foreach($contasSimples as $bill)
-    @php
-        $semaforo = DateHelper::semaforo($bill->vencimento);
-        $corSema  = match($semaforo) { 'red' => '#DC2626', 'yellow' => '#D97706', default => '#16A34A' };
-        $emoji    = match($semaforo) { 'red' => '🔴', 'yellow' => '🟡', default => '🟢' };
-    @endphp
-    <div class="flex items-center gap-4 px-5 py-4">
-
-        <span class="text-xl shrink-0">{{ $emoji }}</span>
-
-        <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-             style="background:{{ ($bill->categoria?->cor ?? '#6366F1') }}18">
-            <i data-lucide="{{ $bill->categoria?->icone ?? 'tag' }}" class="w-4 h-4"
-               style="color:{{ $bill->categoria?->cor ?? '#6366F1' }}"></i>
-        </div>
-
-        <div class="flex-1 min-w-0">
-            <div class="flex items-baseline gap-2">
-                <span class="font-semibold text-foco-text">{{ $bill->descricao }}</span>
-                @if($bill->recorrente)
-                <span class="text-xs text-foco-muted flex items-center gap-1">
-                    <i data-lucide="repeat" class="w-3 h-3"></i>
-                    {{ ucfirst($bill->recorrencia ?? 'mensal') }}
-                </span>
-                @endif
-            </div>
-            <p class="text-xs mt-0.5" style="color:{{ $corSema }}">
-                {{ DateHelper::formatarDataRelativa($bill->vencimento) }}
-                @if($bill->categoria) <span class="text-foco-muted">· {{ $bill->categoria->nome }}</span> @endif
-            </p>
-        </div>
-
-        <div class="text-right shrink-0">
-            <p class="font-bold" style="color:{{ $bill->tipo === 'pagar' ? '#DC2626' : '#16A34A' }}; font-size:1.05rem">
-                {{ $bill->tipo === 'pagar' ? '−' : '+' }}&nbsp;R$&nbsp;{{ number_format($bill->valor, 2, ',', '.') }}
-            </p>
-        </div>
-
-        <div class="flex items-center gap-2 ml-1 shrink-0">
-            <form action="{{ route('bills.marcarPago', $bill) }}" method="POST">
-                @csrf
-                <button type="submit"
-                        class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg text-white"
-                        style="background:{{ $bill->tipo === 'pagar' ? '#16A34A' : '#6366F1' }}">
-                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                    {{ $bill->tipo === 'pagar' ? 'Marcar pago' : 'Marcar recebido' }}
-                </button>
-            </form>
-            <a href="{{ route('bills.edit', $bill) }}"
-               class="p-2 rounded-lg text-foco-muted hover:text-foco-accent hover:bg-foco-surface transition-colors">
-                <i data-lucide="pencil" class="w-4 h-4"></i>
-            </a>
-            <form action="{{ route('bills.destroy', $bill) }}" method="POST">
-                @csrf @method('DELETE')
-                <button type="submit" class="p-2 text-foco-muted hover:text-foco-saida transition-colors rounded-lg hover:bg-foco-surface">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
-            </form>
-        </div>
-    </div>
-    @endforeach
+        @foreach($contasAvulsas as $bill)
+            @include('bills._linha_conta', ['bill' => $bill])
+        @endforeach
     </div>
 </div>
 @endif
 
 {{-- Vazio --}}
-@if($parcelamentos->isEmpty() && $contasSimples->isEmpty())
+@if($parcelamentos->isEmpty() && $contasFixas->isEmpty() && $contasAvulsas->isEmpty() && $custoFixo['qtd'] === 0)
 <div class="card px-8 py-16 text-center mb-6">
     <div class="w-14 h-14 rounded-2xl bg-foco-surface mx-auto mb-4 flex items-center justify-center">
         <i data-lucide="check-circle-2" class="w-7 h-7 text-foco-entrada"></i>

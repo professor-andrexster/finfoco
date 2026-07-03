@@ -7,6 +7,7 @@ use App\Models\Bill;
 use App\Models\Reminder;
 use App\Models\Transaction;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -31,16 +32,16 @@ class DashboardController extends Controller
         $entradaMes     = Transaction::where('user_id', $uid)->where('tipo','entrada')->whereDate('data','>=',$mesInicio)->whereDate('data','<=',$mesFim)->sum('valor');
         $saidaMes       = Transaction::where('user_id', $uid)->where('tipo','saida')->whereDate('data','>=',$mesInicio)->whereDate('data','<=',$mesFim)->sum('valor');
 
-        // Safe-to-spend mensal
-        $contasPendentesMes   = Bill::where('user_id',$uid)->where('status','pendente')->whereBetween('vencimento',[$hoje,$mesFim])->where('tipo','pagar')->sum('valor');
-        $entradasEsperadasMes = Bill::where('user_id',$uid)->where('status','pendente')->whereBetween('vencimento',[$hoje,$mesFim])->where('tipo','receber')->sum('valor');
+        // Safe-to-spend mensal (valor - valor_pago: abatimentos parciais reduzem o pendente)
+        $contasPendentesMes   = Bill::where('user_id',$uid)->where('status','pendente')->whereBetween('vencimento',[$hoje,$mesFim])->where('tipo','pagar')->sum(DB::raw('valor - valor_pago'));
+        $entradasEsperadasMes = Bill::where('user_id',$uid)->where('status','pendente')->whereBetween('vencimento',[$hoje,$mesFim])->where('tipo','receber')->sum(DB::raw('valor - valor_pago'));
         $diasRestantesMes     = $hoje->diffInDays($mesFim) + 1;
         $podeGastarMes        = (float)$saldoTotal + (float)$entradasEsperadasMes - (float)$contasPendentesMes;
         $podeGastarHoje       = $diasRestantesMes > 0 ? $podeGastarMes / $diasRestantesMes : 0;
 
         // Safe-to-spend semanal
-        $contasPendentesSemana   = Bill::where('user_id',$uid)->where('status','pendente')->whereBetween('vencimento',[$hoje,$semanaFim])->where('tipo','pagar')->sum('valor');
-        $entradasEsperadasSemana = Bill::where('user_id',$uid)->where('status','pendente')->whereBetween('vencimento',[$hoje,$semanaFim])->where('tipo','receber')->sum('valor');
+        $contasPendentesSemana   = Bill::where('user_id',$uid)->where('status','pendente')->whereBetween('vencimento',[$hoje,$semanaFim])->where('tipo','pagar')->sum(DB::raw('valor - valor_pago'));
+        $entradasEsperadasSemana = Bill::where('user_id',$uid)->where('status','pendente')->whereBetween('vencimento',[$hoje,$semanaFim])->where('tipo','receber')->sum(DB::raw('valor - valor_pago'));
         $diasRestantesSemana     = max(1, $hoje->diffInDays($semanaFim) + 1);
         $podeGastarSemana        = ((float)$saldoTotal + (float)$entradasEsperadasSemana - (float)$contasPendentesSemana) / $diasRestantesSemana;
 
@@ -48,7 +49,7 @@ class DashboardController extends Controller
 
         $avisos = $this->gerarAvisos($uid, $hoje, $mesFim);
 
-        $gastosRecorrentes = $this->calcularGastosRecorrentes($uid);
+        $gastosRecorrentes = Bill::custoFixoMensal($uid);
 
         // Lembretes pendentes NUNCA somem, mesmo vencidos (essencial pra TDAH);
         // concluídos antigos saem da lista pra não acumular ruído.
@@ -105,27 +106,4 @@ class DashboardController extends Controller
         return $avisos;
     }
 
-    private function calcularGastosRecorrentes(int $uid): array
-    {
-        $recorrentes = Bill::where('user_id', $uid)
-            ->where('recorrente', true)
-            ->where('tipo', 'pagar')
-            ->orderByDesc('vencimento')
-            ->get()
-            ->unique('descricao'); // mantém só a ocorrência mais recente de cada conta recorrente
-
-        $totalMensal = $recorrentes->sum(function ($bill) {
-            $multiplicador = match ($bill->recorrencia) {
-                'semanal' => 52 / 12,
-                'anual'   => 1 / 12,
-                default   => 1, // mensal
-            };
-            return $bill->valor * $multiplicador;
-        });
-
-        return [
-            'total' => round($totalMensal, 2),
-            'qtd'   => $recorrentes->count(),
-        ];
-    }
 }
