@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-03 (V8: fixo × dia a dia, pagamento parcial, totais em Contas)
+Última atualização: 2026-07-03 (V9: lançamento em sequência, sugestões, comparação mensal, PWA, backup automático)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -199,6 +199,26 @@ Migrations rodadas em produção:
 - Conta pessoal (`andrexster@gmail.com`) teve `trial_ends_at` forçado pra ontem propositalmente, a pedido
   do usuário, pra validar a tela de bloqueio/paywall na prática antes de resgatar o próprio código
 - QA aprovado
+
+### V9 — 5 melhorias de qualidade (2026-07-03)
+- **Lançamento em sequência**: chips "Hoje/Ontem" no campo data + botão secundário
+  "Salvar e lançar outro" (`continuar=1` → redirect de volta pro form). Funciona também
+  quando o modal anti-impulso intercepta (`e.submitter` capturado em `tentarEnviar`,
+  hidden input recriado em `confirmarEnvio` porque `form.submit()` nativo não repassa o botão)
+- **Sugestões de descrição**: `TransactionController::create` envia as 10 descrições mais
+  recentes distintas do usuário → `<datalist>` no input (menos digitação)
+- **Relatórios com contexto**: "▲/▼ X% vs mês anterior" nos cards Entrou/Saiu; cores
+  semânticas (gastar menos = verde; receber menos = âmbar); null-safe quando mês anterior vazio
+- **PWA-lite**: `public/manifest.json` + theme-color + apple-touch-icon — instalável na tela
+  inicial do celular. O manifest precisa ser copiado pro public_html no deploy (docroot separado)
+- **Backup diário automático**: `php artisan finfoco:backup` (dump gzipado em
+  `storage/app/backups`, retenção `--keep=14`). Hostinger bloqueia `shell_exec`/`exec` e não
+  dá `crontab` via SSH → comando usa `proc_open` (permitido) com binário por caminho direto
+  (`/usr/bin/mysqldump`) e gzip em PHP; agendamento via `terminating()` no AppServiceProvider:
+  primeira requisição do dia em produção dispara o backup após a resposta (lock atômico em
+  cache file, marca `backup_diario_em`). Validado em produção: backup gerado no primeiro hit
+- QA em produção com usuário descartável (removido): manifest 200, "Salvar e lançar outro"
+  redireciona pro form, sugestões presentes, relatórios 200
 
 ### V8 — Fixo × Dia a dia + Pagamento parcial + Totais (2026-07-03)
 
