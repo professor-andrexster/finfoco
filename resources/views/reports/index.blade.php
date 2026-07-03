@@ -49,6 +49,12 @@
             <p class="text-2xl font-bold" style="color:#16A34A">
                 +&nbsp;{{ number_format($entradas, 2, ',', '.') }}
             </p>
+            @if($deltaEntradas !== null)
+            {{-- entrar mais = bom (verde); entrar menos = atenção --}}
+            <p class="text-xs mt-1 font-medium" style="color:{{ $deltaEntradas >= 0 ? '#16A34A' : '#D97706' }}">
+                {{ $deltaEntradas >= 0 ? '▲' : '▼' }} {{ abs($deltaEntradas) }}% vs mês anterior
+            </p>
+            @endif
         </div>
         <div class="card p-5">
             <div class="flex items-center gap-1.5 mb-2">
@@ -58,6 +64,12 @@
             <p class="text-2xl font-bold" style="color:#DC2626">
                 −&nbsp;{{ number_format($saidas, 2, ',', '.') }}
             </p>
+            @if($deltaSaidas !== null)
+            {{-- gastar menos = bom (verde); gastar mais = alerta (vermelho) --}}
+            <p class="text-xs mt-1 font-medium" style="color:{{ $deltaSaidas <= 0 ? '#16A34A' : '#DC2626' }}">
+                {{ $deltaSaidas <= 0 ? '▼' : '▲' }} {{ abs($deltaSaidas) }}% vs mês anterior
+            </p>
+            @endif
         </div>
         <div class="card p-5" style="border-top: 3px solid {{ $resultado >= 0 ? '#16A34A' : '#DC2626' }}">
             <div class="flex items-center gap-1.5 mb-2">

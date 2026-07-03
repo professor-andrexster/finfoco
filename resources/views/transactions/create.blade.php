@@ -16,6 +16,7 @@
     <div x-data="{
         tipo: '{{ old('tipo','saida') }}',
         valor: '{{ old('valor') }}',
+        continuar: false,
         mostrarPausa: false,
         countdown: 10,
         countdownTimer: null,
@@ -29,6 +30,8 @@
         },
 
         tentarEnviar(e) {
+            // guarda qual botão enviou (submit() nativo do modal não repassa o botão)
+            this.continuar = e.submitter && e.submitter.name === 'continuar';
             if (this.tipo === 'saida' && parseFloat(this.valor) > this.limiteImpulso) {
                 e.preventDefault();
                 this.mostrarPausa = true;
@@ -48,6 +51,11 @@
         confirmarEnvio() {
             clearInterval(this.countdownTimer);
             this.mostrarPausa = false;
+            if (this.continuar) {
+                const h = document.createElement('input');
+                h.type = 'hidden'; h.name = 'continuar'; h.value = '1';
+                this.$refs.formLancamento.appendChild(h);
+            }
             this.$refs.formLancamento.submit();
         }
     }">
@@ -123,12 +131,19 @@
                 </p>
             </div>
 
-            {{-- Descrição --}}
+            {{-- Descrição (com sugestões do histórico) --}}
             <div>
                 <label for="descricao" class="block text-sm font-medium mb-2 text-foco-muted">Descrição</label>
-                <input type="text" id="descricao" name="descricao" maxlength="60"
+                <input type="text" id="descricao" name="descricao" maxlength="60" list="sugestoes-descricao"
                        value="{{ old('descricao') }}" placeholder="Ex: Mercado, Salário..."
                        class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                @if($sugestoes->isNotEmpty())
+                <datalist id="sugestoes-descricao">
+                    @foreach($sugestoes as $s)
+                    <option value="{{ $s }}">
+                    @endforeach
+                </datalist>
+                @endif
             </div>
 
             {{-- Categoria: chips sempre visíveis — 1 clique, nada escondido (memória zero) --}}
@@ -155,18 +170,36 @@
                 </div>
             </div>
 
-            {{-- Data --}}
-            <div>
+            {{-- Data: chips rápidos + campo pra outras datas --}}
+            <div x-data="{ data: '{{ old('data', date('Y-m-d')) }}', hoje: '{{ date('Y-m-d') }}', ontem: '{{ date('Y-m-d', strtotime('-1 day')) }}' }">
                 <label for="data" class="block text-sm font-medium mb-2 text-foco-muted">Data</label>
-                <input type="date" id="data" name="data"
-                       value="{{ old('data', date('Y-m-d')) }}"
-                       class="w-full border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                <div class="flex gap-2">
+                    <button type="button" @click="data = hoje"
+                            :class="data === hoje ? 'border-foco-accent bg-foco-accent/10 text-foco-accent font-semibold' : 'border-foco-border text-foco-muted'"
+                            class="border-2 rounded-xl px-4 py-3 text-sm transition-colors">
+                        Hoje
+                    </button>
+                    <button type="button" @click="data = ontem"
+                            :class="data === ontem ? 'border-foco-accent bg-foco-accent/10 text-foco-accent font-semibold' : 'border-foco-border text-foco-muted'"
+                            class="border-2 rounded-xl px-4 py-3 text-sm transition-colors">
+                        Ontem
+                    </button>
+                    <input type="date" id="data" name="data" x-model="data"
+                           class="flex-1 border border-foco-border rounded-xl px-4 py-3 bg-white text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                </div>
             </div>
 
             <button type="submit"
                     class="btn-primary w-full bg-foco-accent hover:bg-foco-accent/80 text-white py-4 rounded-2xl flex items-center justify-center gap-3 transition-colors shadow-lg">
                 <i data-lucide="save" class="w-6 h-6"></i>
                 Salvar lançamento
+            </button>
+
+            {{-- Registrar vários em sequência sem sair do formulário --}}
+            <button type="submit" name="continuar" value="1"
+                    class="w-full py-3 rounded-2xl border-2 border-foco-accent/40 text-foco-accent hover:bg-foco-accent/5 transition-colors flex items-center justify-center gap-2 text-sm font-semibold">
+                <i data-lucide="list-plus" class="w-4 h-4"></i>
+                Salvar e lançar outro
             </button>
         </form>
     </div>

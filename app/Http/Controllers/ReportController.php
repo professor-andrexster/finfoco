@@ -39,6 +39,18 @@ class ReportController extends Controller
 
         $custoFixoBase = Bill::custoFixoMensal($uid);
 
+        // Comparação com o mês anterior (contexto: estou melhorando ou piorando?)
+        $mesAnteriorInicio = $ref->copy()->subMonth()->startOfMonth();
+        $mesAnteriorFim    = $ref->copy()->subMonth()->endOfMonth();
+        $doMesAnterior = Transaction::where('user_id', $uid)
+            ->whereDate('data', '>=', $mesAnteriorInicio)
+            ->whereDate('data', '<=', $mesAnteriorFim);
+        $saidasAnterior   = (float) (clone $doMesAnterior)->where('tipo', 'saida')->sum('valor');
+        $entradasAnterior = (float) (clone $doMesAnterior)->where('tipo', 'entrada')->sum('valor');
+
+        $deltaSaidas   = $saidasAnterior   > 0 ? round((((float) $saidas   - $saidasAnterior)   / $saidasAnterior)   * 100) : null;
+        $deltaEntradas = $entradasAnterior > 0 ? round((((float) $entradas - $entradasAnterior) / $entradasAnterior) * 100) : null;
+
         // Saídas agrupadas por categoria, da maior pra menor
         $porCategoria = (clone $doMes)->with('categoria')
             ->where('tipo', 'saida')
@@ -63,6 +75,8 @@ class ReportController extends Controller
             'gastoContas'   => $gastoContas,
             'gastoDiaADia'  => $gastoDiaADia,
             'custoFixoBase' => $custoFixoBase,
+            'deltaSaidas'   => $deltaSaidas,
+            'deltaEntradas' => $deltaEntradas,
             'porCategoria'  => $porCategoria,
         ]);
     }

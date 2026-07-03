@@ -11,7 +11,16 @@ class TransactionController extends Controller
     public function create()
     {
         $categorias = Category::disponiveis()->orderBy('nome')->get();
-        return view('transactions.create', compact('categorias'));
+
+        // Descrições recentes do usuário viram sugestões do campo (menos digitação)
+        $sugestoes = Transaction::where('user_id', auth()->id())
+            ->select('descricao')
+            ->groupBy('descricao')
+            ->orderByRaw('MAX(created_at) DESC')
+            ->limit(10)
+            ->pluck('descricao');
+
+        return view('transactions.create', compact('categorias', 'sugestoes'));
     }
 
     public function store(Request $request)
@@ -31,6 +40,12 @@ class TransactionController extends Controller
         ]);
 
         Transaction::create($data + ['user_id' => auth()->id()]);
+
+        // "Salvar e lançar outro": volta pro formulário pra registrar em sequência
+        if ($request->boolean('continuar')) {
+            return redirect()->route('transactions.create')->with('sucesso', 'Lançamento salvo! Pode lançar o próximo.');
+        }
+
         return redirect()->route('dashboard')->with('sucesso', 'Lançamento salvo!');
     }
 
