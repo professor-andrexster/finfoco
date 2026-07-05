@@ -12,15 +12,21 @@ class TransactionController extends Controller
     {
         $categorias = Category::disponiveis()->orderBy('nome')->get();
 
-        // Descrições recentes do usuário viram sugestões do campo (menos digitação)
+        // Descrições recentes do usuário viram sugestões do campo (menos digitação).
+        // Só lançamentos manuais: pagamentos de contas geram sufixos "(3/12)"/"(parcial)"
+        // que não fazem sentido como sugestão.
         $sugestoes = Transaction::where('user_id', auth()->id())
+            ->whereNull('bill_id')
             ->select('descricao')
             ->groupBy('descricao')
             ->orderByRaw('MAX(created_at) DESC')
             ->limit(10)
             ->pluck('descricao');
 
-        return view('transactions.create', compact('categorias', 'sugestoes'));
+        $limiteImpulso = (float) \App\Models\Setting::get('limite_impulso', '150.00');
+        $valorHora     = (float) \App\Models\Setting::get('valor_hora', '0');
+
+        return view('transactions.create', compact('categorias', 'sugestoes', 'limiteImpulso', 'valorHora'));
     }
 
     public function store(Request $request)
@@ -92,8 +98,13 @@ class TransactionController extends Controller
     public function destroy(Transaction $transaction)
     {
         abort_unless($transaction->user_id === auth()->id(), 403);
+
+        $reverteu = $this->reverterPagamentoDeConta($transaction);
         $transaction->delete();
-        return redirect()->back()->with('sucesso', 'Lançamento excluído!');
+
+        return redirect()->back()->with('sucesso', $reverteu
+            ? 'Lançamento excluído — a conta correspondente voltou a pendente.'
+            : 'Lançamento excluído!');
     }
 
     public function bulkDestroy(Request $request)
@@ -105,12 +116,43 @@ class TransactionController extends Controller
             'ids.required' => 'Selecione ao menos um lançamento.',
         ]);
 
-        $excluidos = Transaction::where('user_id', auth()->id())
+        $transacoes = Transaction::where('user_id', auth()->id())
             ->whereIn('id', $data['ids'])
-            ->delete();
+            ->get();
 
-        return redirect()->route('history.index')
-            ->with('sucesso', "{$excluidos} lançamento(s) excluído(s)!");
+        $revertidas = 0;
+        foreach ($transacoes as $t) {
+            if ($this->reverterPagamentoDeConta($t)) $revertidas++;
+            $t->delete();
+        }
+
+        $msg = $transacoes->count() . ' lançamento(s) excluído(s)!';
+        if ($revertidas) $msg .= " {$revertidas} conta(s) voltou/voltaram a pendente.";
+
+        return redirect()->route('history.index')->with('sucesso', $msg);
+    }
+
+    /**
+     * Excluir um lançamento que veio do pagamento de uma conta desfaz o pagamento:
+     * devolve o valor abatido e, se a conta estava quitada, volta pra pendente.
+     * (A próxima ocorrência de recorrente já criada não é removida — o usuário
+     * pode excluí-la manualmente se for o caso.)
+     */
+    private function reverterPagamentoDeConta(Transaction $transaction): bool
+    {
+        if (!$transaction->bill_id || !$transaction->bill) {
+            return false;
+        }
+
+        $bill = $transaction->bill;
+        $bill->valor_pago = max(0, (float) $bill->valor_pago - (float) $transaction->valor);
+        if (in_array($bill->status, ['pago', 'recebido'])) {
+            $bill->status  = 'pendente';
+            $bill->pago_em = null;
+        }
+        $bill->save();
+
+        return true;
     }
 
     public function history(Request $request)

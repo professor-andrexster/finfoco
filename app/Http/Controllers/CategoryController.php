@@ -9,8 +9,10 @@ class CategoryController extends Controller
 {
     public function index()
     {
+        // Contagem restrita ao usuário logado: em categorias globais, o count sem
+        // filtro somaria lançamentos de TODOS os usuários (número errado + vazamento)
         $categorias = Category::disponiveis()
-            ->withCount('transactions')
+            ->withCount(['transactions' => fn($q) => $q->where('user_id', auth()->id())])
             ->orderByRaw('user_id IS NOT NULL, nome')
             ->get();
         return view('categories.index', compact('categorias'));

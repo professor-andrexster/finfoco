@@ -2,11 +2,6 @@
 @section('title', 'Novo Lançamento')
 
 @section('content')
-@php
-    $limiteImpulso = (float) \App\Models\Setting::get('limite_impulso', '150.00');
-    $valorHora     = (float) \App\Models\Setting::get('valor_hora', '0');
-@endphp
-
 <div class="max-w-lg mx-auto">
     <h1 class="text-2xl font-bold mb-6 flex items-center gap-2">
         <i data-lucide="plus-circle" class="w-6 h-6 text-foco-accent"></i>

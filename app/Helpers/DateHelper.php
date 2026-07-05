@@ -15,10 +15,12 @@ class DateHelper
         if ($diff == 0)  return 'hoje';
         if ($diff == 1)  return 'amanhã';
         if ($diff == -1) return 'ontem';
-        if ($diff > 1)   return "em {$diff} dias";
-        if ($diff < -1)  return 'há ' . abs($diff) . ' dias';
 
-        return $data->format('d/m/Y');
+        // Além de 30 dias, "em 300 dias" não ajuda ninguém — data absoluta é mais clara
+        if (abs($diff) > 30) return $data->format('d/m/Y');
+
+        if ($diff > 1)   return "em {$diff} dias";
+        return 'há ' . abs($diff) . ' dias';
     }
 
     public static function semaforo(Carbon|string $vencimento): string
