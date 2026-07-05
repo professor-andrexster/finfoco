@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-03 (V9: lançamento em sequência, sugestões, comparação mensal, PWA, backup automático)
+Última atualização: 2026-07-05 (V10: reset de senha, avisos por e-mail, meta dia a dia, evolução 6 meses, repetir lançamento, recorrência editável, onboarding, CSV)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -199,6 +199,40 @@ Migrations rodadas em produção:
 - Conta pessoal (`andrexster@gmail.com`) teve `trial_ends_at` forçado pra ontem propositalmente, a pedido
   do usuário, pra validar a tela de bloqueio/paywall na prática antes de resgatar o próprio código
 - QA aprovado
+
+### V10 — 8 melhorias (2026-07-05)
+1. **Recuperação de senha**: `PasswordResetController` (request/email/reset/update), rotas
+   `password.*` (nomes exigidos pelo notification), views standalone, link "Esqueci minha
+   senha" no login, e-mail pt-BR via `ResetPassword::toMailUsing` no AppServiceProvider,
+   resposta neutra (não revela e-mails), throttle 5/min. Fluxo E2E testado
+2. **Aviso diário de contas por e-mail**: `finfoco:avisar-vencimentos` — um e-mail por
+   usuário com atrasadas + vence hoje + vence amanhã (view HTML pura em
+   `emails/aviso-vencimentos`, sem markdown → sem dependência de ext-dom). Disparado 1x/dia
+   pelo tráfego via `rodarRotinaDiaria()` (helper extraído; backup usa o mesmo)
+3. **Meta do dia a dia**: setting `meta_dia_a_dia` (3º campo em Configurações) + barra de
+   progresso no dashboard (gasto manual do mês — `bill_id IS NULL` — vs meta; verde <80%,
+   âmbar 80–99%, vermelho ≥100%)
+4. **Evolução 6 meses nos Relatórios**: barras CSS entrou×saiu (verde/vermelho fixos), meses
+   clicáveis navegam o relatório; uma query agrupada por `DATE_FORMAT('%Y-%m')`
+5. **Repetir lançamento**: `POST /lancamento/{t}/repetir` duplica com data de hoje; botão
+   copy-plus no histórico
+6. **Recorrência editável** em contas não parceladas: `_cobranca` (avulsa|recorrente) +
+   frequência no bills/edit; parcelas seguem imutáveis
+7. **Onboarding**: card de 3 passos no dashboard enquanto faltar conta fixa ou lançamento
+8. **Exportar CSV**: `GET /historico/exportar` respeitando os filtros da tela (query
+   compartilhada via `queryHistorico()`); BOM UTF-8 + `;` pro Excel pt-BR
+
+**Mail em produção configurado**: `MAIL_MAILER=sendmail` (`/usr/sbin/sendmail -t -i`),
+from `noreply@finfoco.nexialabs.com.br`. Teste real enviado pra andrexster@gmail.com sem
+exceção — deliverability (inbox vs spam) a confirmar pelo usuário.
+
+**Dev local**: PHP 8.3 local NÃO tem ext-dom (php8.3-xml) — e-mails markdown do Laravel
+(reset de senha) não renderizam localmente; view HTML pura renderiza normal. Produção tem
+ext-dom. Instalar local: `sudo apt-get install -y php8.3-xml`.
+
+QA V10: fluxo completo de reset (token→nova senha→login novo), avisos renderizando com
+assunto/valores certos, meta 500 com gasto 75 → "cabem 425", CSV com BOM+";", recorrência
+alterada e persistida, onboarding aparece pra usuário novo em produção e some após os passos.
 
 ### V9 — 5 melhorias de qualidade (2026-07-03)
 - **Lançamento em sequência**: chips "Hoje/Ontem" no campo data + botão secundário
