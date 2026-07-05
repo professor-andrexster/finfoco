@@ -39,6 +39,26 @@ class ReportController extends Controller
 
         $custoFixoBase = Bill::custoFixoMensal($uid);
 
+        // Evolução: entradas × saídas dos últimos 6 meses (terminando no mês exibido)
+        $evolucaoInicio = $ref->copy()->subMonths(5)->startOfMonth();
+        $porMesTipo = Transaction::where('user_id', $uid)
+            ->whereDate('data', '>=', $evolucaoInicio)
+            ->whereDate('data', '<=', $fim)
+            ->selectRaw("DATE_FORMAT(data, '%Y-%m') as ym, tipo, SUM(valor) as total")
+            ->groupBy('ym', 'tipo')
+            ->get()
+            ->groupBy('ym');
+
+        $evolucao = collect(range(5, 0))->map(function ($i) use ($ref, $porMesTipo) {
+            $mes = $ref->copy()->subMonths($i);
+            $ym  = $mes->format('Y-m');
+            return [
+                'mes'     => $mes,
+                'entrada' => (float) ($porMesTipo->get($ym)?->firstWhere('tipo', 'entrada')->total ?? 0),
+                'saida'   => (float) ($porMesTipo->get($ym)?->firstWhere('tipo', 'saida')->total ?? 0),
+            ];
+        })->values();
+
         // Comparação com o mês anterior (contexto: estou melhorando ou piorando?)
         $mesAnteriorInicio = $ref->copy()->subMonth()->startOfMonth();
         $mesAnteriorFim    = $ref->copy()->subMonth()->endOfMonth();
@@ -77,6 +97,7 @@ class ReportController extends Controller
             'custoFixoBase' => $custoFixoBase,
             'deltaSaidas'   => $deltaSaidas,
             'deltaEntradas' => $deltaEntradas,
+            'evolucao'      => $evolucao,
             'porCategoria'  => $porCategoria,
         ]);
     }

@@ -97,8 +97,14 @@
     <div x-data="{ selecionando: false, marcados: [] }">
 
         {{-- Barra de seleção em lote --}}
-        <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center justify-between mb-3 gap-3">
             <p class="text-xs text-foco-muted">{{ $transactions->total() }} lançamento(s)</p>
+            <a href="{{ route('history.export', request()->query()) }}"
+               class="text-xs font-semibold text-foco-muted hover:text-foco-accent flex items-center gap-1.5 transition-colors ml-auto"
+               title="Baixa os lançamentos filtrados em CSV">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                Exportar CSV
+            </a>
             <button type="button"
                     @click="selecionando = !selecionando; if (!selecionando) marcados = []"
                     :class="selecionando ? 'text-foco-accent' : 'text-foco-muted hover:text-foco-text'"
@@ -141,6 +147,13 @@
                         <span class="font-bold text-lg {{ $t->tipo === 'entrada' ? 'text-foco-entrada' : 'text-foco-saida' }}">
                             {{ $t->tipo === 'entrada' ? '+' : '-' }}R$ {{ number_format($t->valor, 2, ',', '.') }}
                         </span>
+                        <form action="{{ route('transactions.repeat', $t) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="text-foco-muted hover:text-foco-entrada transition-colors p-1"
+                                    title="Repetir com a data de hoje">
+                                <i data-lucide="copy-plus" class="w-4 h-4"></i>
+                            </button>
+                        </form>
                         <a href="{{ route('transactions.edit', $t) }}"
                            class="text-foco-muted hover:text-foco-accent transition-colors p-1">
                             <i data-lucide="pencil" class="w-4 h-4"></i>

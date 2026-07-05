@@ -42,6 +42,20 @@
                        value="{{ old('limite_impulso', $limiteImpulso) }}" placeholder="150,00"
                        class="w-full bg-white border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
             </div>
+
+            {{-- Meta do dia a dia --}}
+            <div>
+                <label for="meta_dia_a_dia" class="block text-sm font-medium mb-1 text-foco-muted">
+                    Meta de gasto do dia a dia por mês (R$)
+                </label>
+                <p class="text-xs text-foco-muted mb-2">
+                    Quanto você quer gastar no máximo por mês fora das contas fixas e parcelas.
+                    O dashboard mostra a barra de progresso.
+                </p>
+                <input type="number" id="meta_dia_a_dia" name="meta_dia_a_dia" step="0.01" min="0"
+                       value="{{ old('meta_dia_a_dia', $metaDiaADia) }}" placeholder="Ex: 800,00"
+                       class="w-full bg-white border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+            </div>
         </div>
 
         <button type="submit"

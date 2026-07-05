@@ -4,6 +4,44 @@
 @section('content')
 @php use App\Helpers\DateHelper; @endphp
 
+{{-- ONBOARDING: 3 passos até o sistema fazer sentido --}}
+@if(!$temLancamento || !$temContaFixa)
+@php
+    $passos = [
+        ['feito' => $temContaFixa,  'titulo' => 'Cadastre suas contas fixas',   'sub' => 'Aluguel, água, luz, internet...', 'rota' => route('bills.create'),        'icone' => 'repeat'],
+        ['feito' => $temLancamento, 'titulo' => 'Lance seu primeiro gasto',     'sub' => 'Leva menos de 10 segundos',       'rota' => route('transactions.create'), 'icone' => 'plus-circle'],
+        ['feito' => false,          'titulo' => 'Veja pra onde o dinheiro vai', 'sub' => 'Relatório fixo × dia a dia',      'rota' => route('reports.index'),       'icone' => 'bar-chart-3'],
+    ];
+@endphp
+<div class="card p-5 mb-6" style="border-top:3px solid #6366F1">
+    <p class="text-sm font-semibold text-foco-text mb-1 flex items-center gap-2">
+        <i data-lucide="rocket" class="w-4 h-4 text-foco-accent"></i>
+        Bem-vindo ao FinFoco! Comece por aqui:
+    </p>
+    <p class="text-xs text-foco-muted mb-4">Três passos e o sistema começa a trabalhar pra você.</p>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        @foreach($passos as $i => $p)
+        <a href="{{ $p['rota'] }}"
+           class="flex items-start gap-3 p-3 rounded-xl border-2 transition-colors {{ $p['feito'] ? 'border-foco-entrada/40 bg-green-50/50' : 'border-foco-border hover:border-foco-accent/60' }}">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold
+                        {{ $p['feito'] ? 'text-white' : 'text-foco-accent' }}"
+                 style="background:{{ $p['feito'] ? '#16A34A' : '#EEF2FF' }}">
+                @if($p['feito'])
+                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                @else
+                    {{ $i + 1 }}
+                @endif
+            </div>
+            <div class="min-w-0">
+                <p class="text-sm font-semibold {{ $p['feito'] ? 'text-foco-muted line-through' : 'text-foco-text' }}">{{ $p['titulo'] }}</p>
+                <p class="text-xs text-foco-muted mt-0.5">{{ $p['sub'] }}</p>
+            </div>
+        </a>
+        @endforeach
+    </div>
+</div>
+@endif
+
 {{-- AVISOS --}}
 @php
     $danger  = collect($avisos)->where('tipo','danger')->first();
@@ -200,6 +238,38 @@
     </div>
 
 </div>{{-- /x-data visao --}}
+
+{{-- META DO DIA A DIA --}}
+@if($metaDiaADia > 0)
+@php
+    $pctMeta  = min(100, round($gastoDiaADia / $metaDiaADia * 100));
+    $corMeta  = $pctMeta >= 100 ? '#DC2626' : ($pctMeta >= 80 ? '#D97706' : '#16A34A');
+    $sobraMeta = max(0, $metaDiaADia - $gastoDiaADia);
+@endphp
+<div class="card p-5 mb-6">
+    <div class="flex items-center justify-between mb-2 flex-wrap gap-1">
+        <p class="text-sm font-semibold text-foco-text flex items-center gap-2">
+            <i data-lucide="target" class="w-4 h-4" style="color:{{ $corMeta }}"></i>
+            Meta do dia a dia
+        </p>
+        <p class="text-sm">
+            <strong style="color:{{ $corMeta }}">R$&nbsp;{{ number_format($gastoDiaADia, 2, ',', '.') }}</strong>
+            <span class="text-foco-muted">de R$&nbsp;{{ number_format($metaDiaADia, 2, ',', '.') }} · {{ $pctMeta }}%</span>
+        </p>
+    </div>
+    <div class="w-full h-3 rounded-full bg-foco-border overflow-hidden">
+        <div class="h-full rounded-full transition-all duration-500"
+             style="width:{{ $pctMeta }}%; background:{{ $corMeta }}"></div>
+    </div>
+    <p class="text-xs text-foco-muted mt-2">
+        @if($pctMeta >= 100)
+            Meta do mês estourada — cada gasto agora é escolha consciente.
+        @else
+            Ainda cabem R$&nbsp;{{ number_format($sobraMeta, 2, ',', '.') }} no dia a dia este mês.
+        @endif
+    </p>
+</div>
+@endif
 
 {{-- CTA --}}
 <div class="flex justify-center mb-8">

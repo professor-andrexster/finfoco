@@ -47,9 +47,22 @@ class DashboardController extends Controller
 
         $semaforoPodeGastar = $podeGastarHoje < 0 ? ($podeGastarHoje < -50 ? 'red' : 'yellow') : 'green';
 
+        // Onboarding: guia de 3 passos até o usuário ter conta fixa + lançamento
+        $temLancamento = Transaction::where('user_id', $uid)->exists();
+        $temContaFixa  = Bill::where('user_id', $uid)->where('recorrente', true)->exists();
+
         $avisos = $this->gerarAvisos($uid, $hoje, $mesFim);
 
         $gastosRecorrentes = Bill::custoFixoMensal($uid);
+
+        // Meta do dia a dia: gastos manuais do mês (sem bill_id) vs meta definida
+        $metaDiaADia  = (float) \App\Models\Setting::get('meta_dia_a_dia', 0);
+        $gastoDiaADia = $metaDiaADia > 0
+            ? (float) Transaction::where('user_id', $uid)->where('tipo', 'saida')
+                ->whereNull('bill_id')
+                ->whereDate('data', '>=', $mesInicio)->whereDate('data', '<=', $mesFim)
+                ->sum('valor')
+            : 0.0;
 
         // Lembretes pendentes NUNCA somem, mesmo vencidos (essencial pra TDAH);
         // concluídos antigos saem da lista pra não acumular ruído.
@@ -69,6 +82,8 @@ class DashboardController extends Controller
             'saldoTotal','gastosHoje','gastosSemanais','entradasSemana','entradaMes','saidaMes',
             'podeGastarHoje','podeGastarSemana','podeGastarMes','semaforoPodeGastar',
             'contasPendentesMes','gastosRecorrentes',
+            'metaDiaADia','gastoDiaADia',
+            'temLancamento','temContaFixa',
             'avisos','lembretes','ultimasTransacoes'
         ));
     }

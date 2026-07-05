@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\BillingController;
@@ -19,6 +20,12 @@ Route::middleware('guest')->group(function () {
     Route::post('/login',   [LoginController::class,   'store'])->middleware('throttle:10,1');
     Route::get('/register', [RegisterController::class,'create'])->name('register');
     Route::post('/register',[RegisterController::class,'store'])->middleware('throttle:10,1');
+
+    // Recuperação de senha (nomes de rota exigidos pelo notification do Laravel)
+    Route::get('/esqueci-senha',           [PasswordResetController::class, 'request'])->name('password.request');
+    Route::post('/esqueci-senha',          [PasswordResetController::class, 'email'])->name('password.email')->middleware('throttle:5,1');
+    Route::get('/redefinir-senha/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
+    Route::post('/redefinir-senha',        [PasswordResetController::class, 'update'])->name('password.update')->middleware('throttle:5,1');
 });
 
 Route::post('/logout', [LoginController::class, 'destroy'])->name('logout')->middleware('auth');
@@ -43,10 +50,12 @@ Route::middleware(['auth', 'subscribed'])->group(function () {
     Route::get('/lancamento/{transaction}/editar', [TransactionController::class, 'edit'])->name('transactions.edit');
     Route::put('/lancamento/{transaction}',        [TransactionController::class, 'update'])->name('transactions.update');
     Route::delete('/lancamento/{transaction}',     [TransactionController::class, 'destroy'])->name('transactions.destroy');
+    Route::post('/lancamento/{transaction}/repetir', [TransactionController::class, 'repeat'])->name('transactions.repeat');
     Route::delete('/historico/lote',               [TransactionController::class, 'bulkDestroy'])->name('transactions.bulkDestroy');
 
     // Histórico
-    Route::get('/historico', [TransactionController::class, 'history'])->name('history.index');
+    Route::get('/historico',          [TransactionController::class, 'history'])->name('history.index');
+    Route::get('/historico/exportar', [TransactionController::class, 'exportCsv'])->name('history.export');
 
     // Categorias
     Route::get('/categorias',                   [CategoryController::class, 'index'])->name('categories.index');

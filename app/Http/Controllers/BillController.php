@@ -155,11 +155,23 @@ class BillController extends Controller
             'valor'        => 'required|numeric|min:0.01',
             'vencimento'   => 'required|date',
             'categoria_id' => ['nullable', $this->categoriaDisponivel()],
+            '_cobranca'    => 'nullable|in:avulsa,recorrente',
+            'recorrencia'  => 'nullable|in:semanal,mensal,anual',
         ], [
             'descricao.required'  => 'Informe a descrição.',
             'valor.required'      => 'Informe o valor.',
             'vencimento.required' => 'Informe a data de vencimento.',
         ]);
+
+        // Recorrência editável só em contas sem parcelas (mudar numa parcela
+        // quebraria a consistência do parcelamento — segue imutável)
+        if (!$bill->isParcelado() && !empty($data['_cobranca'])) {
+            $data['recorrente']  = $data['_cobranca'] === 'recorrente';
+            $data['recorrencia'] = $data['recorrente'] ? ($data['recorrencia'] ?? 'mensal') : null;
+        } else {
+            unset($data['recorrencia']);
+        }
+        unset($data['_cobranca']);
 
         $bill->update($data);
 

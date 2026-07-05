@@ -82,6 +82,42 @@
         </div>
     </div>
 
+    {{-- Evolução 6 meses: barras entrou (verde) × saiu (vermelho) --}}
+    @php $maxEvolucao = max(1, $evolucao->max('entrada'), $evolucao->max('saida')); @endphp
+    @if($evolucao->sum('entrada') + $evolucao->sum('saida') > 0)
+    <div class="flex items-center gap-2 mb-3">
+        <i data-lucide="trending-up" class="w-4 h-4 text-foco-accent"></i>
+        <h2 class="text-sm font-semibold text-foco-text uppercase tracking-wide">Evolução (6 meses)</h2>
+        <span class="ml-auto text-[11px] text-foco-muted flex items-center gap-3">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:#16A34A"></span> Entrou</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:#DC2626"></span> Saiu</span>
+        </span>
+    </div>
+    <div class="card p-5 mb-8">
+        <div class="flex items-end justify-between gap-2" style="height:150px">
+            @foreach($evolucao as $ponto)
+            @php
+                $hEntrada = round($ponto['entrada'] / $maxEvolucao * 100);
+                $hSaida   = round($ponto['saida']   / $maxEvolucao * 100);
+                $abrev    = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][$ponto['mes']->month];
+            @endphp
+            <div class="flex-1 flex flex-col items-center gap-1 h-full">
+                <div class="flex items-end gap-1 flex-1 w-full justify-center">
+                    <div class="rounded-t-md" style="width:38%; max-width:26px; height:{{ max($hEntrada, $ponto['entrada'] > 0 ? 3 : 0) }}%; background:#16A34A"
+                         title="Entrou: R$ {{ number_format($ponto['entrada'], 2, ',', '.') }}"></div>
+                    <div class="rounded-t-md" style="width:38%; max-width:26px; height:{{ max($hSaida, $ponto['saida'] > 0 ? 3 : 0) }}%; background:#DC2626"
+                         title="Saiu: R$ {{ number_format($ponto['saida'], 2, ',', '.') }}"></div>
+                </div>
+                <a href="{{ route('reports.index', ['mes' => $ponto['mes']->format('Y-m')]) }}"
+                   class="text-[11px] font-medium {{ $ponto['mes']->isSameMonth($ref) ? 'text-foco-accent font-bold' : 'text-foco-muted' }} hover:text-foco-accent">
+                    {{ $abrev }}
+                </a>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
     {{-- Fixo × Dia a dia: quanto do mês foi obrigação e quanto foi escolha --}}
     @if($saidas > 0)
     @php

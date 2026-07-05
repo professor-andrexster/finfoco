@@ -72,6 +72,23 @@ class TransactionController extends Controller
         return redirect()->route('history.index')->with('sucesso', 'Lançamento atualizado!');
     }
 
+    public function repeat(Transaction $transaction)
+    {
+        abort_unless($transaction->user_id === auth()->id(), 403);
+
+        Transaction::create([
+            'user_id'      => auth()->id(),
+            'tipo'         => $transaction->tipo,
+            'valor'        => $transaction->valor,
+            'descricao'    => $transaction->descricao,
+            'categoria_id' => $transaction->categoria_id,
+            'data'         => today(),
+        ]);
+
+        return redirect()->route('history.index')
+            ->with('sucesso', "\"{$transaction->descricao}\" repetido com a data de hoje!");
+    }
+
     public function destroy(Transaction $transaction)
     {
         abort_unless($transaction->user_id === auth()->id(), 403);
@@ -104,22 +121,51 @@ class TransactionController extends Controller
         $dataInicio  = $request->input('data_inicio');
         $dataFim     = $request->input('data_fim');
 
-        $query = Transaction::with('categoria')
-            ->where('user_id', auth()->id())
-            ->orderBy('data', 'desc')
-            ->orderBy('created_at', 'desc');
-
-        if ($busca) $query->where('descricao', 'like', "%{$busca}%");
-        if ($tipo && in_array($tipo, ['entrada', 'saida'])) $query->where('tipo', $tipo);
-        if ($categoriaId) $query->where('categoria_id', $categoriaId);
-        if ($dataInicio) $query->whereDate('data', '>=', $dataInicio);
-        if ($dataFim) $query->whereDate('data', '<=', $dataFim);
-
-        $transactions = $query->paginate(20)->withQueryString();
+        $transactions = $this->queryHistorico($request)->paginate(20)->withQueryString();
         $categorias   = Category::disponiveis()->orderBy('nome')->get();
 
         return view('history.index', compact(
             'transactions', 'busca', 'tipo', 'categoriaId', 'dataInicio', 'dataFim', 'categorias'
         ));
+    }
+
+    public function exportCsv(Request $request)
+    {
+        $transactions = $this->queryHistorico($request)->get();
+        $nomeArquivo  = 'finfoco-historico-' . now()->format('Y-m-d') . '.csv';
+
+        return response()->streamDownload(function () use ($transactions) {
+            $saida = fopen('php://output', 'w');
+            // BOM UTF-8 + separador ";" — abre certo no Excel pt-BR
+            fwrite($saida, "\xEF\xBB\xBF");
+            fputcsv($saida, ['Data', 'Tipo', 'Descrição', 'Categoria', 'Valor (R$)'], ';');
+            foreach ($transactions as $t) {
+                fputcsv($saida, [
+                    $t->data->format('d/m/Y'),
+                    $t->tipo === 'entrada' ? 'Entrada' : 'Saída',
+                    $t->descricao,
+                    $t->categoria?->nome ?? '',
+                    number_format((float) $t->valor, 2, ',', ''),
+                ], ';');
+            }
+            fclose($saida);
+        }, $nomeArquivo, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /** Query do histórico com os filtros da tela (compartilhada com a exportação CSV). */
+    private function queryHistorico(Request $request)
+    {
+        $query = Transaction::with('categoria')
+            ->where('user_id', auth()->id())
+            ->orderBy('data', 'desc')
+            ->orderBy('created_at', 'desc');
+
+        if ($busca = $request->input('busca')) $query->where('descricao', 'like', "%{$busca}%");
+        if (in_array($request->input('tipo'), ['entrada', 'saida'])) $query->where('tipo', $request->input('tipo'));
+        if ($categoriaId = $request->input('categoria_id')) $query->where('categoria_id', $categoriaId);
+        if ($dataInicio = $request->input('data_inicio')) $query->whereDate('data', '>=', $dataInicio);
+        if ($dataFim = $request->input('data_fim')) $query->whereDate('data', '<=', $dataFim);
+
+        return $query;
     }
 }

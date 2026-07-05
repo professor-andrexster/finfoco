@@ -32,6 +32,45 @@
             </div>
         </div>
 
+        @if(!$bill->isParcelado())
+        {{-- Tipo de cobrança: editável só em contas sem parcelas --}}
+        <div class="card p-5"
+             x-data="{ cobranca: '{{ old('_cobranca', $bill->recorrente ? 'recorrente' : 'avulsa') }}' }">
+            <label class="block text-xs font-semibold uppercase tracking-widest text-foco-muted mb-3">Tipo de cobrança</label>
+            <div class="grid grid-cols-2 gap-2">
+                <label class="cursor-pointer">
+                    <input type="radio" name="_cobranca" value="avulsa" x-model="cobranca" class="sr-only">
+                    <div :class="cobranca==='avulsa' ? 'border-foco-accent bg-indigo-50 text-foco-accent' : 'border-foco-border text-foco-muted'"
+                         class="border-2 rounded-xl p-3 flex items-center justify-center gap-2 text-sm font-semibold transition-colors">
+                        <i data-lucide="circle-check" class="w-4 h-4"></i> Avulsa
+                    </div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="_cobranca" value="recorrente" x-model="cobranca" class="sr-only">
+                    <div :class="cobranca==='recorrente' ? 'border-foco-accent bg-indigo-50 text-foco-accent' : 'border-foco-border text-foco-muted'"
+                         class="border-2 rounded-xl p-3 flex items-center justify-center gap-2 text-sm font-semibold transition-colors">
+                        <i data-lucide="repeat" class="w-4 h-4"></i> Recorrente
+                    </div>
+                </label>
+            </div>
+            <div x-show="cobranca==='recorrente'" x-cloak style="display:none" class="mt-3">
+                <label class="block text-xs font-semibold uppercase tracking-widest text-foco-muted mb-2">Frequência</label>
+                <div class="grid grid-cols-3 gap-2">
+                    @foreach(['mensal'=>'Mensal','semanal'=>'Semanal','anual'=>'Anual'] as $val=>$label)
+                    <label class="cursor-pointer">
+                        <input type="radio" name="recorrencia" value="{{ $val }}"
+                               {{ old('recorrencia', $bill->recorrencia ?? 'mensal')===$val?'checked':'' }}
+                               :disabled="cobranca!=='recorrente'" class="sr-only peer">
+                        <div class="border-2 border-foco-border peer-checked:border-foco-accent peer-checked:bg-indigo-50 peer-checked:text-foco-accent rounded-xl p-2.5 text-center text-sm font-semibold transition-colors text-foco-muted">
+                            {{ $label }}
+                        </div>
+                    </label>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        @endif
+
         <div>
             <label class="block text-xs font-semibold uppercase tracking-widest text-foco-muted mb-2">Categoria (opcional)</label>
             <select name="categoria_id" class="w-full border border-foco-border rounded-xl px-4 py-3 text-foco-text bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-foco-accent">
