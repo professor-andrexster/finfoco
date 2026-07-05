@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-05 (V10: reset de senha, avisos por e-mail, meta dia a dia, evolução 6 meses, repetir lançamento, recorrência editável, onboarding, CSV)
+Última atualização: 2026-07-05 (V11: auditoria de consistência — 6 correções; produção sem erros de usuário desde V7)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -199,6 +199,24 @@ Migrations rodadas em produção:
 - Conta pessoal (`andrexster@gmail.com`) teve `trial_ends_at` forçado pra ontem propositalmente, a pedido
   do usuário, pra validar a tela de bloqueio/paywall na prática antes de resgatar o próprio código
 - QA aprovado
+
+### V11 — Auditoria de consistência (2026-07-05)
+Sinais checados: log de produção (7 erros, todos antigos e já corrigidos — zero erro de
+usuário desde a V7) e diff completo de schema produção × migrate:fresh local (idênticos a
+menos de cosmética tinyint(1)/(4) e ordem de enum).
+
+Correções:
+1. Categorias: `withCount` de lançamentos escopado ao usuário (globais somavam de todos)
+2. Sugestões de descrição: só manuais (`whereNull bill_id`)
+3. **Excluir lançamento de pagamento desfaz o pagamento**: `reverterPagamentoDeConta()`
+   devolve `valor_pago` e volta a conta pra pendente (destroy + bulkDestroy). Próxima
+   ocorrência de recorrente já criada NÃO é removida (exclusão manual se preciso)
+4. `DateHelper::formatarDataRelativa`: >30 dias → data absoluta d/m/Y
+5. `welcome.blade.php` morto removido
+6. `transactions/create`: Setting::get movido pro controller (view não faz query)
+
+QA: pagamento excluído → conta pendente/pago_em NULL/valor_pago 0 ✔; sugestão não lista
+descrição vinda de conta ✔; data 2027 aparece absoluta ✔; contagens de categoria próprias ✔
 
 ### V10 — 8 melhorias (2026-07-05)
 1. **Recuperação de senha**: `PasswordResetController` (request/email/reset/update), rotas
