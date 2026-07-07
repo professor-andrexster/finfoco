@@ -103,6 +103,11 @@ Migrations rodadas em produção:
 - **Verificação Google Search Console (2026-07-07)**: meta tag `google-site-verification`
   adicionada ao head da landing, deployada (view:clear + view:cache) e confirmada em
   produção via curl — falta só o clique em "Verificar" no console + envio do sitemap
+- **Verificação Search Console — método arquivo HTML (2026-07-07)**: propriedade tipo
+  "Domínio" só aceita DNS TXT (verificação falhou); migrada para propriedade de Prefixo de
+  URL. Criado `public/google899748e972a66c9c.html`, deployado via SCP pro public_html e
+  confirmado servindo 200 em produção. A meta tag continua na landing (os dois métodos
+  valem pra prefixo de URL)
 
 ### V1 — Módulos 1 a 6 (2026-06-28)
 - Migrations: categories, transactions, alerts
@@ -510,8 +515,9 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## PENDÊNCIAS / BLOQUEIOS
-- Google Search Console: meta tag de verificação já está no ar em produção — falta o usuário
-  clicar em "Verificar" no console e enviar o `sitemap.xml`
+- Google Search Console (propriedade de Prefixo de URL): meta tag + arquivo HTML de
+  verificação já estão no ar em produção — falta o usuário clicar em "Verificar" no console
+  e enviar o `sitemap.xml`
 - (Opcional) Criar imagem OG raster 1200×630 pra melhorar preview em redes sociais
 - Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HISTÓRICO).
 
@@ -543,6 +549,15 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-07 — Search Console: verificação por arquivo HTML (prefixo de URL) — commit 115dabb
+- Propriedade criada como "Domínio" só aceita verificação por DNS TXT — falhou; usuário
+  migrou para propriedade de Prefixo de URL
+- Criado `public/google899748e972a66c9c.html` (conteúdo:
+  `google-site-verification: google899748e972a66c9c.html`)
+- Deployado via SCP pro public_html da Hostinger; confirmado servindo 200 em produção
+- Meta tag `google-site-verification` segue na landing (ambos os métodos valem pra prefixo)
+- Pendência restante: usuário clicar em "Verificar" e enviar o sitemap.xml
 
 ### 2026-07-07 — Meta tag de verificação do Google Search Console — commit 949923a
 - Meta tag `google-site-verification` (token XBiTmaa-B-fDn0VqbYbBKhopfXqkPBJXbFiOkl7ejeU)
