@@ -522,6 +522,10 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
   desatualizada (sem Stripe/SMTP). Até corrigir o script, preferir deploy cirúrgico via
   SSH/SCP dos arquivos alterados (chave `~/.ssh/finfoco_deploy`, porta 65002) + limpar/refazer
   caches remotos (route/view)
+- **Deploy do FinFoco é exclusivamente Hostinger via SSH/SCP** — não conectar o repo a
+  plataformas de deploy automático (Vercel/Netlify etc.). Um projeto órfão "finfoco" na
+  Vercel (preset Next.js, criado em 13/06/2026) disparava deploy inútil a cada push e foi
+  removido em 2026-07-07
 
 ---
 
@@ -558,6 +562,15 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-07 — Projeto órfão na Vercel removido
+- Usuário recebia e-mails de deploy da Vercel; investigação achou um projeto "finfoco" na
+  conta professor-andrexster (criado em 13/06/2026, preset Next.js) conectado ao repo
+  GitHub — cada push disparava um deploy inútil (FinFoco é Laravel e roda na Hostinger)
+- Removido via `vercel project rm finfoco` (CLI autenticada localmente)
+- Produção na Hostinger, repo GitHub e demais projetos Vercel do usuário intactos
+- Decisão registrada em DECISÕES: deploy exclusivamente Hostinger via SSH/SCP; nunca
+  conectar o repo a plataformas de deploy automático
 
 ### 2026-07-07 — Imagem OG + landing visível para logados — commit 18f6b25
 - `public/og-image.png` criada (1200×630, 117 KB) via script Python/PIL, fonte Inter,
