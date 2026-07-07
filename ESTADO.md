@@ -100,6 +100,9 @@ Migrations rodadas em produção:
   `MarketingController@home` (route:cache do servidor não aceita closures); deploy cirúrgico
   via SSH/SCP (só os 5 arquivos alterados); caches remotos refeitos; QA em produção aprovado
   (landing 200 com JSON-LD, `/painel` → 302 /login, login/register/sitemap 200)
+- **Verificação Google Search Console (2026-07-07)**: meta tag `google-site-verification`
+  adicionada ao head da landing, deployada (view:clear + view:cache) e confirmada em
+  produção via curl — falta só o clique em "Verificar" no console + envio do sitemap
 
 ### V1 — Módulos 1 a 6 (2026-06-28)
 - Migrations: categories, transactions, alerts
@@ -507,7 +510,8 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## PENDÊNCIAS / BLOQUEIOS
-- Cadastrar o site no Google Search Console e enviar o `sitemap.xml`
+- Google Search Console: meta tag de verificação já está no ar em produção — falta o usuário
+  clicar em "Verificar" no console e enviar o `sitemap.xml`
 - (Opcional) Criar imagem OG raster 1200×630 pra melhorar preview em redes sociais
 - Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HISTÓRICO).
 
@@ -539,6 +543,12 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-07 — Meta tag de verificação do Google Search Console — commit 949923a
+- Meta tag `google-site-verification` (token XBiTmaa-B-fDn0VqbYbBKhopfXqkPBJXbFiOkl7ejeU)
+  adicionada ao head de `resources/views/marketing/home.blade.php`
+- Deployada na Hostinger (view:clear + view:cache OK) e confirmada em produção via curl
+- Próximo passo (usuário): clicar em "Verificar" no Search Console e enviar o sitemap
 
 ### 2026-07-07 — Deploy da landing page em produção — commit 458e19f
 - Rota `/` convertida de closure para `MarketingController@home` (novo
