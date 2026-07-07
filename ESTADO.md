@@ -1,9 +1,10 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-05 (V11: auditoria de consistência — 6 correções; produção sem erros de usuário desde V7)
+Última atualização: 2026-07-07 (V12: landing page pública com SEO na raiz do domínio; dashboard movido para /painel)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
 Sistema SaaS multi-usuário com autenticação, 9 módulos, parcelamentos e diagnóstico completo aplicado.
+Raiz `/` agora é landing page pública de divulgação (SEO completo); o app vive em `/painel`.
 **Cobrança recorrente via Stripe (Laravel Cashier) está 100% funcional em produção**, modo LIVE,
 testada de ponta a ponta com fluxo real de trial em produção (registro real via HTTP, dashboard/`/assinatura`
 acessíveis durante o trial, bloqueio correto após expiração) — não é só "deployada", é validada com uso real.
@@ -77,6 +78,24 @@ Migrations rodadas em produção:
 ---
 
 ## O QUE FOI CONSTRUÍDO
+
+### V12 — Landing page pública com SEO (2026-07-07)
+- `resources/views/marketing/home.blade.php`: landing de divulgação servida na raiz `/`
+  para visitantes; usuário autenticado que acessa `/` é redirecionado ao painel
+- Rota do dashboard movida de `/` para `/painel`, mantendo o nome de rota `dashboard`
+  (nenhum `route('dashboard')` quebrou; redirect pós-login continua funcionando)
+- SEO técnico: HTML semântico (header/nav/main/section/article/footer, h1 único, FAQ com
+  `<details>/<summary>`), meta description, canonical, Open Graph, Twitter Card, JSON-LD
+  `WebApplication` (oferta R$ 19,98/mês BRL, 7 dias grátis) + `FAQPage`
+- **Bug encontrado e corrigido**: `@context` do JSON-LD colide com a diretiva Blade
+  `@context` do Laravel 11 — blocos JSON-LD envolvidos em `@verbatim`
+- `public/robots.txt` atualizado: libera a landing, bloqueia rotas privadas (/painel,
+  /lancamento, /historico etc.) e aponta o sitemap
+- `public/sitemap.xml` estático criado com `/`, `/register` e `/login`
+- Conteúdo: hero com CTA "Começar teste grátis de 7 dias", seção problema/TDAH, como
+  funciona em 3 passos, 6 recursos, preço R$ 19,98/mês, FAQ com 5 perguntas, CTA final e rodapé
+- QA local: HTTP 200 na `/`, JSON-LD validado como JSON, `/painel` sem login → 302 /login,
+  sitemap e robots respondem 200
 
 ### V1 — Módulos 1 a 6 (2026-06-28)
 - Migrations: categories, transactions, alerts
@@ -470,6 +489,10 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 - Migrations que alteram tabelas já existentes em produção devem sempre checar `Schema::hasColumn()` antes
   de adicionar coluna, pois o schema de produção pode ter divergido do arquivo de migration commitado
   (drift histórico via import SQL manual no phpMyAdmin) — ver bug do `updated_at` em `bills` (V6)
+- Raiz `/` é a landing pública; o app fica em `/painel` mas o nome de rota continua `dashboard`
+  (todos os `route('dashboard')` do código seguem válidos sem alteração)
+- JSON-LD em Blade DEVE ser envolvido em `@verbatim`: `@context` do schema.org colide com a
+  diretiva Blade `@context` do Laravel 11 e quebra a renderização silenciosamente
 
 ---
 
@@ -504,6 +527,15 @@ Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HIST
 ---
 
 ## HISTÓRICO
+
+### 2026-07-07 — Landing page pública com SEO (V12) — commit 8f2ae00
+- Nova view `marketing/home.blade.php` servida na raiz `/` para visitantes; autenticado é
+  redirecionado ao painel
+- Dashboard movido de `/` para `/painel` mantendo o nome de rota `dashboard` (zero quebra)
+- SEO completo: HTML semântico, meta description, canonical, OG, Twitter Card, JSON-LD
+  WebApplication + FAQPage (envolvidos em `@verbatim` por colisão de `@context` com Blade)
+- `robots.txt` bloqueando rotas privadas + `sitemap.xml` estático (/, /register, /login)
+- QA local: `/` 200, JSON-LD válido, `/painel` sem login → 302 /login, sitemap/robots 200
 
 ### 2026-07-02 — Dashboard: visão mensal + gastos recorrentes + fix de schema drift em `bills`
 - Terceira opção "Este mês" no toggle do dashboard (além de Hoje/Esta semana)
