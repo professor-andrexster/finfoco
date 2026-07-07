@@ -108,6 +108,9 @@ Migrations rodadas em produção:
   URL. Criado `public/google899748e972a66c9c.html`, deployado via SCP pro public_html e
   confirmado servindo 200 em produção. A meta tag continua na landing (os dois métodos
   valem pra prefixo de URL)
+- **Propriedade VERIFICADA no Search Console (2026-07-07)**: Prefixo de URL
+  `https://finfoco.nexialabs.com.br/`, método arquivo HTML — resta enviar o sitemap e
+  solicitar indexação da home
 
 ### V1 — Módulos 1 a 6 (2026-06-28)
 - Migrations: categories, transactions, alerts
@@ -515,9 +518,8 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## PENDÊNCIAS / BLOQUEIOS
-- Google Search Console (propriedade de Prefixo de URL): meta tag + arquivo HTML de
-  verificação já estão no ar em produção — falta o usuário clicar em "Verificar" no console
-  e enviar o `sitemap.xml`
+- Google Search Console: propriedade VERIFICADA (2026-07-07) — falta o usuário enviar o
+  `sitemap.xml` no menu Sitemaps e solicitar indexação da home via Inspeção de URL
 - (Opcional) Criar imagem OG raster 1200×630 pra melhorar preview em redes sociais
 - Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HISTÓRICO).
 
@@ -549,6 +551,12 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-07 — Search Console: propriedade verificada com sucesso
+- Propriedade de Prefixo de URL `https://finfoco.nexialabs.com.br/` verificada no Google
+  Search Console via método arquivo HTML
+- Pendência reduzida a: enviar `sitemap.xml` no menu Sitemaps + solicitar indexação da
+  home via Inspeção de URL (opcional: imagem OG 1200×630)
 
 ### 2026-07-07 — Search Console: verificação por arquivo HTML (prefixo de URL) — commit 115dabb
 - Propriedade criada como "Domínio" só aceita verificação por DNS TXT — falhou; usuário
