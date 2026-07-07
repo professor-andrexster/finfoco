@@ -9,6 +9,7 @@
     <meta name="description" content="Registre gastos em menos de 3 cliques, veja seu saldo na hora e receba alertas antes de estourar o orçamento. Feito para cérebros com TDAH. Teste grátis por 7 dias.">
     <link rel="canonical" href="https://finfoco.nexialabs.com.br/">
     <meta name="robots" content="index, follow">
+    <meta name="google-site-verification" content="XBiTmaa-B-fDn0VqbYbBKhopfXqkPBJXbFiOkl7ejeU">
 
     {{-- Open Graph --}}
     <meta property="og:type" content="website">
