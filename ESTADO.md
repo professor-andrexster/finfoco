@@ -81,7 +81,8 @@ Migrations rodadas em produção:
 
 ### V12 — Landing page pública com SEO (2026-07-07)
 - `resources/views/marketing/home.blade.php`: landing de divulgação servida na raiz `/`
-  para visitantes; usuário autenticado que acessa `/` é redirecionado ao painel
+  (inicialmente autenticado era redirecionado ao painel; corrigido no mesmo dia — landing
+  sempre visível, com CTA adaptado via `@auth`, ver bullet da imagem OG abaixo)
 - Rota do dashboard movida de `/` para `/painel`, mantendo o nome de rota `dashboard`
   (nenhum `route('dashboard')` quebrou; redirect pós-login continua funcionando)
 - SEO técnico: HTML semântico (header/nav/main/section/article/footer, h1 único, FAQ com
@@ -111,6 +112,13 @@ Migrations rodadas em produção:
 - **Propriedade VERIFICADA no Search Console (2026-07-07)**: Prefixo de URL
   `https://finfoco.nexialabs.com.br/`, método arquivo HTML — resta enviar o sitemap e
   solicitar indexação da home
+- **Imagem OG + correção de UX (2026-07-07)**: `public/og-image.png` (1200×630, 117 KB)
+  gerada via script Python/PIL com fonte Inter e identidade FinFoco; `og:image` aponta pro
+  PNG (com width/height/alt) e `twitter:card` virou `summary_large_image` — confirmada 200
+  em produção. Correção reportada pelo usuário: `/` redirecionava logado direto ao painel
+  e ele nunca via a landing; agora `MarketingController@home` sempre renderiza a landing e
+  o header mostra "Abrir painel" (CTA do hero vira "Abrir meu painel") via `@auth`/`@else`.
+  Deployado na Hostinger com view:clear/view:cache
 
 ### V1 — Módulos 1 a 6 (2026-06-28)
 - Migrations: categories, transactions, alerts
@@ -520,7 +528,6 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ## PENDÊNCIAS / BLOQUEIOS
 - Google Search Console: propriedade VERIFICADA (2026-07-07) — falta o usuário enviar o
   `sitemap.xml` no menu Sitemaps e solicitar indexação da home via Inspeção de URL
-- (Opcional) Criar imagem OG raster 1200×630 pra melhorar preview em redes sociais
 - Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HISTÓRICO).
 
 ---
@@ -551,6 +558,15 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-07 — Imagem OG + landing visível para logados — commit 18f6b25
+- `public/og-image.png` criada (1200×630, 117 KB) via script Python/PIL, fonte Inter,
+  identidade FinFoco; `og:image` atualizado com width/height/alt; `twitter:card` →
+  `summary_large_image`; confirmada servindo 200 em produção — pendência da imagem OG resolvida
+- Correção de UX reportada pelo usuário: `/` redirecionava logado ao painel e ele nunca
+  conseguia ver a landing. `MarketingController@home` agora sempre renderiza a landing;
+  header mostra "Abrir painel" e CTA do hero vira "Abrir meu painel" via `@auth`/`@else`
+- Deploy na Hostinger com view:clear/view:cache
 
 ### 2026-07-07 — Search Console: propriedade verificada com sucesso
 - Propriedade de Prefixo de URL `https://finfoco.nexialabs.com.br/` verificada no Google
