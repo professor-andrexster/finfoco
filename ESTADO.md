@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-07 (V12: landing page pública com SEO na raiz do domínio; dashboard movido para /painel)
+Última atualização: 2026-07-07 (V12 deployada em produção: landing page pública com SEO na raiz do domínio; dashboard em /painel)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -96,6 +96,10 @@ Migrations rodadas em produção:
   funciona em 3 passos, 6 recursos, preço R$ 19,98/mês, FAQ com 5 perguntas, CTA final e rodapé
 - QA local: HTTP 200 na `/`, JSON-LD validado como JSON, `/painel` sem login → 302 /login,
   sitemap e robots respondem 200
+- **Deploy em produção (2026-07-07)**: rota `/` convertida de closure para
+  `MarketingController@home` (route:cache do servidor não aceita closures); deploy cirúrgico
+  via SSH/SCP (só os 5 arquivos alterados); caches remotos refeitos; QA em produção aprovado
+  (landing 200 com JSON-LD, `/painel` → 302 /login, login/register/sitemap 200)
 
 ### V1 — Módulos 1 a 6 (2026-06-28)
 - Migrations: categories, transactions, alerts
@@ -493,11 +497,19 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
   (todos os `route('dashboard')` do código seguem válidos sem alteração)
 - JSON-LD em Blade DEVE ser envolvido em `@verbatim`: `@context` do schema.org colide com a
   diretiva Blade `@context` do Laravel 11 e quebra a renderização silenciosamente
+- Rotas NUNCA podem usar closure: produção roda `php artisan route:cache`, que não serializa
+  closures — toda rota deve apontar pra Controller (ver conversão da `/` pra `MarketingController@home`)
+- **AVISO — `deploy_hostinger.sh` sobrescreve o `.env` de produção** com uma versão local
+  desatualizada (sem Stripe/SMTP). Até corrigir o script, preferir deploy cirúrgico via
+  SSH/SCP dos arquivos alterados (chave `~/.ssh/finfoco_deploy`, porta 65002) + limpar/refazer
+  caches remotos (route/view)
 
 ---
 
 ## PENDÊNCIAS / BLOQUEIOS
-Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HISTÓRICO).
+- Cadastrar o site no Google Search Console e enviar o `sitemap.xml`
+- (Opcional) Criar imagem OG raster 1200×630 pra melhorar preview em redes sociais
+- Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HISTÓRICO).
 
 ---
 
@@ -527,6 +539,19 @@ Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HIST
 ---
 
 ## HISTÓRICO
+
+### 2026-07-07 — Deploy da landing page em produção — commit 458e19f
+- Rota `/` convertida de closure para `MarketingController@home` (novo
+  `app/Http/Controllers/MarketingController.php`): o servidor usa `route:cache`, que não
+  aceita rotas com closure
+- Deploy cirúrgico via SSH/SCP (chave `~/.ssh/finfoco_deploy`, porta 65002): subiu apenas
+  MarketingController.php, routes/web.php, marketing/home.blade.php, robots.txt e sitemap.xml
+- `deploy_hostinger.sh` NÃO foi usado: ele sobrescreve o `.env` de produção com versão
+  desatualizada (sem Stripe/SMTP) — registrado como aviso em DECISÕES
+- Caches remotos: route:clear, view:clear, route:cache, view:cache — todos OK
+- QA em produção: `/` 200 com a landing (title + 2 blocos JSON-LD), `/painel` sem login →
+  302 /login, `/login` e `/register` 200, `sitemap.xml` 200, `robots.txt` atualizado
+- Pendência registrada: Google Search Console + sitemap; opcional imagem OG 1200×630
 
 ### 2026-07-07 — Landing page pública com SEO (V12) — commit 8f2ae00
 - Nova view `marketing/home.blade.php` servida na raiz `/` para visitantes; autenticado é
