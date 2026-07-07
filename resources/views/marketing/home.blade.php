@@ -17,14 +17,18 @@
     <meta property="og:site_name" content="FinFoco">
     <meta property="og:title" content="FinFoco — Controle financeiro simples para quem tem TDAH">
     <meta property="og:description" content="Registre gastos em menos de 3 cliques, veja seu saldo na hora e receba alertas antes de estourar o orçamento. Teste grátis por 7 dias.">
-    <meta property="og:image" content="https://finfoco.nexialabs.com.br/logo.svg">
+    <meta property="og:image" content="https://finfoco.nexialabs.com.br/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:alt" content="FinFoco — Controle financeiro para cérebros com TDAH">
     <meta property="og:locale" content="pt_BR">
 
     {{-- Twitter Card --}}
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="FinFoco — Controle financeiro simples para quem tem TDAH">
     <meta name="twitter:description" content="Registre gastos em menos de 3 cliques, veja seu saldo na hora e receba alertas antes de estourar o orçamento. Teste grátis por 7 dias.">
-    <meta name="twitter:image" content="https://finfoco.nexialabs.com.br/logo.svg">
+    <meta name="twitter:image" content="https://finfoco.nexialabs.com.br/og-image.png">
 
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="manifest" href="/manifest.json">
@@ -152,13 +156,21 @@
                 <span class="text-xl font-bold">Fin<span class="text-foco-accent">Foco</span></span>
             </a>
             <div class="flex items-center gap-3">
-                <a href="{{ route('login') }}" class="text-sm font-semibold text-foco-muted hover:text-foco-text px-3 py-2">
-                    Entrar
-                </a>
-                <a href="{{ route('register') }}"
-                   class="bg-foco-accent hover:bg-indigo-600 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors">
-                    Criar conta grátis
-                </a>
+                @auth
+                    <a href="{{ route('dashboard') }}"
+                       class="bg-foco-accent hover:bg-indigo-600 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors inline-flex items-center gap-2">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4" aria-hidden="true"></i>
+                        Abrir painel
+                    </a>
+                @else
+                    <a href="{{ route('login') }}" class="text-sm font-semibold text-foco-muted hover:text-foco-text px-3 py-2">
+                        Entrar
+                    </a>
+                    <a href="{{ route('register') }}"
+                       class="bg-foco-accent hover:bg-indigo-600 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors">
+                        Criar conta grátis
+                    </a>
+                @endauth
             </div>
         </nav>
     </header>
@@ -178,10 +190,10 @@
                 antes de estourar o orçamento. Sem planilhas, sem categorias infinitas, sem culpa.
             </p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-                <a href="{{ route('register') }}"
+                <a href="{{ auth()->check() ? route('dashboard') : route('register') }}"
                    class="bg-foco-accent hover:bg-indigo-600 text-white text-lg font-bold px-8 py-4 rounded-xl transition-colors inline-flex items-center gap-2 w-full sm:w-auto justify-center">
                     <i data-lucide="rocket" class="w-5 h-5" aria-hidden="true"></i>
-                    Começar teste grátis de 7 dias
+                    @auth Abrir meu painel @else Começar teste grátis de 7 dias @endauth
                 </a>
                 <a href="#como-funciona"
                    class="text-foco-accent font-semibold text-lg px-6 py-4 inline-flex items-center gap-2">
