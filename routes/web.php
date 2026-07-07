@@ -8,6 +8,7 @@ use App\Http\Controllers\BillController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingController;
@@ -15,11 +16,7 @@ use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Landing pública (SEO) ────────────────────────────────────────────────────
-Route::get('/', function () {
-    return auth()->check()
-        ? redirect()->route('dashboard')
-        : view('marketing.home');
-})->name('home');
+Route::get('/', [MarketingController::class, 'home'])->name('home');
 
 // ─── Auth (público) ───────────────────────────────────────────────────────────
 Route::middleware('guest')->group(function () {
