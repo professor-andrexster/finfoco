@@ -14,6 +14,13 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
+// ─── Landing pública (SEO) ────────────────────────────────────────────────────
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : view('marketing.home');
+})->name('home');
+
 // ─── Auth (público) ───────────────────────────────────────────────────────────
 Route::middleware('guest')->group(function () {
     Route::get('/login',    [LoginController::class,   'create'])->name('login');
@@ -42,7 +49,7 @@ Route::middleware('auth')->group(function () {
 // ─── App (requer autenticação + assinatura ativa) ─────────────────────────────
 Route::middleware(['auth', 'subscribed'])->group(function () {
 
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/painel', [DashboardController::class, 'index'])->name('dashboard');
 
     // Lançamentos
     Route::get('/lancamento',                      [TransactionController::class, 'create'])->name('transactions.create');
