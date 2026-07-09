@@ -66,5 +66,46 @@
             </div>
         @endif
     </div>
+
+    {{-- Bloco 4: tabela de usuários em trial (para e-mail marketing) --}}
+    <div class="card rounded-2xl p-6 mt-8">
+        <h2 class="font-semibold text-foco-text flex items-center gap-2 mb-4">
+            <i data-lucide="hourglass" class="w-4 h-4 text-foco-alerta"></i>
+            Usuários em trial
+        </h2>
+
+        @if($usuariosEmTrial->isEmpty())
+            <p class="text-foco-muted text-sm py-6 text-center">Nenhum trial ativo no momento</p>
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-foco-muted border-b border-foco-border">
+                            <th class="py-2 pr-4 font-medium">E-mail</th>
+                            <th class="py-2 pr-4 font-medium">Nome</th>
+                            <th class="py-2 pr-4 font-medium">Cadastro</th>
+                            <th class="py-2 pr-4 font-medium">Dias em trial</th>
+                            <th class="py-2 pr-4 font-medium">Trial termina em</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($usuariosEmTrial as $usuario)
+                        <tr class="border-b border-foco-border last:border-0">
+                            <td class="py-3 pr-4 text-foco-text">{{ $usuario->email }}</td>
+                            <td class="py-3 pr-4 text-foco-text">{{ $usuario->name }}</td>
+                            <td class="py-3 pr-4 text-foco-muted">{{ $usuario->created_at->format('d/m/Y') }}</td>
+                            <td class="py-3 pr-4">
+                                <span class="text-xs font-semibold px-2 py-1 rounded-lg text-foco-alerta bg-foco-surface">
+                                    {{ (int) $usuario->created_at->diffInDays(now()) }} dias
+                                </span>
+                            </td>
+                            <td class="py-3 pr-4 text-foco-muted">{{ $usuario->trial_ends_at->format('d/m/Y') }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </div>
 </div>
 @endsection

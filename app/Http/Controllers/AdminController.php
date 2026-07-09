@@ -18,16 +18,20 @@ class AdminController extends Controller
             ->take(20)
             ->get();
 
-        $totalEmTrial = User::where('trial_ends_at', '>', now())
+        $usuariosEmTrial = User::where('trial_ends_at', '>', now())
             ->whereDoesntHave('subscriptions', function ($query) {
                 $query->where('stripe_status', 'active');
             })
-            ->count();
+            ->orderBy('created_at')
+            ->get(['name', 'email', 'created_at', 'trial_ends_at']);
+
+        $totalEmTrial = $usuariosEmTrial->count();
 
         return view('admin.vendas', compact(
             'totalAssinantesAtivos',
             'ultimasAssinaturas',
-            'totalEmTrial'
+            'totalEmTrial',
+            'usuariosEmTrial'
         ));
     }
 }

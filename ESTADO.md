@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-09 (V13: WhatsApp de suporte/vendas + dashboard admin de vendas — deployada em produção com sucesso)
+Última atualização: 2026-07-09 (V13 + incremento: tabela de usuários em trial em admin/vendas)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -113,6 +113,16 @@ Migrations rodadas em produção:
   Smoke test em produção: `/admin/vendas` → 302 sem sessão (esperado), landing
   pública 200 com link `wa.me/5531992799787` no HTML, `/configuracoes` → 302
   sem sessão
+- **Incremento (2026-07-09): tabela de usuários em trial**, a pedido do dono
+  do SaaS pra fazer e-mail marketing direcionado a quem está em trial.
+  `AdminController@vendas` agora traz `$usuariosEmTrial` com `get()`
+  (name/email/created_at/trial_ends_at) em vez de só `count()`; `$totalEmTrial`
+  passou a derivar dessa coleção. Nova tabela em `admin/vendas.blade.php`
+  abaixo dos cards existentes (e-mail, nome, data de cadastro, dias em trial,
+  data de término do trial), com estado vazio "Nenhum trial ativo no momento".
+  Correção pós-QA: `diffInDays()` retornava float longo (Carbon 3 tem modo
+  "precise" por padrão) — trocado por `(int) $usuario->created_at->diffInDays(now())`
+  pra exibir dias inteiros. QA aprovado.
 
 ### V12 — Landing page pública com SEO (2026-07-07)
 - `resources/views/marketing/home.blade.php`: landing de divulgação servida na raiz `/`
@@ -606,6 +616,16 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-09 — Admin/vendas: tabela de usuários em trial ativo (incremento V13)
+- Pedido do dono do SaaS: listar quem está em trial pra e-mail marketing direcionado
+- `AdminController@vendas`: `$usuariosEmTrial` agora vem de `->get()` (name/email/
+  created_at/trial_ends_at) em vez de só `->count()`; `$totalEmTrial` derivado da coleção
+- `admin/vendas.blade.php`: nova tabela abaixo dos cards (e-mail, nome, cadastro, dias em
+  trial, término do trial), estado vazio "Nenhum trial ativo no momento"
+- Correção pós-QA: `diffInDays()` devolvia float longo (Carbon 3 modo "precise" por padrão);
+  trocado por `(int) $usuario->created_at->diffInDays(now())`
+- QA aprovado
 
 ### 2026-07-09 — Deploy em produção: WhatsApp de suporte/vendas + dashboard admin de vendas (V13)
 - Nenhum arquivo de código mudou desde o commit `080a273` (a correção de cor já
