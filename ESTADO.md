@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-09 (V13: WhatsApp de suporte/vendas + dashboard admin de vendas — validado local, pendente deploy em produção)
+Última atualização: 2026-07-09 (V13: WhatsApp de suporte/vendas + dashboard admin de vendas — deployada em produção com sucesso)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -104,6 +104,15 @@ Migrations rodadas em produção:
   registra pelo fluxo normal e o seeder só promove depois). Idempotente,
   registrado em `DatabaseSeeder.php`
 - QA aprovado localmente
+- **Deploy em produção concluído (2026-07-09)**: deploy cirúrgico via rsync SSH
+  dos 11 arquivos da feature (sem tocar `.env`, sem rodar `deploy_hostinger.sh`
+  inteiro); `php artisan migrate --force` criou a coluna `is_admin` em
+  produção; `php artisan db:seed --class=AdminUserSeeder --force` rodado e
+  confirmado via tinker que `andrexster@gmail.com` está com `is_admin = true`
+  no banco de produção; caches config/route/view limpos e reconstruídos.
+  Smoke test em produção: `/admin/vendas` → 302 sem sessão (esperado), landing
+  pública 200 com link `wa.me/5531992799787` no HTML, `/configuracoes` → 302
+  sem sessão
 
 ### V12 — Landing page pública com SEO (2026-07-07)
 - `resources/views/marketing/home.blade.php`: landing de divulgação servida na raiz `/`
@@ -566,10 +575,8 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 - Google Search Console: propriedade VERIFICADA (2026-07-07) — falta o usuário enviar o
   `sitemap.xml` no menu Sitemaps e solicitar indexação da home via Inspeção de URL
 - Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HISTÓRICO).
-- **V13 (admin/vendas) ainda não foi deployada em produção**: falta rodar a migration
-  `add_is_admin_to_users_table` e o seeder `AdminUserSeeder` (ou promover
-  `andrexster@gmail.com` via tinker) no servidor, depois desse usuário já estar registrado
-  no banco de produção. Validado só localmente até aqui.
+- Nenhuma pendência de V13 (admin/vendas) — deployada em produção com sucesso em 2026-07-09
+  (ver HISTÓRICO).
 
 ---
 
@@ -599,6 +606,21 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-09 — Deploy em produção: WhatsApp de suporte/vendas + dashboard admin de vendas (V13)
+- Nenhum arquivo de código mudou desde o commit `080a273` (a correção de cor já
+  estava incluída nele) — esta entrada documenta só a operação de deploy
+- Deploy cirúrgico via rsync SSH dos 11 arquivos da feature, sem tocar `.env`
+  e sem rodar `deploy_hostinger.sh` inteiro
+- `php artisan migrate --force` em produção: coluna `is_admin` criada na
+  tabela `users`
+- `php artisan db:seed --class=AdminUserSeeder --force` em produção:
+  confirmado via tinker que `andrexster@gmail.com` está com `is_admin = true`
+  no banco de produção
+- Caches `config`, `route`, `view` limpos e reconstruídos em produção
+- Smoke test em produção: `/admin/vendas` → 302 sem sessão (esperado,
+  redireciona pro login), landing pública → 200 com link
+  `wa.me/5531992799787` presente no HTML, `/configuracoes` → 302 sem sessão
 
 ### 2026-07-09 — WhatsApp de suporte/vendas + dashboard admin de vendas (V13)
 - Botão "Falar no WhatsApp" (suporte, (33) 98465-6356) em `settings/index.blade.php`,
