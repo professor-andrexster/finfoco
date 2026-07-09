@@ -27,6 +27,12 @@ class User extends Authenticatable
             'trial_ends_at'     => 'datetime',
             'password'          => 'hashed',
             'lifetime_access'   => 'boolean',
+            'is_admin'          => 'boolean',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return (bool) $this->is_admin;
     }
 }

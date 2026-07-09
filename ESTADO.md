@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-07 (V12 deployada em produção: landing page pública com SEO na raiz do domínio; dashboard em /painel)
+Última atualização: 2026-07-09 (V13: WhatsApp de suporte/vendas + dashboard admin de vendas — validado local, pendente deploy em produção)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -78,6 +78,32 @@ Migrations rodadas em produção:
 ---
 
 ## O QUE FOI CONSTRUÍDO
+
+### V13 — WhatsApp de suporte/vendas + dashboard admin de vendas (2026-07-09)
+- **Suporte (usuários logados)**: botão "Falar no WhatsApp" em
+  `resources/views/settings/index.blade.php`, número (33) 98465-6356 →
+  `https://wa.me/5533984656356`, cor `foco-accent` (roxo — ação principal, não
+  `foco-entrada` verde, que tem significado fixo de entrada financeira)
+- **Vendas (landing pública)**: link "Falar com vendas" em
+  `resources/views/marketing/home.blade.php` (header e rodapé), número (31)
+  99279-9787 → `https://wa.me/5531992799787`, visível só pro visitante
+  deslogado (`@guest`/`@else` de `@auth`), some pra quem já está autenticado
+- **Dashboard admin de vendas**: nova rota `GET /admin/vendas`
+  (`AdminController@vendas`), protegida por middleware `admin` novo
+  (`app/Http/Middleware/EnsureIsAdmin.php`, alias registrado em
+  `bootstrap/app.php`) — barra com 403 quem não tem `is_admin = true`. Mostra
+  total de assinantes ativos (Cashier `stripe_status = 'active'`), total de
+  usuários em trial ativo e tabela das últimas 20 assinaturas (`with('user')`,
+  sem N+1)
+- Nova coluna `users.is_admin` (boolean, default false) via migration
+  `2026_07_09_132208_add_is_admin_to_users_table.php` — **fora** do
+  `$fillable` de `User` (protege contra escalada de privilégio via mass
+  assignment)
+- `database/seeders/AdminUserSeeder.php`: promove `andrexster@gmail.com` a
+  admin SE o usuário já existir no banco (não cria usuário — o admin se
+  registra pelo fluxo normal e o seeder só promove depois). Idempotente,
+  registrado em `DatabaseSeeder.php`
+- QA aprovado localmente
 
 ### V12 — Landing page pública com SEO (2026-07-07)
 - `resources/views/marketing/home.blade.php`: landing de divulgação servida na raiz `/`
@@ -526,6 +552,13 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
   plataformas de deploy automático (Vercel/Netlify etc.). Um projeto órfão "finfoco" na
   Vercel (preset Next.js, criado em 13/06/2026) disparava deploy inútil a cada push e foi
   removido em 2026-07-07
+- **Admin único via booleano, sem sistema de roles**: `users.is_admin` é um único booleano
+  pra um único usuário (o dono do SaaS) — decisão deliberada por ser caso de uso simples,
+  não vale criar abstração de permissões/roles pra 1 admin
+- `users.is_admin` fora do `$fillable` do Model `User` (mesma lógica de `lifetime_access`):
+  só pode ser setado por seeder/tinker direto no banco, nunca por mass assignment via form
+- Números de WhatsApp: suporte (33) 98465-6356 (usuários logados, em Configurações), vendas
+  (31) 99279-9787 (landing pública, só visitante deslogado)
 
 ---
 
@@ -533,6 +566,10 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 - Google Search Console: propriedade VERIFICADA (2026-07-07) — falta o usuário enviar o
   `sitemap.xml` no menu Sitemaps e solicitar indexação da home via Inspeção de URL
 - Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HISTÓRICO).
+- **V13 (admin/vendas) ainda não foi deployada em produção**: falta rodar a migration
+  `add_is_admin_to_users_table` e o seeder `AdminUserSeeder` (ou promover
+  `andrexster@gmail.com` via tinker) no servidor, depois desse usuário já estar registrado
+  no banco de produção. Validado só localmente até aqui.
 
 ---
 
@@ -562,6 +599,18 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-09 — WhatsApp de suporte/vendas + dashboard admin de vendas (V13)
+- Botão "Falar no WhatsApp" (suporte, (33) 98465-6356) em `settings/index.blade.php`,
+  cor `foco-accent`
+- Link "Falar com vendas" ((31) 99279-9787) na landing `marketing/home.blade.php`,
+  visível só a visitante deslogado
+- Nova rota `GET /admin/vendas` (`AdminController@vendas`) protegida por middleware
+  `admin` (`EnsureIsAdmin`, 403 se `is_admin` falso) — assinantes ativos, trials ativos,
+  últimas 20 assinaturas
+- Migration `add_is_admin_to_users_table` (coluna fora do `$fillable`) + seeder
+  `AdminUserSeeder` (idempotente, promove `andrexster@gmail.com` se já existir)
+- QA aprovado localmente; deploy em produção ainda pendente (ver PENDÊNCIAS)
 
 ### 2026-07-07 — Projeto órfão na Vercel removido
 - Usuário recebia e-mails de deploy da Vercel; investigação achou um projeto "finfoco" na

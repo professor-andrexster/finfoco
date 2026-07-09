@@ -163,6 +163,11 @@
                         Abrir painel
                     </a>
                 @else
+                    <a href="https://wa.me/5531992799787" target="_blank" rel="noopener"
+                       class="hidden sm:inline-flex items-center gap-2 text-sm font-semibold text-foco-muted hover:text-foco-text px-3 py-2">
+                        <i data-lucide="message-circle" class="w-4 h-4" aria-hidden="true"></i>
+                        Falar com vendas
+                    </a>
                     <a href="{{ route('login') }}" class="text-sm font-semibold text-foco-muted hover:text-foco-text px-3 py-2">
                         Entrar
                     </a>
@@ -389,6 +394,13 @@
             <nav aria-label="Links do rodapé" class="flex items-center gap-6">
                 <a href="#como-funciona" class="hover:text-foco-text">Como funciona</a>
                 <a href="#preco" class="hover:text-foco-text">Preço</a>
+                @guest
+                    <a href="https://wa.me/5531992799787" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-1.5 hover:text-foco-text sm:hidden">
+                        <i data-lucide="message-circle" class="w-4 h-4" aria-hidden="true"></i>
+                        Falar com vendas
+                    </a>
+                @endguest
                 <a href="{{ route('login') }}" class="hover:text-foco-text">Entrar</a>
                 <a href="{{ route('register') }}" class="hover:text-foco-text">Criar conta</a>
             </nav>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
@@ -98,4 +99,9 @@ Route::middleware(['auth', 'subscribed'])->group(function () {
     // Configurações
     Route::get('/configuracoes',  [SettingController::class, 'show'])->name('settings.show');
     Route::post('/configuracoes', [SettingController::class, 'update'])->name('settings.update');
+});
+
+// ─── Admin (requer autenticação + is_admin) ────────────────────────────────────
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/admin/vendas', [AdminController::class, 'vendas'])->name('admin.vendas');
 });

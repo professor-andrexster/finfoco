@@ -64,5 +64,21 @@
             Salvar configurações
         </button>
     </form>
+
+    {{-- Suporte --}}
+    <div class="card rounded-2xl p-6 mt-5">
+        <h2 class="font-semibold text-foco-text flex items-center gap-2 mb-2">
+            <i data-lucide="life-buoy" class="w-4 h-4 text-foco-accent"></i>
+            Precisa de ajuda?
+        </h2>
+        <p class="text-sm text-foco-muted mb-4">
+            Fale direto com o suporte pelo WhatsApp.
+        </p>
+        <a href="https://wa.me/5533984656356" target="_blank" rel="noopener"
+           class="btn-primary w-full bg-foco-accent hover:bg-foco-accent/80 text-white py-4 rounded-2xl flex items-center justify-center gap-3 transition-colors">
+            <i data-lucide="message-circle" class="w-6 h-6"></i>
+            Falar no WhatsApp
+        </a>
+    </div>
 </div>
 @endsection
