@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-09 (V13 + incremento: tabela de usuários em trial em admin/vendas)
+Última atualização: 2026-07-09 (V13 + incremento tabela de trial em admin/vendas — deployado em produção)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -123,6 +123,12 @@ Migrations rodadas em produção:
   Correção pós-QA: `diffInDays()` retornava float longo (Carbon 3 tem modo
   "precise" por padrão) — trocado por `(int) $usuario->created_at->diffInDays(now())`
   pra exibir dias inteiros. QA aprovado.
+- **Deploy em produção concluído (2026-07-09, commit `15cd9a0`)**: rsync
+  cirúrgico dos 2 arquivos alterados (`app/Http/Controllers/AdminController.php`
+  e `resources/views/admin/vendas.blade.php`), sem tocar `.env`; sem migration
+  nova (não houve mudança de schema nesta entrega). Caches config/route/view
+  limpos e reconstruídos. Smoke test em produção: `/admin/vendas` → 302 sem
+  sessão (redireciona pro login, esperado), landing pública → 200.
 
 ### V12 — Landing page pública com SEO (2026-07-07)
 - `resources/views/marketing/home.blade.php`: landing de divulgação servida na raiz `/`
@@ -616,6 +622,14 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-09 — Deploy em produção: tabela de usuários em trial em admin/vendas — commit 15cd9a0
+- Deploy cirúrgico via rsync SSH dos 2 arquivos alterados (`AdminController.php`
+  e `admin/vendas.blade.php`), sem tocar `.env` — sem migration nova, pois
+  esta entrega não mudou o schema
+- Caches config/route/view limpos e reconstruídos em produção
+- Smoke test: `/admin/vendas` → 302 sem sessão (esperado, redireciona pro
+  login), landing pública → 200
 
 ### 2026-07-09 — Admin/vendas: tabela de usuários em trial ativo (incremento V13)
 - Pedido do dono do SaaS: listar quem está em trial pra e-mail marketing direcionado
