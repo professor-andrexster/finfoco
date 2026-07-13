@@ -1,9 +1,11 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-09 (V13 + incremento tabela de trial em admin/vendas — deployado em produção)
+Última atualização: 2026-07-13 (V14 — Agenda TDAH fase 1 — deployada em produção)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
-Sistema SaaS multi-usuário com autenticação, 9 módulos, parcelamentos e diagnóstico completo aplicado.
+Sistema SaaS multi-usuário com autenticação, 10 módulos, parcelamentos e diagnóstico completo aplicado.
+**Remodelagem em curso**: de controlador financeiro para assistente completo para pessoas com TDAH
+(fase 1 = Agenda, concluída em 2026-07-13; fases 2 e 3 no roadmap em PENDÊNCIAS).
 Raiz `/` agora é landing page pública de divulgação (SEO completo); o app vive em `/painel`.
 **Cobrança recorrente via Stripe (Laravel Cashier) está 100% funcional em produção**, modo LIVE,
 testada de ponta a ponta com fluxo real de trial em produção (registro real via HTTP, dashboard/`/assinatura`
@@ -21,6 +23,9 @@ acessíveis durante o trial, bloqueio correto após expiração) — não é só
 - [x] 9. Configurações (valor_hora + limite_impulso)
 - [x] SaaS: Auth login/registro + multi-tenant user_id em todas as tabelas
 - [x] SaaS: Cobrança recorrente via Stripe (Laravel Cashier) — trial 7 dias + assinatura mensal
+- [x] 10. Agenda TDAH (fase 1) — visão do dia, linha do AGORA, alertas no navegador, feed iCal
+- [ ] 11. Rotinas recorrentes com streak (fase 2 da remodelagem TDAH)
+- [ ] 12. E-mail diário "Seu dia hoje" + micro-passos em tarefas (fase 3 da remodelagem TDAH)
 
 ---
 
@@ -59,6 +64,9 @@ bills            — id, tipo, descricao, valor, categoria_id, vencimento, statu
                    recorrente, recorrencia, pago_em, parcelas_total, parcela_atual, user_id, timestamps
 reminders        — id, titulo, data_lembrete, concluido, user_id, timestamps
 settings         — PK(user_id, chave), valor  ← chave-valor por usuário
+appointments     — id, user_id FK cascade, titulo varchar(80), data date,
+                   hora time NULL (null = dia todo), lembrete_min default 30,
+                   concluido boolean, timestamps, index (user_id, data)
 ```
 
 Migrations rodadas em produção:
@@ -74,10 +82,73 @@ Migrations rodadas em produção:
 - `2024_01_02_000001` — add_user_id_to_all_tables
 - `2024_01_02_000002` — add_parcelas_to_bills
 - `2026_07_02_183440` — add_updated_at_to_bills_table (guarda `Schema::hasColumn`, corrige schema drift)
+- `2026_07_09_132208` — add_is_admin_to_users_table
+- `2026_07_13_000001` — create_appointments_table (guarda `Schema::hasTable`)
 
 ---
 
 ## O QUE FOI CONSTRUÍDO
+
+### V14 — Agenda TDAH (fase 1 da remodelagem, 2026-07-13, commit `faf9f96`)
+Contexto: o dono decidiu remodelar o FinFoco de controlador financeiro para
+**assistente completo para pessoas com TDAH**. Pesquisa (Tiimo, Morgen,
+Lifestack, Goblin Tools, Finch) apontou os pilares: tempo visível (combate a
+time blindness), lembretes impossíveis de ignorar, micro-passos, recompensa
+imediata, setup mínimo. Roadmap: Fase 1 = Agenda (feita), Fase 2 = Rotinas
+recorrentes com streak, Fase 3 = e-mail diário "Seu dia hoje" (reusar cron do
+`finfoco:avisar-vencimentos`) + micro-passos em tarefas.
+
+- **Migration** `2026_07_13_000001_create_appointments_table.php`: tabela
+  `appointments` — id, user_id FK cascade, titulo varchar(80), data date,
+  hora time nullable (null = dia todo), lembrete_min default 30, concluido
+  boolean, timestamps, index (user_id, data). Guarda `Schema::hasTable`
+- **Model** `app/Models/Appointment.php`: fillable, casts, scope `doDia`
+  (dia-todo primeiro, depois por hora), `booted` preenche user_id
+- **Controller** `app/Http/Controllers/AgendaController.php`: index (visão do
+  dia, `?data=`, `Carbon::parse` com fallback pra hoje), store (validação
+  pt_BR, máx 3 campos), concluir (toggle), destroy, e `feed($token)` — feed
+  iCal público por token secreto de 40 chars guardado em settings (chave
+  `ics_token`, gerado na 1ª visita à agenda). Google Agenda assina a URL
+  (Outras agendas → + → Com um URL). Eventos com hora usam
+  `DTSTART;TZID=America/Sao_Paulo` + DTEND (+1h); sem hora viram `VALUE=DATE`
+  (dia todo)
+- **Rotas** em `routes/web.php`: GET/POST `/agenda`,
+  POST `/agenda/{appointment}/concluir`, DELETE `/agenda/{appointment}`
+  (grupo auth+subscribed); GET `/agenda/feed/{token}.ics` público com
+  `where` token `[A-Za-z0-9]{40}`
+- **View** `resources/views/agenda/index.blade.php`: navegação
+  ontem/hoje/amanhã, barra de progresso do dia (verde, "Dia completo!" com
+  party-popper), quick-add 3 campos (título, data, hora opcional — "sem hora,
+  vale o dia todo"), timeline com linha do AGORA (`li#linha-agora`
+  reposicionada por script a cada 30s, só quando vendo hoje), compromissos
+  atrasados com ring amarelo foco-alerta + "passou da hora", check circular
+  grande com feedback Alpine < 200ms, alertas do navegador via Notification
+  API (botão "Ativar alertas no navegador", avisa `lembrete_min` antes,
+  dedupe via localStorage), box "Ver no Google Agenda" com URL do feed +
+  botão copiar. Estado vazio acolhedor
+- **Navbar**: item "Agenda" (calendar-days) logo após Dashboard em
+  `layouts/app.blade.php`
+- **QA local (tudo passou)**: `php -l` nos 3 arquivos novos; banco local
+  recriado do zero (datadir `/tmp/finfoco_mysql_data` sumiu com reboot —
+  precisou de `mysql_install_db` + recriar DB `finfoco` e user `finfoco`);
+  migrate OK; route:list com as 5 rotas; feed iCal validado com evento com
+  hora e dia-todo; token inválido → 404; `/agenda` sem login → redirect
+  login; login com user QA (qa@finfoco.test, lifetime_access=1 só no banco
+  LOCAL) → 200 com todos os elementos; POST store → 302 e criou; POST
+  concluir → 302 e concluido=1
+- **Deploy em produção (2026-07-13)**: rsync cirúrgico dos 6 arquivos,
+  `php artisan migrate --force` rodou a migration ([8] Ran), caches
+  config/route/view reconstruídos. Smoke: `/agenda` → 302 login (200 com -L),
+  feed com token inválido → 404, landing 200
+
+Checklist binário de aceitação:
+- [x] Migration appointments em produção
+- [x] CRUD de compromissos funciona (criar/concluir/excluir)
+- [x] Timeline com linha do AGORA só no dia de hoje
+- [x] Alertas do navegador com opt-in
+- [x] Feed iCal válido e protegido por token
+- [x] Navbar com Agenda
+- [x] Nada dos módulos financeiros quebrou (landing 200, rotas cacheadas sem erro)
 
 ### V13 — WhatsApp de suporte/vendas + dashboard admin de vendas (2026-07-09)
 - **Suporte (usuários logados)**: botão "Falar no WhatsApp" em
@@ -584,19 +655,45 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
   só pode ser setado por seeder/tinker direto no banco, nunca por mass assignment via form
 - Números de WhatsApp: suporte (33) 98465-6356 (usuários logados, em Configurações), vendas
   (31) 99279-9787 (landing pública, só visitante deslogado)
+- **Remodelagem TDAH**: FinFoco vira assistente completo para pessoas com TDAH, não só
+  controlador financeiro. Pilares (pesquisa em Tiimo, Morgen, Lifestack, Goblin Tools,
+  Finch): tempo visível (combate a time blindness), lembretes impossíveis de ignorar,
+  micro-passos, recompensa imediata, setup mínimo
+- **Feed iCal por token secreto** (não por auth): Google Agenda assina URLs públicas sem
+  login — segurança vem do token de 40 chars aleatórios guardado em `settings`
+  (chave `ics_token`), com constraint de rota `[A-Za-z0-9]{40}` e 404 pra token inválido
+- Agenda: `hora` nullable significa compromisso de dia todo (no iCal vira `VALUE=DATE`;
+  com hora vira `DTSTART;TZID=America/Sao_Paulo` + DTEND de +1h)
+- **Armadilha Blade**: `@json(...)` com expressão multilinha quebra o compilador do Blade
+  ("Unclosed '['") — construir a coleção num bloco `@php` e passar `@json($variavel)`
+- **Armadilha shell**: `pkill -f "artisan serve"` mata o próprio shell do Claude Code
+  (o padrão casa com a linha de comando dele) — usar `pgrep` antes pra mirar o PID certo
 
 ---
 
 ## PENDÊNCIAS / BLOQUEIOS
+- **Roadmap da remodelagem TDAH** (fase 1 concluída em 2026-07-13):
+  - Fase 2 — Rotinas recorrentes com streak
+  - Fase 3 — E-mail diário "Seu dia hoje" (reusar cron do `finfoco:avisar-vencimentos`)
+    + micro-passos em tarefas
 - Google Search Console: propriedade VERIFICADA (2026-07-07) — falta o usuário enviar o
   `sitemap.xml` no menu Sitemaps e solicitar indexação da home via Inspeção de URL
 - Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HISTÓRICO).
 - Nenhuma pendência de V13 (admin/vendas) — deployada em produção com sucesso em 2026-07-09
   (ver HISTÓRICO).
+- Nenhuma pendência de V14 (Agenda) — deployada em produção com sucesso em 2026-07-13
+  (ver HISTÓRICO).
 
 ---
 
-## QA — Último resultado (2026-07-02)
+## QA — Último resultado (2026-07-13, V14 Agenda)
+- `php -l` OK nos 3 arquivos novos; migrate local OK; 5 rotas no route:list
+- Feed iCal validado (evento com hora e dia-todo); token inválido → 404
+- `/agenda` sem login → redirect login; com user QA → 200 com todos os elementos
+- POST store → 302 e criou; POST concluir → 302 e concluido=1
+- Produção pós-deploy: `/agenda` → 302 login (200 com -L), feed token inválido → 404, landing 200
+
+## QA — Resultado anterior (2026-07-02)
 - Dashboard: visão mensal + gastos recorrentes aprovados em 2 rodadas de QA
 - Pós-deploy: home 302 (redireciona pra login sem sessão), login 200
 
@@ -622,6 +719,26 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-13 — V14: Agenda TDAH (fase 1 da remodelagem) — commit faf9f96, deployada em produção
+- Decisão do dono: remodelar o FinFoco de controlador financeiro para assistente completo
+  para pessoas com TDAH; pesquisa (Tiimo, Morgen, Lifestack, Goblin Tools, Finch) definiu
+  os pilares e o roadmap de 3 fases (fase 1 = Agenda, feita; fases 2 e 3 em PENDÊNCIAS)
+- Nova tabela `appointments` (migration com guarda `Schema::hasTable`), Model
+  `Appointment` (scope `doDia`, booted seta user_id), `AgendaController`
+  (index/store/concluir/destroy + `feed($token)` iCal), 5 rotas (4 auth+subscribed +
+  feed público com token de 40 chars em settings `ics_token`), view
+  `agenda/index.blade.php` (navegação ontem/hoje/amanhã, barra de progresso, quick-add
+  3 campos, timeline com linha do AGORA a cada 30s, atrasados com ring foco-alerta,
+  check com feedback < 200ms, Notification API opt-in com dedupe em localStorage,
+  box "Ver no Google Agenda"), item "Agenda" na navbar
+- Lições registradas em DECISÕES: `@json` multilinha quebra o compilador Blade
+  (usar `@php` + `@json($variavel)`); `pkill -f "artisan serve"` mata o próprio shell
+  do Claude Code (usar pgrep antes)
+- QA local completo aprovado (inclusive recriação do banco local, que sumiu com reboot)
+- Deploy em produção: rsync cirúrgico dos 6 arquivos, `migrate --force` ([8] Ran),
+  caches reconstruídos; smoke test aprovado (agenda 302→login, feed inválido 404,
+  landing 200); checklist binário de aceitação 7/7 (ver seção V14)
 
 ### 2026-07-09 — Deploy em produção: tabela de usuários em trial em admin/vendas — commit 15cd9a0
 - Deploy cirúrgico via rsync SSH dos 2 arquivos alterados (`AdminController.php`
