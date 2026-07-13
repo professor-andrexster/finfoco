@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
+use App\Models\Routine;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
@@ -25,6 +26,11 @@ class AgendaController extends Controller
             ->doDia($dia)
             ->get();
 
+        $rotinas = Routine::where('user_id', auth()->id())
+            ->doDia($dia)
+            ->with(['checks' => fn($q) => $q->whereDate('data', '>=', today()->subDays(400))])
+            ->get();
+
         // Token do feed iCal (Google Calendar assina esta URL) — criado na 1ª visita
         $icsToken = Setting::get('ics_token');
         if (!$icsToken) {
@@ -35,6 +41,7 @@ class AgendaController extends Controller
         return view('agenda.index', [
             'dia'          => $dia,
             'compromissos' => $compromissos,
+            'rotinas'      => $rotinas,
             'icsUrl'       => route('agenda.feed', ['token' => $icsToken]),
         ]);
     }

@@ -12,6 +12,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\ReminderController;
+use App\Http\Controllers\RoutineController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TransactionController;
@@ -97,6 +98,12 @@ Route::middleware(['auth', 'subscribed'])->group(function () {
     Route::post('/agenda',                           [AgendaController::class, 'store'])->name('agenda.store');
     Route::post('/agenda/{appointment}/concluir',    [AgendaController::class, 'concluir'])->name('agenda.concluir');
     Route::delete('/agenda/{appointment}',           [AgendaController::class, 'destroy'])->name('agenda.destroy');
+
+    // Rotinas
+    Route::get('/rotinas',                    [RoutineController::class, 'index'])->name('routines.index');
+    Route::post('/rotinas',                   [RoutineController::class, 'store'])->name('routines.store');
+    Route::post('/rotinas/{routine}/check',   [RoutineController::class, 'check'])->name('routines.check');
+    Route::delete('/rotinas/{routine}',       [RoutineController::class, 'destroy'])->name('routines.destroy');
 
     // Lembretes
     Route::post('/lembretes',                   [ReminderController::class, 'store'])->name('reminders.store');

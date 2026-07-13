@@ -8,15 +8,24 @@
     $anterior  = $dia->copy()->subDay()->toDateString();
     $proximo   = $dia->copy()->addDay()->toDateString();
     $tituloDia = $ehHoje ? 'Hoje' : ($dia->isTomorrow() ? 'Amanhã' : ($dia->isYesterday() ? 'Ontem' : $dia->translatedFormat('l')));
-    $feitos    = $compromissos->where('concluido', true)->count();
-    $total     = $compromissos->count();
+    $feitos    = $compromissos->where('concluido', true)->count()
+               + $rotinas->filter(fn($r) => $r->feitaEm($dia))->count();
+    $total     = $compromissos->count() + $rotinas->count();
     $eventosNotificacao = $compromissos->where('concluido', false)->whereNotNull('hora')->values()->map(fn($c) => [
-        'id'     => $c->id,
+        'id'     => 'c' . $c->id,
         'titulo' => $c->titulo,
         'data'   => $c->data->toDateString(),
         'hora'   => substr($c->hora, 0, 5),
         'avisar' => $c->lembrete_min,
-    ]);
+    ])->concat(
+        $rotinas->filter(fn($r) => $r->hora && !$r->feitaEm($dia))->values()->map(fn($r) => [
+            'id'     => 'r' . $r->id,
+            'titulo' => $r->titulo,
+            'data'   => $dia->toDateString(),
+            'hora'   => substr($r->hora, 0, 5),
+            'avisar' => 10,
+        ])
+    )->values();
 @endphp
 
 <div class="max-w-2xl mx-auto space-y-6">
@@ -79,6 +88,55 @@
         </button>
         <p class="text-xs text-foco-muted text-center">Hora é opcional — sem hora, vale o dia todo.</p>
     </form>
+
+    {{-- Rotinas do dia --}}
+    @if($rotinas->isNotEmpty())
+    <div class="space-y-3">
+        <div class="flex items-center justify-between px-1">
+            <h2 class="text-sm font-bold text-foco-muted uppercase tracking-wide flex items-center gap-1.5">
+                <i data-lucide="repeat" class="w-4 h-4"></i> Rotinas do dia
+            </h2>
+            <a href="{{ route('routines.index') }}" class="text-xs font-semibold text-foco-accent hover:underline">
+                Gerenciar rotinas
+            </a>
+        </div>
+        <ul class="space-y-3">
+            @foreach($rotinas as $r)
+            @php $feita = $r->feitaEm($dia); $sequencia = $r->streak(); @endphp
+            <li class="card card-hover p-4 flex items-center gap-4 {{ $feita ? 'opacity-50' : '' }}">
+                <form action="{{ route('routines.check', $r) }}" method="POST" x-data="{ ok: {{ $feita ? 'true' : 'false' }} }">
+                    @csrf
+                    <input type="hidden" name="data" value="{{ $dia->toDateString() }}">
+                    <button type="submit" @click="ok = !ok"
+                            class="w-11 h-11 rounded-full border-2 flex items-center justify-center transition-colors shrink-0"
+                            :class="ok ? 'bg-foco-entrada border-foco-entrada text-white' : 'border-foco-border text-transparent hover:border-foco-entrada'"
+                            title="{{ $feita ? 'Desmarcar rotina' : 'Concluir rotina' }}">
+                        <i data-lucide="check" class="w-5 h-5"></i>
+                    </button>
+                </form>
+                <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-base {{ $feita ? 'line-through' : '' }}">{{ $r->titulo }}</p>
+                    <p class="text-sm text-foco-muted">
+                        {{ $r->hora ? substr($r->hora, 0, 5) : 'Qualquer hora' }}
+                    </p>
+                </div>
+                @if($sequencia > 0)
+                <span class="flex items-center gap-1 text-sm font-bold text-foco-accent shrink-0"
+                      title="{{ $sequencia }} dia{{ $sequencia > 1 ? 's' : '' }} seguidos">
+                    <i data-lucide="flame" class="w-4 h-4"></i> {{ $sequencia }}
+                </span>
+                @endif
+            </li>
+            @endforeach
+        </ul>
+    </div>
+    @else
+    <div class="flex justify-end px-1">
+        <a href="{{ route('routines.index') }}" class="text-xs font-semibold text-foco-accent hover:underline flex items-center gap-1">
+            <i data-lucide="repeat" class="w-3.5 h-3.5"></i> Criar rotinas diárias
+        </a>
+    </div>
+    @endif
 
     {{-- Linha do tempo do dia --}}
     @if($compromissos->isEmpty())
@@ -230,7 +288,7 @@
             eventos.forEach(e => {
                 const inicio = new Date(e.data + 'T' + e.hora + ':00');
                 const avisarEm = new Date(inicio.getTime() - e.avisar * 60000);
-                const chave = 'finfoco-notif-' + e.id;
+                const chave = 'finfoco-notif-' + e.id + '-' + e.data;
                 if (agora >= avisarEm && agora <= inicio && !localStorage.getItem(chave)) {
                     new Notification('⏰ ' + e.hora + ' — ' + e.titulo, {
                         body: 'Começa em breve. Respira, você consegue.',
