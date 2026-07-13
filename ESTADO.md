@@ -1,11 +1,11 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-13 (V14 — Agenda TDAH fase 1 — deployada em produção)
+Última atualização: 2026-07-13 (V15 — Rotinas recorrentes com streak, fase 2 TDAH — deployada em produção)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
-Sistema SaaS multi-usuário com autenticação, 10 módulos, parcelamentos e diagnóstico completo aplicado.
+Sistema SaaS multi-usuário com autenticação, 11 módulos, parcelamentos e diagnóstico completo aplicado.
 **Remodelagem em curso**: de controlador financeiro para assistente completo para pessoas com TDAH
-(fase 1 = Agenda, concluída em 2026-07-13; fases 2 e 3 no roadmap em PENDÊNCIAS).
+(fase 1 = Agenda e fase 2 = Rotinas com streak, ambas concluídas em 2026-07-13; fase 3 no roadmap em PENDÊNCIAS).
 Raiz `/` agora é landing page pública de divulgação (SEO completo); o app vive em `/painel`.
 **Cobrança recorrente via Stripe (Laravel Cashier) está 100% funcional em produção**, modo LIVE,
 testada de ponta a ponta com fluxo real de trial em produção (registro real via HTTP, dashboard/`/assinatura`
@@ -24,7 +24,7 @@ acessíveis durante o trial, bloqueio correto após expiração) — não é só
 - [x] SaaS: Auth login/registro + multi-tenant user_id em todas as tabelas
 - [x] SaaS: Cobrança recorrente via Stripe (Laravel Cashier) — trial 7 dias + assinatura mensal
 - [x] 10. Agenda TDAH (fase 1) — visão do dia, linha do AGORA, alertas no navegador, feed iCal
-- [ ] 11. Rotinas recorrentes com streak (fase 2 da remodelagem TDAH)
+- [x] 11. Rotinas recorrentes com streak (fase 2 TDAH)
 - [ ] 12. E-mail diário "Seu dia hoje" + micro-passos em tarefas (fase 3 da remodelagem TDAH)
 
 ---
@@ -67,6 +67,10 @@ settings         — PK(user_id, chave), valor  ← chave-valor por usuário
 appointments     — id, user_id FK cascade, titulo varchar(80), data date,
                    hora time NULL (null = dia todo), lembrete_min default 30,
                    concluido boolean, timestamps, index (user_id, data)
+routines         — id, user_id FK cascade, titulo varchar(80), hora time NULL
+                   (null = qualquer hora), dias char(7) default '1111111'
+                   (posições seg..dom, '1' = ativo), timestamps, index user_id
+routine_checks   — id, routine_id FK cascade, data date, unique(routine_id, data)
 ```
 
 Migrations rodadas em produção:
@@ -84,10 +88,66 @@ Migrations rodadas em produção:
 - `2026_07_02_183440` — add_updated_at_to_bills_table (guarda `Schema::hasColumn`, corrige schema drift)
 - `2026_07_09_132208` — add_is_admin_to_users_table
 - `2026_07_13_000001` — create_appointments_table (guarda `Schema::hasTable`)
+- `2026_07_13_000002` — create_routines_tables (routines + routine_checks, guardas `Schema::hasTable`)
 
 ---
 
 ## O QUE FOI CONSTRUÍDO
+
+### V15 — Rotinas recorrentes com streak (fase 2 da remodelagem TDAH, 2026-07-13, commit `328b20f`)
+Continuação da remodelagem TDAH (fase 1 = V14 Agenda). Entrega rotinas/hábitos
+recorrentes com recompensa imediata (streak 🔥), pilar de dopamina identificado
+na pesquisa.
+
+- **Migration** `2026_07_13_000002_create_routines_tables.php` (guardas
+  `hasTable`): tabela `routines` — id, user_id FK cascade, titulo varchar(80),
+  hora time nullable (null = qualquer hora), dias char(7) default '1111111'
+  (posições seg..dom, '1' = ativo), timestamps, index user_id; tabela
+  `routine_checks` — id, routine_id FK cascade, data date,
+  unique(routine_id, data)
+- **Models**: `app/Models/Routine.php` — scope `doDia(Carbon)` via
+  `SUBSTRING(dias, dayOfWeekIso, 1) = '1'`, `agendadaEm()`, `feitaEm()`,
+  `streak()` (conta de trás pra frente só dias agendados; hoje ainda pendente
+  NÃO quebra a sequência; limite 366 iterações); `app/Models/RoutineCheck.php`
+- **Controller** `app/Http/Controllers/RoutineController.php`: index (rotinas
+  com checks dos últimos 400 dias), store (validação pt_BR: titulo, hora
+  opcional H:i, dias[] 1-7 min 1 — monta a string de 7 chars), destroy, check
+  (toggle do dia via firstOrCreate/delete, param `data` com fallback hoje,
+  param `voltar=rotinas` decide o redirect)
+- **Rotas** (grupo auth+subscribed): GET/POST `/rotinas`,
+  POST `/rotinas/{routine}/check`, DELETE `/rotinas/{routine}`
+- **View** `resources/views/routines/index.blade.php`: criar rotina com 3
+  campos (título, hora opcional, chips circulares S T Q Q S S D com Alpine
+  x-model, todos ligados por padrão), lista com check de hoje (círculo
+  tracejado quando a rotina não vale hoje), mini-badges dos dias, streak com
+  flame roxo foco-accent (amarelo é reservado pra atenção), excluir com
+  confirm. Estados vazio/erro definidos
+- **Agenda** (`agenda/index.blade.php` + `AgendaController@index`): nova seção
+  "Rotinas do dia" acima da timeline com check 1-clique (POST routines.check
+  com data do dia visto) e badge de streak; link "Gerenciar rotinas" (ou
+  "Criar rotinas diárias" quando não há nenhuma — rotinas NÃO estão na navbar,
+  o hub é a agenda); barra de progresso do dia agora soma compromissos +
+  rotinas; alertas do navegador incluem rotinas com hora (avisa 10 min antes)
+  — ids prefixados 'c'/'r' e chave de dedupe do localStorage agora inclui a
+  data (rotinas repetem!)
+- **QA local (tudo passou)**: `php -l` nos 4 arquivos PHP; migrate OK;
+  route:list 4 rotas; view:cache OK; fluxo HTTP real logado: GET /rotinas 200,
+  POST store 302 (rotina "Tomar o remédio" 08:00 todos os dias), POST check
+  302 → check no banco, streak=1; com check de ontem adicionado via tinker
+  streak=2; GET /agenda 200 com "Rotinas do dia", rotina, flame e progresso
+  "2 de 4"
+- **Deploy em produção (2026-07-13)**: rsync cirúrgico dos 8 arquivos,
+  `migrate --force` rodou ([9] Ran), caches reconstruídos. Smoke: `/rotinas`
+  e `/agenda` → 302 login (200 com -L), landing 200
+
+Checklist binário de aceitação:
+- [x] Tabelas routines/routine_checks em produção
+- [x] Criar/excluir rotina com dias da semana
+- [x] Check do dia com toggle e unique por dia
+- [x] Streak correto (hoje pendente não quebra)
+- [x] Seção Rotinas do dia na agenda com progresso somado
+- [x] Alertas do navegador incluem rotinas com hora
+- [x] Nada existente quebrou (landing 200, rotas cacheadas)
 
 ### V14 — Agenda TDAH (fase 1 da remodelagem, 2026-07-13, commit `faf9f96`)
 Contexto: o dono decidiu remodelar o FinFoco de controlador financeiro para
@@ -668,12 +728,24 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
   ("Unclosed '['") — construir a coleção num bloco `@php` e passar `@json($variavel)`
 - **Armadilha shell**: `pkill -f "artisan serve"` mata o próprio shell do Claude Code
   (o padrão casa com a linha de comando dele) — usar `pgrep` antes pra mirar o PID certo
+- **Armadilha shell (complemento V15)**: `pkill -f`/`pgrep -f` com padrão que aparece na
+  própria linha de comando mata o shell do Claude Code (exit 144) — usar o truque do
+  colchete no padrão, ex.: `pgrep -f "serve --por[t]=8899"` (o colchete impede o padrão
+  de casar consigo mesmo)
+- Rotinas NÃO entram na navbar: o hub delas é a Agenda (seção "Rotinas do dia"); a tela
+  `/rotinas` é só gerenciamento, acessada por link contextual na agenda
+- Streak usa flame roxo `foco-accent` (não amarelo — amarelo tem significado fixo de atenção)
+- `routines.dias` é char(7) '1111111' com posições seg..dom; scope `doDia` resolve via
+  `SUBSTRING(dias, dayOfWeekIso, 1) = '1'` direto no SQL
+- `streak()`: hoje ainda pendente não quebra a sequência (só dias agendados contam;
+  limite de 366 iterações pra evitar loop infinito)
+- Dedupe de notificações no localStorage precisa incluir a DATA na chave quando o item
+  se repete (rotinas): ids prefixados 'c'/'r' pra compromissos/rotinas não colidirem
 
 ---
 
 ## PENDÊNCIAS / BLOQUEIOS
-- **Roadmap da remodelagem TDAH** (fase 1 concluída em 2026-07-13):
-  - Fase 2 — Rotinas recorrentes com streak
+- **Roadmap da remodelagem TDAH** (fases 1 e 2 concluídas em 2026-07-13):
   - Fase 3 — E-mail diário "Seu dia hoje" (reusar cron do `finfoco:avisar-vencimentos`)
     + micro-passos em tarefas
 - Google Search Console: propriedade VERIFICADA (2026-07-07) — falta o usuário enviar o
@@ -683,10 +755,20 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
   (ver HISTÓRICO).
 - Nenhuma pendência de V14 (Agenda) — deployada em produção com sucesso em 2026-07-13
   (ver HISTÓRICO).
+- Nenhuma pendência de V15 (Rotinas com streak) — deployada em produção com sucesso em
+  2026-07-13 (ver HISTÓRICO).
 
 ---
 
-## QA — Último resultado (2026-07-13, V14 Agenda)
+## QA — Último resultado (2026-07-13, V15 Rotinas com streak)
+- `php -l` OK nos 4 arquivos PHP; migrate local OK; 4 rotas no route:list; view:cache OK
+- Fluxo HTTP real logado: GET /rotinas 200, POST store 302 (rotina "Tomar o remédio"
+  08:00 todos os dias), POST check 302 → check no banco, streak=1; com check de ontem
+  via tinker → streak=2
+- GET /agenda 200 com "Rotinas do dia", rotina, flame e progresso "2 de 4"
+- Produção pós-deploy: `/rotinas` e `/agenda` → 302 login (200 com -L), landing 200
+
+## QA — Resultado anterior (2026-07-13, V14 Agenda)
 - `php -l` OK nos 3 arquivos novos; migrate local OK; 5 rotas no route:list
 - Feed iCal validado (evento com hora e dia-todo); token inválido → 404
 - `/agenda` sem login → redirect login; com user QA → 200 com todos os elementos
@@ -719,6 +801,29 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-13 — V15: Rotinas recorrentes com streak (fase 2 TDAH) — commit 328b20f, deployada em produção
+- Fase 2 da remodelagem TDAH: rotinas/hábitos recorrentes com recompensa imediata
+  (streak 🔥), pilar de dopamina da pesquisa
+- Novas tabelas `routines` (titulo, hora nullable, dias char(7) seg..dom) e
+  `routine_checks` (unique routine_id+data), migration com guardas hasTable
+- Models `Routine` (scope `doDia` via SUBSTRING no SQL, `streak()` que não quebra com
+  hoje pendente) e `RoutineCheck`; `RoutineController` (index/store/destroy/check
+  toggle com `voltar=rotinas`); 4 rotas auth+subscribed
+- View `routines/index.blade.php`: form 3 campos com chips de dias, lista com check de
+  hoje, mini-badges, streak com flame roxo foco-accent, estados vazio/erro
+- Agenda ganhou seção "Rotinas do dia" (check 1-clique + streak), link contextual pra
+  /rotinas (sem item na navbar — hub é a agenda), progresso do dia somando compromissos
+  + rotinas, alertas do navegador com rotinas com hora (10 min antes, dedupe por data,
+  ids prefixados 'c'/'r')
+- Lição registrada em DECISÕES: `pkill -f`/`pgrep -f` com padrão que aparece na própria
+  linha de comando mata o shell (exit 144) — usar truque do colchete
+  (`pgrep -f "serve --por[t]=8899"`)
+- QA local completo aprovado (php -l, migrate, route:list, fluxo HTTP real com store,
+  check, streak 1→2, agenda com progresso "2 de 4")
+- Deploy em produção: rsync cirúrgico dos 8 arquivos, `migrate --force` ([9] Ran),
+  caches reconstruídos; smoke aprovado (/rotinas e /agenda 302→login, landing 200);
+  checklist binário 7/7 (ver seção V15)
 
 ### 2026-07-13 — V14: Agenda TDAH (fase 1 da remodelagem) — commit faf9f96, deployada em produção
 - Decisão do dono: remodelar o FinFoco de controlador financeiro para assistente completo
