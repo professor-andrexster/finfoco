@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
@@ -91,6 +92,12 @@ Route::middleware(['auth', 'subscribed'])->group(function () {
     Route::delete('/contas/{bill}',           [BillController::class, 'destroy'])->name('bills.destroy');
     Route::delete('/contas-parcelamento',     [BillController::class, 'destroyParcelamento'])->name('bills.destroyParcelamento');
 
+    // Agenda
+    Route::get('/agenda',                            [AgendaController::class, 'index'])->name('agenda.index');
+    Route::post('/agenda',                           [AgendaController::class, 'store'])->name('agenda.store');
+    Route::post('/agenda/{appointment}/concluir',    [AgendaController::class, 'concluir'])->name('agenda.concluir');
+    Route::delete('/agenda/{appointment}',           [AgendaController::class, 'destroy'])->name('agenda.destroy');
+
     // Lembretes
     Route::post('/lembretes',                   [ReminderController::class, 'store'])->name('reminders.store');
     Route::post('/lembretes/{reminder}/toggle', [ReminderController::class, 'toggle'])->name('reminders.toggle');
@@ -100,6 +107,11 @@ Route::middleware(['auth', 'subscribed'])->group(function () {
     Route::get('/configuracoes',  [SettingController::class, 'show'])->name('settings.show');
     Route::post('/configuracoes', [SettingController::class, 'update'])->name('settings.update');
 });
+
+// ─── Feed iCal da agenda (público, protegido por token secreto de 40 chars) ───
+Route::get('/agenda/feed/{token}.ics', [AgendaController::class, 'feed'])
+    ->where('token', '[A-Za-z0-9]{40}')
+    ->name('agenda.feed');
 
 // ─── Admin (requer autenticação + is_admin) ────────────────────────────────────
 Route::middleware(['auth', 'admin'])->group(function () {

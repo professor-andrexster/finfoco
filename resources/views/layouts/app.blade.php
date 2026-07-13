@@ -128,6 +128,7 @@
                 @php
                     $nav = [
                         ['route'=>'dashboard',           'pat'=>'dashboard',    'icon'=>'layout-dashboard','label'=>'Dashboard'],
+                        ['route'=>'agenda.index',        'pat'=>'agenda*',      'icon'=>'calendar-days',   'label'=>'Agenda'],
                         ['route'=>'transactions.create', 'pat'=>'transactions*','icon'=>'plus-circle',     'label'=>'Lançar'],
                         ['route'=>'bills.index',         'pat'=>'bills*',       'icon'=>'receipt',         'label'=>'Contas'],
                         ['route'=>'history.index',       'pat'=>'history*',     'icon'=>'clock',           'label'=>'Histórico'],
