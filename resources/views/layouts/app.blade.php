@@ -12,6 +12,21 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="FinFoco">
 
+    {{-- Tema: aplica antes do primeiro paint pra não piscar --}}
+    <script>
+        (function () {
+            var t = localStorage.getItem('finfoco_tema');
+            if (t === 'escuro' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+        function finfocoAlternarTema() {
+            var r = document.documentElement;
+            r.classList.toggle('dark');
+            localStorage.setItem('finfoco_tema', r.classList.contains('dark') ? 'escuro' : 'claro');
+        }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..700;1,14..32,300..700&display=swap" rel="stylesheet">
 
@@ -21,15 +36,15 @@
             theme: {
                 extend: {
                     colors: {
-                        'foco-bg':      '#FFFFFF',
-                        'foco-surface': '#F7F7FD',
-                        'foco-border':  '#E4E4F0',
-                        'foco-entrada': '#16A34A',
-                        'foco-saida':   '#DC2626',
-                        'foco-alerta':  '#D97706',
-                        'foco-text':    '#1E1B4B',
-                        'foco-muted':   '#9794B8',
-                        'foco-accent':  '#6366F1',
+                        'foco-bg':      'var(--c-bg)',
+                        'foco-surface': 'var(--c-surface)',
+                        'foco-border':  'var(--c-border)',
+                        'foco-entrada': 'var(--c-entrada)',
+                        'foco-saida':   'var(--c-saida)',
+                        'foco-alerta':  'var(--c-alerta)',
+                        'foco-text':    'var(--c-text)',
+                        'foco-muted':   'var(--c-muted)',
+                        'foco-accent':  'var(--c-accent)',
                     },
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                 },
@@ -41,38 +56,114 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
     <style>
-        body { font-size: 16px; background-color: #FFFFFF; color: #1E1B4B; }
+        /* ── Tokens de tema (claro/escuro) ─────────────────────────────── */
+        :root {
+            --c-bg:      #FFFFFF;
+            --c-card:    #FFFFFF;
+            --c-surface: #F7F7FD;
+            --c-border:  #E4E4F0;
+            --c-border2: #F3F3FB;
+            --c-text:    #1E1B4B;
+            --c-muted:   #9794B8;
+            --c-accent:  #6366F1;
+            --c-entrada: #16A34A;
+            --c-saida:   #DC2626;
+            --c-alerta:  #D97706;
+            --c-sombra:  rgba(99,102,241,.08);
+            --c-anel:    rgba(99,102,241,.06);
+        }
+        .dark {
+            --c-bg:      #0F0F13;
+            --c-card:    #1A1A22;
+            --c-surface: #22222C;
+            --c-border:  #2A2A38;
+            --c-border2: #232330;
+            --c-text:    #F1F5F9;
+            --c-muted:   #8E97AB;
+            --c-accent:  #818CF8;
+            --c-entrada: #22C55E;
+            --c-saida:   #EF4444;
+            --c-alerta:  #F59E0B;
+            --c-sombra:  rgba(0,0,0,.45);
+            --c-anel:    rgba(255,255,255,.07);
+        }
+
+        body { font-size: 16px; background-color: var(--c-bg); color: var(--c-text); }
         .btn-primary { font-size: 18px; font-weight: 700; }
         [x-cloak] { display: none !important; }
 
         .card {
-            background: #fff;
+            background: var(--c-card);
             border-radius: 16px;
-            box-shadow: 0 1px 4px rgba(99,102,241,.08), 0 0 0 1px rgba(99,102,241,.06);
+            box-shadow: 0 1px 4px var(--c-sombra), 0 0 0 1px var(--c-anel);
         }
+        .card-hover { transition: box-shadow .15s ease, transform .15s ease; }
         .card-hover:hover {
-            box-shadow: 0 4px 16px rgba(99,102,241,.12), 0 0 0 1px rgba(99,102,241,.1);
+            box-shadow: 0 4px 16px var(--c-sombra), 0 0 0 1px var(--c-anel);
+            transform: translateY(-1px);
         }
 
         /* Input padrão */
         input[type="text"], input[type="number"], input[type="date"],
         input[type="time"], input[type="url"],
         input[type="email"], textarea, select {
-            background: #fff !important;
-            border-color: #E4E4F0 !important;
-            color: #1E1B4B !important;
+            background: var(--c-card) !important;
+            border-color: var(--c-border) !important;
+            color: var(--c-text) !important;
         }
-        input::placeholder, textarea::placeholder { color: #9794B8; }
+        input::placeholder, textarea::placeholder { color: var(--c-muted); }
+        .dark input[type="date"], .dark input[type="time"] { color-scheme: dark; }
 
         /* Item ativo da sidebar (desktop) */
         .side-active {
-            background: #EEF2FF;
-            color: #6366F1 !important;
+            background: rgba(99,102,241,.12);
+            color: var(--c-accent) !important;
             font-weight: 700;
         }
 
         /* Barra inferior (mobile): respeita o recorte do iPhone */
         .tabbar { padding-bottom: env(safe-area-inset-bottom); }
+
+        /* ── Modo escuro: cobre cores fixas herdadas das views ─────────── */
+        .dark .bg-white { background-color: var(--c-card) !important; }
+        .dark [style*="#E4E4F0"] { border-color: var(--c-border) !important; }
+        .dark [style*="#F3F3FB"] { border-color: var(--c-border2) !important; }
+        .dark [style*="background:#EEF2FF"], .dark [style*="background:#E0E7FF"] { background: rgba(99,102,241,.18) !important; }
+        .dark [style*="background:#FEF2F2"], .dark [style*="background: #FEF2F2"] { background: rgba(239,68,68,.14) !important; }
+        .dark [style*="background:#FFFBEB"], .dark [style*="background: #FFFBEB"] { background: rgba(245,158,11,.14) !important; }
+        .dark [style*="color:#1E1B4B"] { color: var(--c-text) !important; }
+        .dark circle[stroke="#E0DFFA"] { stroke: #2A2A38; }
+        .dark circle[stroke="#E4E4F0"] { stroke: var(--c-border); }
+        .dark .bg-green-50\/50 { background: rgba(34,197,94,.08) !important; }
+        .dark .hover\:bg-red-50:hover { background: rgba(239,68,68,.12) !important; }
+
+        /* Tecla de atalho */
+        kbd {
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--c-muted);
+            background: var(--c-surface);
+            border: 1px solid var(--c-border);
+            border-bottom-width: 2px;
+            border-radius: 5px;
+            padding: 1px 5px;
+        }
+        .so-escuro { display: none; }
+        .dark .so-escuro { display: inline-flex; }
+        .dark .so-claro { display: none; }
+
+        /* ── Micro-animações (dopamina visual, sem exagero) ────────────── */
+        @keyframes surgir { from { opacity: 0; transform: translateY(5px); } }
+        .card { animation: surgir .22s ease-out both; }
+        button { transition: transform .12s ease, background-color .15s ease, color .15s ease, border-color .15s ease; }
+        button:active { transform: scale(.94); }
+        @keyframes pop { 40% { transform: scale(1.18); } }
+        button[title^="Concluir"]:active, button[title^="Desmarcar"]:active { animation: pop .25s ease; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; }
+        }
     </style>
 </head>
 <body class="bg-foco-bg text-foco-text font-sans min-h-screen">
@@ -107,15 +198,15 @@
 
     @php
         $navDia = [
-            ['route'=>'dashboard',     'pat'=>'dashboard',  'icon'=>'layout-dashboard','label'=>'Painel'],
-            ['route'=>'agenda.index',  'pat'=>'agenda*',    'icon'=>'calendar-days',   'label'=>'Agenda'],
-            ['route'=>'foco.index',    'pat'=>'foco*',      'icon'=>'zap',             'label'=>'Hiperfoco'],
-            ['route'=>'routines.index','pat'=>'routines*',  'icon'=>'repeat',          'label'=>'Rotinas'],
+            ['route'=>'dashboard',     'pat'=>'dashboard',  'icon'=>'layout-dashboard','label'=>'Painel',   'kbd'=>'P'],
+            ['route'=>'agenda.index',  'pat'=>'agenda*',    'icon'=>'calendar-days',   'label'=>'Agenda',   'kbd'=>'A'],
+            ['route'=>'foco.index',    'pat'=>'foco*',      'icon'=>'zap',             'label'=>'Hiperfoco','kbd'=>'F'],
+            ['route'=>'routines.index','pat'=>'routines*',  'icon'=>'repeat',          'label'=>'Rotinas',  'kbd'=>'R'],
         ];
         $navDinheiro = [
-            ['route'=>'transactions.create','pat'=>'transactions*','icon'=>'plus-circle', 'label'=>'Lançar'],
-            ['route'=>'bills.index',        'pat'=>'bills*',       'icon'=>'receipt',     'label'=>'Contas'],
-            ['route'=>'history.index',      'pat'=>'history*',     'icon'=>'clock',       'label'=>'Histórico'],
+            ['route'=>'transactions.create','pat'=>'transactions*','icon'=>'plus-circle', 'label'=>'Lançar',   'kbd'=>'L'],
+            ['route'=>'bills.index',        'pat'=>'bills*',       'icon'=>'receipt',     'label'=>'Contas',   'kbd'=>'C'],
+            ['route'=>'history.index',      'pat'=>'history*',     'icon'=>'clock',       'label'=>'Histórico','kbd'=>'H'],
             ['route'=>'reports.index',      'pat'=>'reports*',     'icon'=>'bar-chart-3', 'label'=>'Relatórios'],
             ['route'=>'categories.index',   'pat'=>'categories*',  'icon'=>'tag',         'label'=>'Categorias'],
             ['route'=>'alerts.index',       'pat'=>'alerts*',      'icon'=>'bell',        'label'=>'Alertas'],
@@ -148,6 +239,7 @@
                               {{ request()->routeIs($item['pat']) ? 'side-active' : 'text-foco-text hover:bg-foco-surface' }}">
                         <i data-lucide="{{ $item['icon'] }}" style="width:18px;height:18px" class="shrink-0"></i>
                         {{ $item['label'] }}
+                        @if(!empty($item['kbd']))<kbd class="ml-auto">{{ $item['kbd'] }}</kbd>@endif
                     </a>
                     @endforeach
                 </div>
@@ -161,6 +253,7 @@
                               {{ request()->routeIs($item['pat']) ? 'side-active' : 'text-foco-text hover:bg-foco-surface' }}">
                         <i data-lucide="{{ $item['icon'] }}" style="width:18px;height:18px" class="shrink-0"></i>
                         {{ $item['label'] }}
+                        @if(!empty($item['kbd']))<kbd class="ml-auto">{{ $item['kbd'] }}</kbd>@endif
                     </a>
                     @endforeach
                 </div>
@@ -169,6 +262,19 @@
 
         {{-- Usuário (desktop) --}}
         <div class="px-3 py-4 space-y-0.5" style="border-top:1px solid #F3F3FB">
+            <button onclick="finfocoAlternarTema()"
+                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foco-text hover:bg-foco-surface transition-colors">
+                <span class="so-claro inline-flex"><i data-lucide="moon" style="width:18px;height:18px"></i></span>
+                <span class="so-escuro"><i data-lucide="sun" style="width:18px;height:18px"></i></span>
+                <span class="so-claro">Modo escuro</span>
+                <span class="so-escuro">Modo claro</span>
+            </button>
+            <button onclick="document.getElementById('modal-atalhos').style.display='flex'"
+                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foco-text hover:bg-foco-surface transition-colors">
+                <i data-lucide="keyboard" style="width:18px;height:18px" class="shrink-0"></i>
+                Atalhos
+                <kbd class="ml-auto">?</kbd>
+            </button>
             <a href="{{ route('settings.show') }}"
                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors
                       {{ request()->routeIs('settings*') ? 'side-active' : 'text-foco-text hover:bg-foco-surface' }}">
@@ -239,6 +345,12 @@
                     <a href="{{ route('settings.show') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-foco-surface transition-colors">
                         <i data-lucide="settings-2" class="w-4 h-4 text-foco-muted"></i> Configurações
                     </a>
+                    <button onclick="finfocoAlternarTema()" class="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-foco-surface transition-colors">
+                        <span class="so-claro inline-flex"><i data-lucide="moon" class="w-4 h-4 text-foco-muted"></i></span>
+                        <span class="so-escuro"><i data-lucide="sun" class="w-4 h-4 text-foco-muted"></i></span>
+                        <span class="so-claro">Modo escuro</span>
+                        <span class="so-escuro">Modo claro</span>
+                    </button>
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
                         <button type="submit" class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-foco-saida hover:bg-red-50 transition-colors">
@@ -329,7 +441,66 @@
         </nav>
     </div>
 
+    {{-- Modal de atalhos de teclado --}}
+    <div id="modal-atalhos" style="display:none" class="fixed inset-0 z-[80] items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/40" onclick="document.getElementById('modal-atalhos').style.display='none'"></div>
+        <div class="card relative w-full max-w-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-bold flex items-center gap-2">
+                    <i data-lucide="keyboard" class="w-5 h-5 text-foco-accent"></i> Atalhos de teclado
+                </h2>
+                <button onclick="document.getElementById('modal-atalhos').style.display='none'"
+                        class="text-foco-muted hover:text-foco-text p-1">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <ul class="space-y-2.5 text-sm">
+                @foreach([
+                    ['P', 'Painel'], ['A', 'Agenda'], ['S', 'Agenda da semana'],
+                    ['F', 'Modo Hiperfoco'], ['R', 'Rotinas'], ['L', 'Lançar entrada/saída'],
+                    ['C', 'Contas'], ['H', 'Histórico'], ['E', 'Modo escuro/claro'], ['?', 'Esta ajuda'],
+                ] as [$tecla, $acao])
+                <li class="flex items-center justify-between">
+                    <span class="text-foco-muted">{{ $acao }}</span>
+                    <kbd>{{ $tecla }}</kbd>
+                </li>
+                @endforeach
+            </ul>
+            <p class="text-xs text-foco-muted mt-4">Funcionam em qualquer tela, menos quando você está digitando.</p>
+        </div>
+    </div>
+
     <script>lucide.createIcons();</script>
+
+    {{-- Atalhos de teclado (desktop) --}}
+    <script>
+        (function () {
+            const mapa = {
+                p: '{{ route('dashboard') }}',
+                a: '{{ route('agenda.index') }}',
+                s: '{{ route('agenda.semana') }}',
+                f: '{{ route('foco.index') }}',
+                r: '{{ route('routines.index') }}',
+                l: '{{ route('transactions.create') }}',
+                c: '{{ route('bills.index') }}',
+                h: '{{ route('history.index') }}',
+            };
+            const modal = document.getElementById('modal-atalhos');
+
+            document.addEventListener('keydown', (e) => {
+                if (e.metaKey || e.ctrlKey || e.altKey) return;
+                const el = document.activeElement;
+                if (el && (['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName) || el.isContentEditable)) return;
+
+                if (e.key === 'Escape') { modal.style.display = 'none'; return; }
+                if (e.key === '?') { modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex'; return; }
+
+                const k = e.key.toLowerCase();
+                if (k === 'e') { finfocoAlternarTema(); return; }
+                if (mapa[k]) window.location.href = mapa[k];
+            });
+        })();
+    </script>
 
     @auth
     @if(config('services.webpush.public_key'))
