@@ -64,6 +64,25 @@
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Norte",
+        "url": "https://finfoco.nexialabs.com.br/",
+        "logo": "https://finfoco.nexialabs.com.br/icon.svg",
+        "description": "Norte — sistema para pessoas com TDAH: agenda visual, rotinas, hiperfoco, conquistas e finanças."
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Norte",
+        "url": "https://finfoco.nexialabs.com.br/",
+        "inLanguage": "pt-BR"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
         "@type": "FAQPage",
         "mainEntity": [
             {
@@ -155,23 +174,66 @@
     <script defer src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
     <style>
-        body { font-size: 16px; background-color: #FFFFFF; color: #1E1B4B; }
+        body { font-size: 16px; background-color: #FFFFFF; color: #1E1B4B; -webkit-font-smoothing: antialiased; letter-spacing: -0.011em; }
         html { scroll-behavior: smooth; }
         .card {
             background: #fff;
             border-radius: 16px;
             box-shadow: 0 1px 4px rgba(99,102,241,.08), 0 0 0 1px rgba(99,102,241,.06);
+            transition: transform .25s cubic-bezier(.22,1,.36,1), box-shadow .25s ease;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(99,102,241,.14), 0 0 0 1px rgba(99,102,241,.12);
         }
         details summary { cursor: pointer; list-style: none; }
         details summary::-webkit-details-marker { display: none; }
         details[open] .faq-chevron { transform: rotate(180deg); }
         .faq-chevron { transition: transform .2s ease; }
+
+        /* ── Efeitos de landing moderna ─────────────────────────────────── */
+        .nav-blur {
+            position: sticky; top: 0; z-index: 50;
+            background: rgba(255,255,255,.72);
+            backdrop-filter: blur(14px) saturate(1.6);
+            -webkit-backdrop-filter: blur(14px) saturate(1.6);
+        }
+        .gradient-text {
+            background: linear-gradient(100deg, #6366F1 0%, #8B5CF6 55%, #6366F1 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .hero-glow {
+            pointer-events: none;
+            position: absolute; inset: 0 0 auto 0; height: 520px; z-index: -1;
+            background:
+                radial-gradient(640px 340px at 50% -40px, rgba(99,102,241,.13), transparent 70%),
+                radial-gradient(420px 260px at 78% 120px, rgba(139,92,246,.07), transparent 70%);
+        }
+        .cta-seta i { transition: transform .2s ease; }
+        .cta-seta:hover i { transform: translateX(3px); }
+
+        /* Revelação no scroll (aplicada via JS, com stagger) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(18px);
+            transition: opacity .65s cubic-bezier(.22,1,.36,1), transform .65s cubic-bezier(.22,1,.36,1);
+            transition-delay: var(--d, 0s);
+        }
+        .reveal.visivel { opacity: 1; transform: none; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal { opacity: 1; transform: none; transition: none; }
+            .card, .card:hover { transform: none; transition: none; }
+            html { scroll-behavior: auto; }
+        }
     </style>
 </head>
 <body class="bg-foco-bg text-foco-text font-sans min-h-screen antialiased">
 
     {{-- ─── Cabeçalho ───────────────────────────────────────────────────── --}}
-    <header class="border-b border-foco-border">
+    <header class="border-b border-foco-border nav-blur">
         <nav aria-label="Navegação principal" class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
             <a href="/" class="flex items-center gap-2" aria-label="Norte — página inicial">
                 <img src="/logo.svg" alt="Logotipo do Norte" width="32" height="32" class="w-8 h-8">
@@ -204,14 +266,15 @@
 
     <main>
         {{-- ─── Hero ────────────────────────────────────────────────────── --}}
-        <section aria-labelledby="hero-titulo" class="max-w-5xl mx-auto px-4 pt-16 pb-20 text-center">
+        <section aria-labelledby="hero-titulo" class="relative max-w-5xl mx-auto px-4 pt-16 pb-20 text-center">
+            <div class="hero-glow" aria-hidden="true"></div>
             <p class="inline-flex items-center gap-2 bg-foco-surface border border-foco-border text-foco-accent text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
                 <i data-lucide="zap" class="w-4 h-4" aria-hidden="true"></i>
                 Feito por quem tem TDAH, para cérebros com TDAH
             </p>
             <h1 id="hero-titulo" class="text-4xl md:text-5xl font-bold leading-tight max-w-3xl mx-auto">
                 Seu TDAH não é defeito.<br>
-                <span class="text-foco-accent">É um superpoder sem manual.</span>
+                <span class="gradient-text">É um superpoder sem manual.</span>
             </h1>
             <p class="text-lg text-foco-muted max-w-2xl mx-auto mt-6">
                 O Norte é o manual: agenda visual que combate a cegueira temporal, rotinas com
@@ -225,7 +288,7 @@
                     @auth Abrir meu painel @else Começar teste grátis de 7 dias @endauth
                 </a>
                 <a href="#superpoderes"
-                   class="text-foco-accent font-semibold text-lg px-6 py-4 inline-flex items-center gap-2">
+                   class="cta-seta text-foco-accent font-semibold text-lg px-6 py-4 inline-flex items-center gap-2">
                     Conhecer meus superpoderes
                     <i data-lucide="arrow-down" class="w-5 h-5" aria-hidden="true"></i>
                 </a>
@@ -412,6 +475,28 @@
             </div>
         </section>
 
+        {{-- ─── Conteúdo semântico (SEO) ────────────────────────────────── --}}
+        <section aria-labelledby="sobre-titulo" class="max-w-3xl mx-auto px-4 pb-4">
+            <h2 id="sobre-titulo" class="text-2xl font-bold text-center">Um app para TDAH em português, do jeito que o cérebro TDAH funciona</h2>
+            <div class="text-foco-muted text-sm leading-relaxed mt-6 space-y-4">
+                <p>
+                    O <strong class="text-foco-text">Norte</strong> é um aplicativo de organização para adultos com TDAH.
+                    Ele ataca as três barreiras clássicas do transtorno: a <strong class="text-foco-text">cegueira temporal</strong>
+                    (com uma agenda visual em linha do tempo e o marcador AGORA em tempo real), a
+                    <strong class="text-foco-text">memória de trabalho sobrecarregada</strong> (com lembretes em camadas — e-mail matinal,
+                    notificações no navegador e no celular, integração com o Google Agenda) e a
+                    <strong class="text-foco-text">paralisia de início de tarefa</strong> (quebrando qualquer compromisso em micro-passos).
+                </p>
+                <p>
+                    Do outro lado, o Norte transforma as forças do TDAH em ferramenta: o <strong class="text-foco-text">Modo
+                    Hiperfoco</strong> funciona como um timer pomodoro adaptado para TDAH, as <strong class="text-foco-text">rotinas com
+                    sequência</strong> criam hábitos com recompensa imediata, e a página de <strong class="text-foco-text">conquistas</strong>
+                    mostra sua constância num mapa visual — porque para o cérebro com TDAH, ver o progresso é combustível.
+                    O módulo financeiro completa o sistema com lançamentos em 3 cliques e proteção contra compras por impulso.
+                </p>
+            </div>
+        </section>
+
         {{-- ─── FAQ ─────────────────────────────────────────────────────── --}}
         <section id="faq" aria-labelledby="faq-titulo" class="py-20">
             <div class="max-w-3xl mx-auto px-4">
@@ -511,6 +596,29 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (window.lucide) lucide.createIcons();
+
+            // Revelação no scroll com stagger — desativada se o usuário prefere menos movimento
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+            const alvos = document.querySelectorAll(
+                'main h1, main h2, main .card, main ol > li, main section > p, main section > div > p, #faq details'
+            );
+            alvos.forEach((el) => {
+                el.classList.add('reveal');
+                const irmaos = Array.from(el.parentElement.children).filter(c => c.classList.contains('reveal'));
+                el.style.setProperty('--d', (irmaos.indexOf(el) % 6) * 0.07 + 's');
+            });
+
+            const io = new IntersectionObserver((entradas) => {
+                entradas.forEach((e) => {
+                    if (e.isIntersecting) {
+                        e.target.classList.add('visivel');
+                        io.unobserve(e.target);
+                    }
+                });
+            }, { threshold: 0.12, rootMargin: '0px 0px -36px 0px' });
+
+            alvos.forEach((el) => io.observe(el));
         });
     </script>
 </body>
