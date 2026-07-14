@@ -1,8 +1,12 @@
-# ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-14 (V21 — design sóbrio/moderno + View Transitions + Speculation Rules — deployada em produção)
+# ESTADO DO PROJETO — Norte (ex-FinFoco)
+Última atualização: 2026-07-14 (V22 — PIVÔ: rebrand Norte + módulo Conquistas + sessões de foco — deployada em produção)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
+**O produto agora se chama NORTE** (V22, 2026-07-14): pivô completo de app financeiro para
+SISTEMA PARA PESSOAS COM TDAH — rotinas e conquistas no centro, finanças como um módulo.
+Nome escolhido pelo Andre ("perder o norte" é a dor TDAH; o sistema devolve). Logo nova:
+agulha de bússola. Domínio segue finfoco.nexialabs.com.br até o Andre criar o novo.
 Sistema SaaS multi-usuário com autenticação, 13 módulos, parcelamentos e diagnóstico completo aplicado.
 **Remodelagem TDAH COMPLETA (fases 1–3)**: de controlador financeiro para assistente completo
 para pessoas com TDAH — fase 1 = Agenda, fase 2 = Rotinas com streak, fase 3 = e-mail matinal
@@ -52,6 +56,7 @@ acessíveis durante o trial, bloqueio correto após expiração) — não é só
 - [x] 15. UX desktop ≠ mobile (sidebar + tab bar + painel centro do dia)
 - [x] 16. Atalhos de teclado + modo escuro + micro-animações
 - [x] 17. Design sóbrio + View Transitions + Speculation Rules
+- [x] 18. PIVÔ: rebrand Norte + módulo Conquistas + sessões de foco
 
 ---
 
@@ -106,6 +111,8 @@ appointment_steps — id, appointment_id FK cascade, titulo varchar(80),
                    concluido boolean, timestamps
 push_subscriptions — id, user_id, endpoint text, endpoint_hash sha256 unique,
                    p256dh, auth, timestamps
+focus_sessions   — id, user_id, titulo varchar NULL, minutos, timestamps
+                   (sessões concluídas do Modo Hiperfoco)
 ```
 
 Migrations rodadas em produção:
@@ -126,10 +133,88 @@ Migrations rodadas em produção:
 - `2026_07_13_000002` — create_routines_tables (routines + routine_checks, guardas `Schema::hasTable`)
 - `2026_07_13_000003` — create_appointment_steps_table (guarda `Schema::hasTable`)
 - `2026_07_13_000004` — create_push_subscriptions_table ([11] Ran em produção)
+- `2026_07_14_000001` — create_focus_sessions_table ([12] Ran em produção)
 
 ---
 
 ## O QUE FOI CONSTRUÍDO
+
+### V22 — PIVÔ DE MARCA E PRODUTO: FinFoco vira NORTE (2026-07-14, commit `7b001a2`, deployada em produção)
+Contexto: Andre decidiu completar a transformação — de app financeiro para
+SISTEMA PARA PESSOAS COM TDAH, com rotinas e conquistas no centro e finanças
+como um módulo. Nome novo escolhido pelo Andre entre 4 opções propostas:
+**Norte** ("perder o norte" é a dor TDAH; o sistema devolve). Também pediu
+avisos de contas com cores sóbrias.
+
+#### Rebrand Norte (nome + logo + tudo)
+- Logo nova: **agulha de bússola apontando ao norte** dentro de círculo indigo
+  (SVG minimalista) — substituiu os 3 círculos concêntricos em public/icon.svg,
+  public/logo.svg e nos SVGs inline de layouts/app, auth/* e billing
+- Renomeado em TODOS os pontos visíveis: `<title>`, apple-mobile-web-app-title,
+  sidebar/header, auth (4 telas), billing, e-mails (agenda-do-dia,
+  aviso-vencimentos, assunto "Norte — Contas:"), reset de senha ("Equipe
+  Norte"), push ("Norte — chegou a hora"), Telegram, sw.js, manifest.json
+  ("Norte — seu dia no controle", start_url /painel), landing/SEO/JSON-LD,
+  settings
+- **ICS: CALNAME/PRODID viraram Norte mas os UIDs mantêm
+  finfoco.nexialabs.com.br** — mudar UID duplicaria eventos nas assinaturas
+  Google existentes. NÃO MUDAR NUNCA
+- Identificadores internos preservados de propósito: comandos finfoco:*,
+  chaves de cache/localStorage (finfoco_tema, finfoco-notif-*), banco, repo,
+  domínio. Domínio segue finfoco.nexialabs.com.br — pendência do Andre criar
+  norte.nexialabs.com.br (ou domínio próprio) no hPanel quando quiser; aí
+  atualizar canonical/OG/sitemap/robots e APP_URL
+- .env APP_NAME=Norte (local e produção)
+
+#### Módulo Conquistas (/conquistas, atalho Q, nav MEU DIA + sheet mobile)
+- Migration `2026_07_14_000001_create_focus_sessions_table.php`:
+  focus_sessions (user_id, titulo nullable, minutos, timestamps) — o timer do
+  Hiperfoco agora REGISTRA a sessão concluída via POST /foco/sessao (fetch
+  JSON, FocoController@registrarSessao)
+- `ConquistaController@index`: mapa de constância de ~20 semanas
+  (atividade/dia = routine_checks + compromissos concluídos + sessões de foco,
+  3 queries agregadas), sequência atual (max streak entre rotinas), melhor
+  sequência histórica (método melhorSequencia caminha do primeiro check até
+  hoje respeitando dias agendados; hoje pendente não quebra), totais e 8
+  marcos adultos (primeiro passo, 7 dias, 30 dias, primeiro hiperfoco, 10
+  sessões, 300 min de foco, 50 concluídos, 30 dias ativos) com progresso
+  atual/alvo
+- View `conquistas/index.blade.php`: 4 cards de números, heatmap estilo GitHub
+  (colunas=semanas, linhas seg..dom, 5 níveis de rgba(99,102,241,α) — funciona
+  nos dois temas; célula vazia usa var(--c-surface)+inset border), legenda
+  Menos→Mais, grid de marcos (atingido = ícone accent + check verde; pendente
+  = barra de progresso fina + x/y). Copy sóbria: "Constância vale mais que
+  perfeição."
+
+#### Avisos de contas sóbrios (dashboard)
+- Banners pastel (#FEF2F2/#FFFBEB com texto colorido) viraram cards neutros
+  com **ponto de 8px** na cor de significado (vermelho=vencida, âmbar=a
+  vencer) — mantém o código de cores sem gritar
+
+#### Armadilha de deploy IMPORTANTE (registrada em DECISÕES)
+Rsync amplo (`app resources routes database config public bootstrap`) levou
+`bootstrap/cache/packages.php` LOCAL para produção — ele referencia pacotes
+require-dev (Laravel Pail) que não existem no vendor de produção → "Class
+Laravel\Pail\PailServiceProvider not found" em QUALQUER artisan. Correção:
+`rm bootstrap/cache/{packages,services,config,routes-v7}.php && composer
+dump-autoload --no-dev --optimize` no servidor. **Regra: nunca rsyncar
+bootstrap/cache/ — sempre excluir.**
+
+#### QA (tudo passou)
+- Local: lint OK; migrate OK; login mostra Norte; POST /foco/sessao 204 e
+  grava; /conquistas 200 com todos os blocos; zero "FinFoco" nas páginas
+  renderizadas
+- Produção: migrate [12] Ran, landing 26× Norte e 0× FinFoco, /conquistas e
+  /painel 200, manifest novo no docroot, login 200 com Norte
+
+Checklist binário de aceitação:
+- [x] Nome Norte em todo ponto visível (app, landing, auth, e-mails, push, manifest)
+- [x] Logo bússola nova em todos os lugares
+- [x] Conquistas no ar com heatmap, streaks e 8 marcos
+- [x] Sessões de hiperfoco persistindo
+- [x] Avisos de contas sóbrios
+- [x] UIDs do ICS preservados
+- [x] Produção deployada e smoke-testada
 
 ### V21 — Design sóbrio/moderno + View Transitions + Speculation Rules (2026-07-14, commit `1ddaf2e`, deployada em produção)
 Contexto: o sistema estava ganhando cara infantil com emojis. NOVA DIRETRIZ
@@ -1240,10 +1325,31 @@ original do CLAUDE.md, accent clareado pra #818CF8).
   com 180ms — degrada em silêncio em browsers sem suporte, nenhum fallback JS
 - Cores fixas em SVG são armadilha de tema: usar `stroke="currentColor"` + classe
   de texto (ex.: anel do timer do foco com text-foco-accent), nunca hex hardcoded
+- **PIVÔ DE MARCA (V22)**: o produto se chama **Norte** — rebrand só nos pontos
+  VISÍVEIS. Identificadores internos preservados de propósito: comandos
+  `finfoco:*`, chaves de cache/localStorage (`finfoco_tema`, `finfoco-notif-*`),
+  banco, repo e domínio seguem como estão (mudá-los quebraria estado dos
+  usuários sem ganho)
+- **UIDs do feed ICS NUNCA mudam (V22)**: CALNAME/PRODID viraram Norte, mas os
+  UIDs mantêm `finfoco.nexialabs.com.br` — mudar UID duplicaria todos os
+  eventos nas assinaturas Google já existentes. NÃO MUDAR NUNCA
+- **NUNCA rsyncar `bootstrap/cache/` pro servidor (V22)** — o `packages.php`
+  local referencia pacotes require-dev (ex.: Laravel Pail) que não existem no
+  vendor `--no-dev` de produção e quebra QUALQUER `artisan` ("Class
+  Laravel\Pail\PailServiceProvider not found"). Sempre excluir do rsync.
+  Correção se acontecer: `rm bootstrap/cache/{packages,services,config,routes-v7}.php
+  && composer dump-autoload --no-dev --optimize` no servidor
+- Avisos de contas no dashboard usam card neutro + **ponto de 8px** na cor de
+  significado (vermelho=vencida, âmbar=a vencer) em vez de banner pastel —
+  código de cores mantido sem gritar (diretriz de design sóbrio)
 
 ---
 
 ## PENDÊNCIAS / BLOQUEIOS
+- **Domínio novo pós-rebrand (só o Andre pode fazer)**: criar
+  norte.nexialabs.com.br (ou domínio próprio) no hPanel quando quiser; aí
+  atualizar canonical/OG/sitemap/robots e APP_URL. Até lá o domínio segue
+  finfoco.nexialabs.com.br (funcionando normalmente)
 - **Ativação do bot do Telegram (só o Andre pode fazer)**: criar bot no @BotFather,
   colocar `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` e `TELEGRAM_WEBHOOK_SECRET`
   no .env de produção, rodar `php artisan config:cache` e registrar o webhook:
@@ -1273,10 +1379,18 @@ original do CLAUDE.md, accent clareado pra #818CF8).
   micro-animações) — ambas deployadas em produção em 2026-07-14.
 - Nenhuma pendência de V21 (design sóbrio + View Transitions + Speculation Rules) —
   deployada em produção em 2026-07-14.
+- V22 (rebrand Norte + Conquistas) deployada em produção em 2026-07-14 — única
+  pendência é o domínio novo (item acima, decisão do Andre).
 
 ---
 
-## QA — Último resultado (2026-07-14, V21 — design sóbrio + View Transitions + Speculation Rules)
+## QA — Último resultado (2026-07-14, V22 — rebrand Norte + Conquistas + sessões de foco)
+- Local: lint OK; migrate OK; login mostra Norte; POST /foco/sessao 204 e grava;
+  /conquistas 200 com todos os blocos; zero "FinFoco" nas páginas renderizadas
+- Produção: migrate [12] Ran; landing com 26× Norte e 0× FinFoco; /conquistas e
+  /painel 200; manifest novo no docroot; login 200 com Norte
+
+## QA — Resultado anterior (2026-07-14, V21 — design sóbrio + View Transitions + Speculation Rules)
 - view:cache OK, php -l OK, 4 telas 200
 - grep de emojis nas páginas renderizadas = 0
 - speculationrules e view-transition presentes no HTML
@@ -1356,6 +1470,24 @@ original do CLAUDE.md, accent clareado pra #818CF8).
 ---
 
 ## HISTÓRICO
+
+### 2026-07-14 — V22: PIVÔ — FinFoco vira NORTE + módulo Conquistas + sessões de foco — commit 7b001a2, deployada em produção
+- Pivô de marca e produto: de app financeiro para SISTEMA PARA PESSOAS COM
+  TDAH (rotinas e conquistas no centro, finanças como módulo). Nome escolhido
+  pelo Andre: **Norte**. Logo nova de agulha de bússola
+- Rebrand em todos os pontos visíveis (app, landing, auth, e-mails, push,
+  Telegram, sw.js, manifest, SEO/JSON-LD); identificadores internos e UIDs do
+  ICS preservados de propósito (ver DECISÕES); APP_NAME=Norte nos .env
+- Novo módulo Conquistas (/conquistas, atalho Q): heatmap de constância ~20
+  semanas, sequência atual e melhor histórica, totais e 8 marcos adultos com
+  progresso; timer do Hiperfoco passa a registrar sessões concluídas
+  (migration focus_sessions, POST /foco/sessao)
+- Avisos de contas do dashboard viraram cards neutros com ponto de 8px na cor
+  de significado (sóbrio)
+- Armadilha de deploy descoberta e registrada: nunca rsyncar bootstrap/cache/
+  (packages.php local com pacotes require-dev quebra artisan em produção)
+- QA local e produção OK (migrate [12] Ran, landing 26× Norte / 0× FinFoco,
+  /conquistas e /painel 200); checklist binário 7/7
 
 ### 2026-07-14 — V21: design sóbrio/moderno + View Transitions + Speculation Rules — commit 1ddaf2e, deployada em produção
 - NOVA DIRETRIZ PERMANENTE de design do Andre (registrada em DECISÕES): minimalista,
