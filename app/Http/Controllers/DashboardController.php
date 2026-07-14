@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Alert;
+use App\Models\Appointment;
 use App\Models\Bill;
 use App\Models\Reminder;
+use App\Models\Routine;
 use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -78,13 +80,28 @@ class DashboardController extends Controller
             ->orderBy('data','desc')->orderBy('created_at','desc')
             ->limit(5)->get();
 
+        // Meu dia: o painel abre com o dia, não com dinheiro
+        $compromissosHoje = Appointment::where('user_id', $uid)->doDia($hoje)->get();
+        $proximoCompromisso = $compromissosHoje
+            ->filter(fn($c) => !$c->concluido && ($c->hora === null || substr($c->hora, 0, 5) >= now()->format('H:i')))
+            ->sortBy(fn($c) => $c->hora ?? '99:99')
+            ->first()
+            ?? $compromissosHoje->firstWhere('concluido', false);
+
+        $rotinasHoje = Routine::where('user_id', $uid)
+            ->doDia($hoje)
+            ->with(['checks' => fn($q) => $q->whereDate('data', $hoje)])
+            ->get();
+        $rotinasFeitasHoje = $rotinasHoje->filter(fn($r) => $r->checks->isNotEmpty())->count();
+
         return view('dashboard.index', compact(
             'saldoTotal','gastosHoje','gastosSemanais','entradasSemana','entradaMes','saidaMes',
             'podeGastarHoje','podeGastarSemana','podeGastarMes','semaforoPodeGastar',
             'contasPendentesMes','gastosRecorrentes',
             'metaDiaADia','gastoDiaADia',
             'temLancamento','temContaFixa',
-            'avisos','lembretes','ultimasTransacoes'
+            'avisos','lembretes','ultimasTransacoes',
+            'compromissosHoje','proximoCompromisso','rotinasHoje','rotinasFeitasHoje'
         ));
     }
 

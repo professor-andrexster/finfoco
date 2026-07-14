@@ -45,7 +45,7 @@
         ->values();
 @endphp
 
-<div class="max-w-2xl mx-auto space-y-6">
+<div class="max-w-2xl lg:max-w-6xl mx-auto space-y-6">
 
     {{-- Navegação do dia --}}
     <div class="flex items-center justify-between">
@@ -72,6 +72,10 @@
             <i data-lucide="chevron-right" class="w-5 h-5"></i>
         </a>
     </div>
+
+    {{-- Desktop: linha do tempo à esquerda, rotinas e integrações à direita --}}
+    <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6 lg:items-start space-y-6 lg:space-y-0">
+    <div class="space-y-6">
 
     {{-- Progresso do dia (recompensa visual imediata) --}}
     @if($total > 0)
@@ -110,55 +114,6 @@
         </button>
         <p class="text-xs text-foco-muted text-center">Hora é opcional — sem hora, vale o dia todo.</p>
     </form>
-
-    {{-- Rotinas do dia --}}
-    @if($rotinas->isNotEmpty())
-    <div class="space-y-3">
-        <div class="flex items-center justify-between px-1">
-            <h2 class="text-sm font-bold text-foco-muted uppercase tracking-wide flex items-center gap-1.5">
-                <i data-lucide="repeat" class="w-4 h-4"></i> Rotinas do dia
-            </h2>
-            <a href="{{ route('routines.index') }}" class="text-xs font-semibold text-foco-accent hover:underline">
-                Gerenciar rotinas
-            </a>
-        </div>
-        <ul class="space-y-3">
-            @foreach($rotinas as $r)
-            @php $feita = $r->feitaEm($dia); $sequencia = $r->streak(); @endphp
-            <li class="card card-hover p-4 flex items-center gap-4 {{ $feita ? 'opacity-50' : '' }}">
-                <form action="{{ route('routines.check', $r) }}" method="POST" x-data="{ ok: {{ $feita ? 'true' : 'false' }} }">
-                    @csrf
-                    <input type="hidden" name="data" value="{{ $dia->toDateString() }}">
-                    <button type="submit" @click="ok = !ok"
-                            class="w-11 h-11 rounded-full border-2 flex items-center justify-center transition-colors shrink-0"
-                            :class="ok ? 'bg-foco-entrada border-foco-entrada text-white' : 'border-foco-border text-transparent hover:border-foco-entrada'"
-                            title="{{ $feita ? 'Desmarcar rotina' : 'Concluir rotina' }}">
-                        <i data-lucide="check" class="w-5 h-5"></i>
-                    </button>
-                </form>
-                <div class="flex-1 min-w-0">
-                    <p class="font-semibold text-base {{ $feita ? 'line-through' : '' }}">{{ $r->titulo }}</p>
-                    <p class="text-sm text-foco-muted">
-                        {{ $r->hora ? substr($r->hora, 0, 5) : 'Qualquer hora' }}
-                    </p>
-                </div>
-                @if($sequencia > 0)
-                <span class="flex items-center gap-1 text-sm font-bold text-foco-accent shrink-0"
-                      title="{{ $sequencia }} dia{{ $sequencia > 1 ? 's' : '' }} seguidos">
-                    <i data-lucide="flame" class="w-4 h-4"></i> {{ $sequencia }}
-                </span>
-                @endif
-            </li>
-            @endforeach
-        </ul>
-    </div>
-    @else
-    <div class="flex justify-end px-1">
-        <a href="{{ route('routines.index') }}" class="text-xs font-semibold text-foco-accent hover:underline flex items-center gap-1">
-            <i data-lucide="repeat" class="w-3.5 h-3.5"></i> Criar rotinas diárias
-        </a>
-    </div>
-    @endif
 
     {{-- Linha do tempo do dia --}}
     @if($itens->isEmpty())
@@ -299,6 +254,64 @@
         </ul>
     @endif
 
+    </div>{{-- /coluna principal --}}
+
+    {{-- Coluna lateral (desktop) / continuação (mobile) --}}
+    <div class="space-y-6">
+
+    {{-- Rotinas do dia --}}
+    @if($rotinas->isNotEmpty())
+    <div class="space-y-3">
+        <div class="flex items-center justify-between px-1">
+            <h2 class="text-sm font-bold text-foco-muted uppercase tracking-wide flex items-center gap-1.5">
+                <i data-lucide="repeat" class="w-4 h-4"></i> Rotinas do dia
+            </h2>
+            <a href="{{ route('routines.index') }}" class="text-xs font-semibold text-foco-accent hover:underline">
+                Gerenciar rotinas
+            </a>
+        </div>
+        <ul class="space-y-3">
+            @foreach($rotinas as $r)
+            @php $feita = $r->feitaEm($dia); $sequencia = $r->streak(); @endphp
+            <li class="card card-hover p-4 flex items-center gap-4 {{ $feita ? 'opacity-50' : '' }}">
+                <form action="{{ route('routines.check', $r) }}" method="POST" x-data="{ ok: {{ $feita ? 'true' : 'false' }} }">
+                    @csrf
+                    <input type="hidden" name="data" value="{{ $dia->toDateString() }}">
+                    <button type="submit" @click="ok = !ok"
+                            class="w-11 h-11 rounded-full border-2 flex items-center justify-center transition-colors shrink-0"
+                            :class="ok ? 'bg-foco-entrada border-foco-entrada text-white' : 'border-foco-border text-transparent hover:border-foco-entrada'"
+                            title="{{ $feita ? 'Desmarcar rotina' : 'Concluir rotina' }}">
+                        <i data-lucide="check" class="w-5 h-5"></i>
+                    </button>
+                </form>
+                <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-base {{ $feita ? 'line-through' : '' }}">{{ $r->titulo }}</p>
+                    <p class="text-sm text-foco-muted">
+                        {{ $r->hora ? substr($r->hora, 0, 5) : 'Qualquer hora' }}
+                    </p>
+                </div>
+                @if($sequencia > 0)
+                <span class="flex items-center gap-1 text-sm font-bold text-foco-accent shrink-0"
+                      title="{{ $sequencia }} dia{{ $sequencia > 1 ? 's' : '' }} seguidos">
+                    <i data-lucide="flame" class="w-4 h-4"></i> {{ $sequencia }}
+                </span>
+                @endif
+            </li>
+            @endforeach
+        </ul>
+    </div>
+    @else
+    <a href="{{ route('routines.index') }}" class="card card-hover p-4 flex items-center gap-3">
+        <span class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background:#EEF2FF">
+            <i data-lucide="repeat" class="w-5 h-5 text-foco-accent"></i>
+        </span>
+        <span>
+            <span class="block font-semibold text-sm">Criar rotinas diárias</span>
+            <span class="block text-xs text-foco-muted">Hábitos com sequência 🔥 que aparecem aqui todo dia.</span>
+        </span>
+    </a>
+    @endif
+
     {{-- Alertas do navegador --}}
     <div x-data="{ perm: ('Notification' in window) ? Notification.permission : 'unsupported' }">
         <button x-show="perm === 'default'" x-cloak
@@ -346,6 +359,9 @@
             <p class="text-xs text-foco-muted">Este link é só seu. Não compartilhe — quem tiver o link vê sua agenda.</p>
         </div>
     </div>
+
+    </div>{{-- /coluna lateral --}}
+    </div>{{-- /grid desktop --}}
 </div>
 @endsection
 

@@ -4,6 +4,84 @@
 @section('content')
 @php use App\Helpers\DateHelper; @endphp
 
+{{-- ═══ MEU DIA: o painel abre com o dia, não com dinheiro ═══════════════════ --}}
+@php
+    $hora = now()->hour;
+    $saudacao = $hora < 12 ? 'Bom dia' : ($hora < 18 ? 'Boa tarde' : 'Boa noite');
+    $primeiroNome = explode(' ', trim(auth()->user()->name))[0];
+    $pendentesHoje = $compromissosHoje->where('concluido', false)->count();
+@endphp
+<div class="mb-6">
+    <div class="flex items-end justify-between flex-wrap gap-2 mb-4">
+        <div>
+            <h1 class="text-2xl font-bold">{{ $saudacao }}, {{ $primeiroNome }} 👋</h1>
+            <p class="text-sm text-foco-muted capitalize">{{ today()->translatedFormat('l, d \d\e F') }}</p>
+        </div>
+        <a href="{{ route('agenda.index') }}" class="text-sm font-semibold text-foco-accent hover:underline flex items-center gap-1">
+            Abrir agenda <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {{-- Próximo compromisso --}}
+        <a href="{{ route('agenda.index') }}" class="card card-hover p-5 flex items-start gap-3">
+            <span class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background:#EEF2FF">
+                <i data-lucide="calendar-days" class="w-5 h-5 text-foco-accent"></i>
+            </span>
+            <span class="min-w-0">
+                <span class="block text-xs font-semibold uppercase tracking-wide text-foco-muted">Agora na agenda</span>
+                @if($proximoCompromisso)
+                    <span class="block font-bold truncate mt-0.5">
+                        @if($proximoCompromisso->hora)<span class="text-foco-accent">{{ substr($proximoCompromisso->hora, 0, 5) }}</span>@endif
+                        {{ $proximoCompromisso->titulo }}
+                    </span>
+                    @if($pendentesHoje > 1)
+                    <span class="block text-xs text-foco-muted mt-0.5">+ {{ $pendentesHoje - 1 }} para hoje</span>
+                    @endif
+                @else
+                    <span class="block font-bold mt-0.5">Dia livre 🎈</span>
+                    <span class="block text-xs text-foco-muted mt-0.5">Nada pendente na agenda de hoje</span>
+                @endif
+            </span>
+        </a>
+
+        {{-- Rotinas de hoje --}}
+        <a href="{{ $rotinasHoje->isEmpty() ? route('routines.index') : route('agenda.index') }}" class="card card-hover p-5 flex items-start gap-3">
+            <span class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background:#EEF2FF">
+                <i data-lucide="repeat" class="w-5 h-5 text-foco-accent"></i>
+            </span>
+            <span class="min-w-0 flex-1">
+                <span class="block text-xs font-semibold uppercase tracking-wide text-foco-muted">Rotinas de hoje</span>
+                @if($rotinasHoje->isEmpty())
+                    <span class="block font-bold mt-0.5">Crie sua primeira</span>
+                    <span class="block text-xs text-foco-muted mt-0.5">Ex.: "Tomar o remédio" às 8h</span>
+                @else
+                    <span class="block font-bold mt-0.5 {{ $rotinasFeitasHoje === $rotinasHoje->count() ? 'text-foco-entrada' : '' }}">
+                        {{ $rotinasFeitasHoje }} de {{ $rotinasHoje->count() }} feitas
+                        @if($rotinasFeitasHoje === $rotinasHoje->count()) ✓ @endif
+                    </span>
+                    <span class="block h-1.5 rounded-full bg-foco-surface overflow-hidden mt-2">
+                        <span class="block h-full rounded-full bg-foco-entrada transition-all"
+                              style="width:{{ $rotinasHoje->count() ? round($rotinasFeitasHoje / $rotinasHoje->count() * 100) : 0 }}%"></span>
+                    </span>
+                @endif
+            </span>
+        </a>
+
+        {{-- Hiperfoco --}}
+        <a href="{{ route('foco.index') }}" class="card card-hover p-5 flex items-start gap-3">
+            <span class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background:#6366F1">
+                <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+            </span>
+            <span class="min-w-0">
+                <span class="block text-xs font-semibold uppercase tracking-wide text-foco-muted">Superpoder</span>
+                <span class="block font-bold mt-0.5">Entrar em hiperfoco</span>
+                <span class="block text-xs text-foco-muted mt-0.5">Uma coisa só, 25 minutos</span>
+            </span>
+        </a>
+    </div>
+</div>
+
 {{-- ONBOARDING: 3 passos até o sistema fazer sentido --}}
 @if(!$temLancamento || !$temContaFixa)
 @php
