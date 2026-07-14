@@ -1,6 +1,11 @@
 User-agent: *
 Allow: /
 Disallow: /painel
+Disallow: /agenda
+Disallow: /rotinas
+Disallow: /foco
+Disallow: /passos
+Disallow: /admin
 Disallow: /lancamento
 Disallow: /historico
 Disallow: /categorias

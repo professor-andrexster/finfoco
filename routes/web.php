@@ -10,6 +10,7 @@ use App\Http\Controllers\BillController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FocoController;
 use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\RoutineController;
@@ -101,6 +102,9 @@ Route::middleware(['auth', 'subscribed'])->group(function () {
     Route::post('/agenda/{appointment}/passos',      [AgendaController::class, 'storePasso'])->name('agenda.passos.store');
     Route::post('/passos/{step}/toggle',             [AgendaController::class, 'togglePasso'])->name('agenda.passos.toggle');
     Route::delete('/passos/{step}',                  [AgendaController::class, 'destroyPasso'])->name('agenda.passos.destroy');
+
+    // Modo Hiperfoco
+    Route::get('/foco', [FocoController::class, 'index'])->name('foco.index');
 
     // Rotinas
     Route::get('/rotinas',                    [RoutineController::class, 'index'])->name('routines.index');
