@@ -1,12 +1,14 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-13 (V16 — E-mail matinal "Seu dia hoje" + micro-passos, fase 3 TDAH — deployada em produção)
+Última atualização: 2026-07-13 (V17 — Modo Hiperfoco + landing reposicionada "TDAH como superpoder" — deployada em produção)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
-Sistema SaaS multi-usuário com autenticação, 12 módulos, parcelamentos e diagnóstico completo aplicado.
+Sistema SaaS multi-usuário com autenticação, 13 módulos, parcelamentos e diagnóstico completo aplicado.
 **Remodelagem TDAH COMPLETA (fases 1–3)**: de controlador financeiro para assistente completo
 para pessoas com TDAH — fase 1 = Agenda, fase 2 = Rotinas com streak, fase 3 = e-mail matinal
 "Seu dia hoje" + micro-passos, todas concluídas e deployadas em 2026-07-13.
+**V17 (2026-07-13)**: reposicionamento "TDAH como superpoder" — Modo Hiperfoco (/foco) +
+landing reescrita com novo posicionamento e SEO ("Seu TDAH não é defeito. É um superpoder sem manual.").
 Raiz `/` agora é landing page pública de divulgação (SEO completo); o app vive em `/painel`.
 **Cobrança recorrente via Stripe (Laravel Cashier) está 100% funcional em produção**, modo LIVE,
 testada de ponta a ponta com fluxo real de trial em produção (registro real via HTTP, dashboard/`/assinatura`
@@ -27,6 +29,7 @@ acessíveis durante o trial, bloqueio correto após expiração) — não é só
 - [x] 10. Agenda TDAH (fase 1) — visão do dia, linha do AGORA, alertas no navegador, feed iCal
 - [x] 11. Rotinas recorrentes com streak (fase 2 TDAH)
 - [x] 12. E-mail matinal Seu dia hoje + micro-passos (fase 3 TDAH)
+- [x] 13. Modo Hiperfoco + reposicionamento superpoder TDAH (landing/SEO)
 
 ---
 
@@ -40,6 +43,11 @@ acessíveis durante o trial, bloqueio correto após expiração) — não é só
 - Banco: `u137664132_finfocoDB` / user `u137664132_finfocoUser`
 - PHP: 8.2.30 (produção), 8.3.6 (dev local)
 - Composer: `php artisan config:cache && php artisan route:cache && php artisan view:cache` após cada deploy
+- **Docroot público REAL**: `~/domains/finfoco.nexialabs.com.br/public_html/` — é dele que os
+  arquivos estáticos são servidos (robots.txt, sitemap.xml, index.php, og-image.png etc.).
+  O rsync para `~/finfoco/public/` NÃO atualiza os estáticos servidos: deploy de estáticos
+  exige rsync direto para esse public_html. Há cache de borda (LiteSpeed/CDN) que pode servir
+  versão antiga por um tempo — validar com query string `?v=2`
 
 ### Dev local (WSL2)
 - Código: `/home/andre_gomes/finfoco-claude-code/`
@@ -97,6 +105,68 @@ Migrations rodadas em produção:
 ---
 
 ## O QUE FOI CONSTRUÍDO
+
+### V17 — TDAH como superpoder: Modo Hiperfoco + landing reposicionada com SEO (2026-07-13, commit `07f74d4`)
+Contexto: Andre (que tem TDAH) pediu para reposicionar o FinFoco usando as FORÇAS
+do TDAH a favor do usuário, não só compensando déficits. Pesquisa embasou: estudos
+associam TDAH a mais criatividade, pensamento divergente e hiperfoco, e usar essas
+forças melhora saúde mental e qualidade de vida (fontes: ScienceDaily 2025 sobre
+forças psicológicas do TDAH, ADDA sobre hiperfoco).
+
+#### A) Modo Hiperfoco (/foco)
+- `app/Http/Controllers/FocoController.php`: index carrega compromissos de hoje
+  não concluídos como sugestões
+- Rota GET `/foco` (auth+subscribed), item "Foco" (ícone zap) na navbar após Agenda
+- `resources/views/foco/index.blade.php`: 3 etapas em Alpine (escolha → foco →
+  fim). Escolha: 1 campo "No que você vai focar agora?" + chips dos compromissos
+  de hoje + duração 15/25/45 min. Foco: anel SVG gigante (r=88, stroke-dashoffset
+  por progresso) com relógio central, título da aba mostra o countdown, botão
+  "Parar o foco (sem culpa — recomeçar também é foco)". Fim: 🎉 + notificação do
+  navegador + botão verde "Marcar como feito na agenda" (POST concluir se veio de
+  compromisso) + "Focar em outra coisa"
+- Armadilha evitada: ícones Lucide dentro de `<template x-if>` não renderizam
+  (createIcons roda antes do Alpine montar) — usar `x-show` em elemento real
+
+#### B) Landing reposicionada (marketing/home.blade.php reescrita)
+- Novo posicionamento: "Seu TDAH não é defeito. É um superpoder sem manual." (H1).
+  CTA final: "Ativar meu superpoder"
+- Seção #superpoderes: 4 forças mapeadas a ferramentas — Hiperfoco→Modo Hiperfoco,
+  Criatividade/pensamento divergente→micro-passos, Energia→rotinas com streak,
+  Coragem/espontaneidade→modal anti-impulso. Com disclaimer honesto (não
+  romantiza, não substitui tratamento)
+- Seção dores→respostas: cegueira temporal→linha do AGORA, esquecimento→lembretes
+  em camadas, paralisia→micro-passos, impulso→proteção 10s
+- Recursos atualizados (agenda, hiperfoco, rotinas, Google Agenda, e-mail matinal,
+  finanças anti-impulso). FAQ novo com 7 perguntas
+- SEO: title "FinFoco — O app que transforma seu TDAH em superpoder"; description
+  e keywords com "app para TDAH, agenda para TDAH, hiperfoco, cegueira temporal,
+  TDAH adulto"; OG/Twitter atualizados; JSON-LD WebApplication com featureList +
+  audience "Adultos com TDAH" e FAQPage espelhando o FAQ visível (validados com
+  json.loads); mantida google-site-verification
+- `public/sitemap.xml`: lastmod 2026-07-13. `public/robots.txt`: Disallow
+  /agenda, /rotinas, /foco, /passos, /admin
+
+#### Descoberta de infra IMPORTANTE
+O docroot público real da Hostinger é `~/domains/finfoco.nexialabs.com.br/public_html/`
+(arquivos estáticos: robots.txt, sitemap.xml, index.php, og-image.png etc.) — o rsync
+para `~/finfoco/public/` NÃO atualiza estáticos servidos. Deploy de estáticos = rsync
+direto para esse public_html. Há cache de borda (LiteSpeed/CDN) que pode servir versão
+antiga por um tempo (validar com `?v=2`).
+
+#### QA (tudo passou)
+- view:cache OK; landing local 200 com todas as âncoras/keywords; JSON-LD parseado
+  válido (WebApplication + FAQPage); /foco logado 200 com sugestões, chips
+  15/25/45, botões
+- Produção: landing com 14 menções a "superpoder", /foco 200 (via login),
+  robots/sitemap atualizados no docroot
+
+Checklist binário de aceitação:
+- [x] Modo Hiperfoco funcional em produção com sugestões do dia
+- [x] Item Foco na navbar
+- [x] Landing nova no ar com posicionamento superpoder
+- [x] JSON-LD válido (WebApplication + FAQPage espelhado)
+- [x] robots.txt e sitemap.xml atualizados no docroot real
+- [x] Nada existente quebrou
 
 ### V16 — E-mail matinal "Seu dia hoje" + micro-passos (fase 3 da remodelagem TDAH, 2026-07-13, commits `bfbe9d3` e `6722e9c`)
 Fecha a remodelagem TDAH iniciada na V14 (Agenda) e V15 (Rotinas). Fase 3 =
@@ -813,13 +883,23 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
   agendada no dia; falha de um endereço não bloqueia os demais
 - Autorização de micro-passos via relação: `$step->appointment->user_id` (o passo não
   tem user_id próprio — herda do compromisso pai)
+- **Docroot real de estáticos na Hostinger**: os arquivos estáticos servidos pelo domínio
+  vêm de `~/domains/finfoco.nexialabs.com.br/public_html/` (robots.txt, sitemap.xml,
+  index.php, og-image.png etc.) — o rsync para `~/finfoco/public/` NÃO os atualiza.
+  Deploy de estáticos = rsync direto para esse public_html. Cache de borda
+  (LiteSpeed/CDN) pode servir versão antiga por um tempo — validar com `?v=2`
+- **Armadilha Lucide + Alpine**: ícones Lucide dentro de `<template x-if>` não renderizam
+  (createIcons roda antes do Alpine montar o template) — usar `x-show` em elemento real
+- **Posicionamento de marca (V17)**: "TDAH como superpoder" — a landing usa as FORÇAS do
+  TDAH (hiperfoco, criatividade, energia, coragem) mapeadas a ferramentas do app, com
+  disclaimer honesto (não romantiza, não substitui tratamento)
 
 ---
 
 ## PENDÊNCIAS / BLOQUEIOS
-- **Remodelagem TDAH COMPLETA** — fases 1, 2 e 3 concluídas e deployadas em 2026-07-13.
-  Ideias futuras (NÃO comprometidas): timer de foco visual (pomodoro), integração
-  WhatsApp para alertas, web push com service worker
+- **Remodelagem TDAH COMPLETA** — fases 1, 2 e 3 concluídas e deployadas em 2026-07-13;
+  timer de foco visual entregue na V17 (Modo Hiperfoco). Ideias futuras (NÃO
+  comprometidas): integração WhatsApp para alertas, web push com service worker
 - Google Search Console: propriedade VERIFICADA (2026-07-07) — falta o usuário enviar o
   `sitemap.xml` no menu Sitemaps e solicitar indexação da home via Inspeção de URL
 - Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HISTÓRICO).
@@ -831,10 +911,20 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
   2026-07-13 (ver HISTÓRICO).
 - Nenhuma pendência de V16 (e-mail matinal + micro-passos) — deployada em produção com
   sucesso em 2026-07-13 (ver HISTÓRICO).
+- Nenhuma pendência de V17 (Modo Hiperfoco + landing superpoder) — deployada em produção
+  com sucesso em 2026-07-13 (ver HISTÓRICO).
 
 ---
 
-## QA — Último resultado (2026-07-13, V16 e-mail matinal + micro-passos)
+## QA — Último resultado (2026-07-13, V17 Modo Hiperfoco + landing superpoder)
+- view:cache OK; landing local 200 com todas as âncoras/keywords
+- JSON-LD parseado válido com json.loads (WebApplication com featureList + audience
+  "Adultos com TDAH", e FAQPage espelhando o FAQ visível de 7 perguntas)
+- /foco logado 200 com sugestões do dia, chips 15/25/45 e botões
+- Produção: landing com 14 menções a "superpoder", /foco 200 (via login),
+  robots.txt e sitemap.xml atualizados no docroot real
+
+## QA — Resultado anterior (2026-07-13, V16 e-mail matinal + micro-passos)
 - `php -l` OK em todos os arquivos; migrate local OK; 3 rotas de passos no
   route:list; view:cache OK
 - Mailable renderizado via tinker com asserts (saudação, rotina, streak 🔥 2,
@@ -885,6 +975,25 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-13 — V17: TDAH como superpoder — Modo Hiperfoco + landing reposicionada com SEO — commit 07f74d4, deployada em produção
+- Reposicionamento pedido por Andre: usar as FORÇAS do TDAH a favor do usuário
+  (pesquisa: ScienceDaily 2025 sobre forças psicológicas do TDAH, ADDA sobre hiperfoco)
+- Modo Hiperfoco em /foco: FocoController + view de 3 etapas em Alpine
+  (escolha com chips dos compromissos de hoje e duração 15/25/45 min → foco com
+  anel SVG gigante e countdown no título da aba → fim com 🎉, notificação e
+  "Marcar como feito na agenda"); item "Foco" (zap) na navbar após Agenda
+- Landing reescrita: H1 "Seu TDAH não é defeito. É um superpoder sem manual.",
+  seção #superpoderes (4 forças → ferramentas), seção dores→respostas, recursos
+  atualizados, FAQ com 7 perguntas, CTA "Ativar meu superpoder"
+- SEO novo: title/description/keywords TDAH, OG/Twitter, JSON-LD WebApplication
+  (featureList + audience) e FAQPage espelhado — validados; sitemap lastmod
+  2026-07-13; robots.txt bloqueia /agenda, /rotinas, /foco, /passos, /admin
+- Descoberta de infra: docroot real de estáticos é
+  `~/domains/finfoco.nexialabs.com.br/public_html/` (rsync pro ~/finfoco/public/
+  não atualiza estáticos servidos); cache de borda pode atrasar — validar com ?v=2
+- Armadilha registrada: Lucide dentro de `<template x-if>` não renderiza — usar x-show
+- QA local e produção aprovados (landing 200 com 14 "superpoder", /foco 200 logado)
 
 ### 2026-07-13 — V16: E-mail matinal "Seu dia hoje" + micro-passos (fase 3 TDAH) — commits bfbe9d3 e 6722e9c, deployada em produção
 - Fecha a remodelagem TDAH (fases 1–3 COMPLETAS): lembrete externo logo cedo
