@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-13 (V18 — 4 integrações: visão semanal, Google Agenda import, Telegram e Web Push — deployada em produção)
+Última atualização: 2026-07-14 (V19 — UX desktop ≠ mobile: sidebar + tab bar com FAB + painel centro do dia — deployada em produção)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -14,6 +14,10 @@ Raiz `/` agora é landing page pública de divulgação (SEO completo); o app vi
 (import ICS com parser próprio e cache), alertas via Telegram (bot + webhook) e Web Push
 (notificação com navegador fechado), com comando unificado `finfoco:alertas` disparado por
 tráfego a cada 60s. Falta só o Andre criar o bot no @BotFather pra ativar o Telegram.
+**V19 (2026-07-14)**: UX como maior força — experiências distintas por dispositivo: desktop com
+sidebar fixa (grupos MEU DIA / DINHEIRO), mobile com barra inferior de 5 alvos + FAB Lançar +
+bottom sheet "Mais"; painel agora abre com o dia (agenda, rotinas, hiperfoco) antes do dinheiro;
+agenda em 2 colunas no desktop. Próxima etapa combinada: continuar melhorias de UX/layout.
 **Cobrança recorrente via Stripe (Laravel Cashier) está 100% funcional em produção**, modo LIVE,
 testada de ponta a ponta com fluxo real de trial em produção (registro real via HTTP, dashboard/`/assinatura`
 acessíveis durante o trial, bloqueio correto após expiração) — não é só "deployada", é validada com uso real.
@@ -35,6 +39,7 @@ acessíveis durante o trial, bloqueio correto após expiração) — não é só
 - [x] 12. E-mail matinal Seu dia hoje + micro-passos (fase 3 TDAH)
 - [x] 13. Modo Hiperfoco + reposicionamento superpoder TDAH (landing/SEO)
 - [x] 14. Integrações: semana + Google Agenda import + Telegram + Web Push
+- [x] 15. UX desktop ≠ mobile (sidebar + tab bar + painel centro do dia)
 
 ---
 
@@ -113,6 +118,72 @@ Migrations rodadas em produção:
 ---
 
 ## O QUE FOI CONSTRUÍDO
+
+### V19 — UX como maior força: desktop ≠ mobile + painel centro do dia (2026-07-14, commit `6e6c315`, deployada em produção)
+Contexto: Andre reclamou que usar no computador parecia "um app de celular
+esticado". Pedido: experiências distintas por dispositivo, UX como a maior
+força do app. Próxima etapa combinada depois desta: continuar melhorias de
+UX/layout.
+
+#### Layout novo (`resources/views/layouts/app.blade.php` reescrito)
+- **Desktop (lg+)**: sidebar fixa de 264px (w-64) à esquerda com logo, dois
+  grupos de navegação — "MEU DIA" (Painel, Agenda, Hiperfoco, Rotinas) e
+  "DINHEIRO" (Lançar, Contas, Histórico, Relatórios, Categorias, Alertas) —
+  e rodapé com Configurações, Assinatura (badge TRIAL) e card do usuário com
+  logout. Item ativo = classe `.side-active` (bg #EEF2FF + roxo + bold).
+  Conteúdo com `lg:pl-64`, wrapper `max-w-6xl px-4 lg:px-10`
+- **Mobile (<lg)**: topo mínimo sticky (logo + avatar com dropdown de
+  Assinatura/Configurações/Sair) + **barra inferior fixa de 5 alvos**
+  (grid-cols-5 h-16): Painel, Agenda, **Lançar como FAB central** (w-14 h-14
+  roxo elevado -mt-7 com sombra), Foco, e "Mais" que abre **bottom sheet**
+  deslizante (x-transition translate-y-full) com grade 3×2: Rotinas, Contas,
+  Histórico, Relatórios, Categorias, Alertas.
+  `padding-bottom: env(safe-area-inset-bottom)` (classe .tabbar) e
+  `viewport-fit=cover` p/ iPhone. Conteúdo com pb-28 no mobile pra barra não
+  cobrir
+- Toasts subiram pra z-[70] (acima do sheet z-50). Estilos de input ganharam
+  type=time e type=url
+- Navbar horizontal antiga (9 itens apertados) foi eliminada
+
+#### Painel = centro do dia (`DashboardController` + `dashboard/index.blade.php`)
+- Controller agora carrega: `$compromissosHoje`, `$proximoCompromisso`
+  (próximo não concluído com hora >= agora, senão o primeiro sem hora
+  pendente), `$rotinasHoje` (com checks de hoje), `$rotinasFeitasHoje`
+- View abre com "Bom dia/Boa tarde/Boa noite, {primeiro nome} 👋" + data por
+  extenso + link "Abrir agenda", e 3 cards clicáveis ANTES do dinheiro:
+  **Agora na agenda** (hora+título do próximo compromisso, "+N para hoje",
+  ou "Dia livre 🎈"), **Rotinas de hoje** (x de y feitas + mini barra de
+  progresso verde; vazio → CTA "Crie sua primeira"), **Entrar em hiperfoco**
+  (ícone zap em fundo roxo). Resto do dashboard financeiro mantido intacto
+  abaixo
+
+#### Agenda em 2 colunas no desktop (`agenda/index.blade.php`)
+- Wrapper `max-w-2xl lg:max-w-6xl`; grid
+  `lg:grid-cols-[minmax(0,1fr)_340px]`: coluna principal = progresso do dia +
+  quick-add + timeline com linha do AGORA; coluna lateral = Rotinas do dia +
+  botão de alertas do navegador + box Google Agenda. No mobile empilha
+  (rotinas agora vêm DEPOIS da timeline — mudança consciente de ordem).
+  Estado vazio de rotinas virou card CTA bonito
+
+#### QA (tudo passou)
+- view:cache OK; login via HTTP e as 13 telas autenticadas todas 200
+  (painel, agenda, agenda/semana, foco, rotinas, configuracoes, contas,
+  historico, relatorios, categorias, alertas, lancamento, assinatura);
+  markup verificado no HTML (sidebar hidden lg:flex fixed, barra grid-cols-5
+  h-16, saudação, 3 cards do dia, side-active ×2, grid 2 colunas da agenda)
+- Verificado que as telas de auth são standalone (não usam layouts.app — que
+  agora pressupõe usuário logado); billing usa e é autenticado, OK
+
+#### Deploy em produção (2026-07-14)
+- rsync 4 arquivos + caches. Smoke produção: /painel 200 (via -L), landing 200
+
+Checklist binário de aceitação:
+- [x] Sidebar desktop com grupos e item ativo
+- [x] Barra inferior mobile com FAB Lançar e sheet Mais
+- [x] Painel abre com o dia (3 cards) antes do dinheiro
+- [x] Agenda 2 colunas no desktop, empilhada no mobile
+- [x] 13 telas autenticadas renderizando 200
+- [x] Deploy em produção OK
 
 ### V18 — 4 integrações: visão semanal, Google Agenda dentro do FinFoco, Telegram e Web Push (2026-07-13, commit `b5fcafc`, deployada em produção)
 
