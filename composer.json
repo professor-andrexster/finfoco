@@ -10,6 +10,7 @@
         "laravel/cashier": "^16.6",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "minishlink/web-push": "^9.0",
         "symfony/clock": "^7.0"
     },
     "require-dev": {

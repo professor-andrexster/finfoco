@@ -25,7 +25,24 @@
             'hora'   => substr($r->hora, 0, 5),
             'avisar' => 10,
         ])
+    )->concat(
+        collect($eventosGoogle)->filter(fn($g) => $g['hora'])->values()->map(fn($g) => [
+            'id'     => 'g' . substr(md5($g['titulo'] . $g['hora']), 0, 10),
+            'titulo' => $g['titulo'],
+            'data'   => $dia->toDateString(),
+            'hora'   => $g['hora'],
+            'avisar' => 30,
+        ])
     )->values();
+
+    // Compromissos do FinFoco + eventos do Google numa linha do tempo só
+    $itens = $compromissos->map(fn($c) => ['tipo' => 'app', 'obj' => $c, 'hora' => $c->hora])
+        ->concat(collect($eventosGoogle)->map(fn($g) => [
+            'tipo' => 'google', 'titulo' => $g['titulo'],
+            'hora' => $g['hora'] ? $g['hora'] . ':00' : null,
+        ]))
+        ->sortBy(fn($i) => $i['hora'] ?? '')
+        ->values();
 @endphp
 
 <div class="max-w-2xl mx-auto space-y-6">
@@ -39,11 +56,16 @@
         <div class="text-center">
             <h1 class="text-2xl font-bold capitalize">{{ $tituloDia }}</h1>
             <p class="text-sm text-foco-muted">{{ $dia->translatedFormat('d \d\e F') }}</p>
-            @unless($ehHoje)
-                <a href="{{ route('agenda.index') }}" class="text-xs font-semibold text-foco-accent hover:underline">
-                    Voltar para hoje
+            <div class="flex items-center justify-center gap-3">
+                <a href="{{ route('agenda.semana', ['data' => $dia->toDateString()]) }}" class="text-xs font-semibold text-foco-accent hover:underline">
+                    Ver semana
                 </a>
-            @endunless
+                @unless($ehHoje)
+                    <a href="{{ route('agenda.index') }}" class="text-xs font-semibold text-foco-accent hover:underline">
+                        Voltar para hoje
+                    </a>
+                @endunless
+            </div>
         </div>
         <a href="{{ route('agenda.index', ['data' => $proximo]) }}"
            class="w-11 h-11 card card-hover flex items-center justify-center text-foco-muted hover:text-foco-text">
@@ -139,7 +161,7 @@
     @endif
 
     {{-- Linha do tempo do dia --}}
-    @if($compromissos->isEmpty())
+    @if($itens->isEmpty())
         <div class="card p-10 text-center space-y-3">
             <i data-lucide="calendar" class="w-10 h-10 mx-auto text-foco-muted"></i>
             <p class="font-semibold">Nada marcado {{ $ehHoje ? 'para hoje' : 'neste dia' }}.</p>
@@ -147,8 +169,27 @@
         </div>
     @else
         <ul id="timeline" class="space-y-3" data-hoje="{{ $ehHoje ? '1' : '0' }}">
-            @foreach($compromissos as $c)
+            @foreach($itens as $item)
+            @if($item['tipo'] === 'google')
             @php
+                $gMin = $item['hora'] ? ((int) substr($item['hora'], 0, 2)) * 60 + (int) substr($item['hora'], 3, 2) : null;
+            @endphp
+            <li data-min="{{ $gMin ?? -1 }}" class="card p-4 flex items-center gap-4">
+                <span class="w-11 h-11 rounded-full border-2 border-foco-border flex items-center justify-center shrink-0 text-foco-muted"
+                      title="Evento do Google Agenda (somente leitura)">
+                    <i data-lucide="calendar" class="w-5 h-5"></i>
+                </span>
+                <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-base">{{ $item['titulo'] }}</p>
+                    <p class="text-sm text-foco-muted">
+                        {{ $item['hora'] ? substr($item['hora'], 0, 5) : 'O dia todo' }}
+                    </p>
+                </div>
+                <span class="text-[10px] font-bold text-foco-muted bg-foco-surface px-2 py-1 rounded-full shrink-0">GOOGLE</span>
+            </li>
+            @else
+            @php
+                $c        = $item['obj'];
                 $minutos  = $c->hora ? ((int) substr($c->hora, 0, 2)) * 60 + (int) substr($c->hora, 3, 2) : null;
                 $atrasado = $ehHoje && !$c->concluido && $minutos !== null && $minutos < (now()->hour * 60 + now()->minute);
             @endphp
@@ -245,6 +286,7 @@
                     </form>
                 </div>
             </li>
+            @endif
             @endforeach
 
             {{-- Linha do AGORA: reposicionada por script conforme a hora atual --}}
@@ -260,7 +302,7 @@
     {{-- Alertas do navegador --}}
     <div x-data="{ perm: ('Notification' in window) ? Notification.permission : 'unsupported' }">
         <button x-show="perm === 'default'" x-cloak
-                @click="Notification.requestPermission().then(p => perm = p)"
+                @click="Notification.requestPermission().then(p => { perm = p; if (p === 'granted' && window.finfocoAssinarPush) window.finfocoAssinarPush(); })"
                 class="card card-hover w-full p-4 flex items-center gap-3 text-left">
             <span class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background:#D9770618">
                 <i data-lucide="bell-ring" class="w-5 h-5 text-foco-alerta"></i>

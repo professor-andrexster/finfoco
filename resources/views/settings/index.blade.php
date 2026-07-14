@@ -58,12 +58,72 @@
             </div>
         </div>
 
+        <div class="card rounded-2xl p-6 space-y-5">
+            <h2 class="font-semibold text-foco-text flex items-center gap-2">
+                <i data-lucide="calendar-sync" class="w-4 h-4 text-foco-accent"></i>
+                Google Agenda dentro do FinFoco
+            </h2>
+
+            <div>
+                <label for="google_ics_url" class="block text-sm font-medium mb-1 text-foco-muted">
+                    Endereço secreto em iCal da sua agenda Google
+                </label>
+                <p class="text-xs text-foco-muted mb-2">
+                    No Google Agenda (computador): <strong>Configurações → sua agenda →
+                    Integrar agenda → Endereço secreto no formato iCal</strong>. Cole aqui e
+                    seus eventos do Google aparecem na agenda do FinFoco.
+                </p>
+                <input type="url" id="google_ics_url" name="google_ics_url" maxlength="500"
+                       value="{{ old('google_ics_url', $googleIcsUrl) }}"
+                       placeholder="https://calendar.google.com/calendar/ical/..."
+                       class="w-full bg-white border border-foco-border rounded-xl px-4 py-3 text-foco-text focus:outline-none focus:border-foco-accent transition-colors">
+                @if($googleIcsUrl)
+                <p class="text-xs text-foco-entrada mt-2 flex items-center gap-1">
+                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                    Conectado — seus eventos do Google aparecem na agenda. Apague o campo para desconectar.
+                </p>
+                @endif
+            </div>
+        </div>
+
         <button type="submit"
                 class="btn-primary w-full bg-foco-accent hover:bg-foco-accent/80 text-white py-4 rounded-2xl flex items-center justify-center gap-3 transition-colors">
             <i data-lucide="save" class="w-6 h-6"></i>
             Salvar configurações
         </button>
     </form>
+
+    {{-- Alertas no Telegram --}}
+    @if(config('services.telegram.bot_username'))
+    <div class="card rounded-2xl p-6 mt-5">
+        <h2 class="font-semibold text-foco-text flex items-center gap-2 mb-2">
+            <i data-lucide="send" class="w-4 h-4 text-foco-accent"></i>
+            Alertas no Telegram
+        </h2>
+        @if($telegramConectado)
+            <p class="text-sm text-foco-entrada flex items-center gap-1.5 mb-4">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                Conectado — seus alertas de compromissos e rotinas chegam no Telegram.
+            </p>
+            <form action="{{ route('telegram.desconectar') }}" method="POST">
+                @csrf
+                <button type="submit" class="text-sm font-semibold text-foco-saida hover:underline">
+                    Desconectar Telegram
+                </button>
+            </form>
+        @else
+            <p class="text-sm text-foco-muted mb-4">
+                Receba os avisos de compromissos e rotinas direto no Telegram —
+                funciona mesmo com o navegador fechado. Um toque e pronto.
+            </p>
+            <a href="{{ route('telegram.conectar') }}"
+               class="btn-primary w-full bg-foco-accent hover:bg-foco-accent/80 text-white py-4 rounded-2xl flex items-center justify-center gap-3 transition-colors">
+                <i data-lucide="send" class="w-6 h-6"></i>
+                Conectar Telegram
+            </a>
+        @endif
+    </div>
+    @endif
 
     {{-- Suporte --}}
     <div class="card rounded-2xl p-6 mt-5">

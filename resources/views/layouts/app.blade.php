@@ -194,6 +194,43 @@
     </main>
 
     <script>lucide.createIcons();</script>
+
+    @auth
+    @if(config('services.webpush.public_key'))
+    {{-- Web Push: registra o service worker e assina quando a permissão existir --}}
+    <script>
+        window.finfocoAssinarPush = async function () {
+            try {
+                if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+                if (Notification.permission !== 'granted') return;
+
+                const reg = await navigator.serviceWorker.register('/sw.js');
+                let sub = await reg.pushManager.getSubscription();
+
+                if (!sub) {
+                    const b64 = '{{ config('services.webpush.public_key') }}'.replace(/-/g, '+').replace(/_/g, '/');
+                    const raw = atob(b64.padEnd(b64.length + (4 - b64.length % 4) % 4, '='));
+                    sub = await reg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: Uint8Array.from(raw, c => c.charCodeAt(0)),
+                    });
+                }
+
+                await fetch('{{ route('push.assinar') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                    },
+                    body: JSON.stringify(sub.toJSON ? sub.toJSON() : sub),
+                });
+            } catch (e) { /* push é extra — nunca pode quebrar a página */ }
+        };
+        window.finfocoAssinarPush();
+    </script>
+    @endif
+    @endauth
+
     @stack('scripts')
 </body>
 </html>

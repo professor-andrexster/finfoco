@@ -7,6 +7,7 @@ use App\Models\AppointmentStep;
 use App\Models\Routine;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\GoogleAgendaService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -41,10 +42,51 @@ class AgendaController extends Controller
         }
 
         return view('agenda.index', [
-            'dia'          => $dia,
-            'compromissos' => $compromissos,
-            'rotinas'      => $rotinas,
-            'icsUrl'       => route('agenda.feed', ['token' => $icsToken]),
+            'dia'           => $dia,
+            'compromissos'  => $compromissos,
+            'rotinas'       => $rotinas,
+            'eventosGoogle' => app(GoogleAgendaService::class)->eventosDoDia(auth()->id(), $dia),
+            'icsUrl'        => route('agenda.feed', ['token' => $icsToken]),
+        ]);
+    }
+
+    public function semana(Request $request)
+    {
+        try {
+            $referencia = $request->filled('data')
+                ? Carbon::parse($request->query('data'))->startOfDay()
+                : today();
+        } catch (\Throwable) {
+            $referencia = today();
+        }
+
+        $inicio = $referencia->copy()->startOfWeek();
+        $fim    = $inicio->copy()->addDays(6);
+
+        $compromissos = Appointment::where('user_id', auth()->id())
+            ->whereBetween('data', [$inicio->toDateString(), $fim->toDateString()])
+            ->orderByRaw('hora IS NULL DESC')
+            ->orderBy('hora')
+            ->get()
+            ->groupBy(fn($c) => $c->data->toDateString());
+
+        $rotinas = Routine::where('user_id', auth()->id())
+            ->with(['checks' => fn($q) => $q->whereBetween('data', [$inicio->toDateString(), $fim->toDateString()])])
+            ->get();
+
+        $google = app(GoogleAgendaService::class);
+        $eventosGoogleSemana = [];
+        for ($i = 0; $i < 7; $i++) {
+            $d = $inicio->copy()->addDays($i);
+            $eventosGoogleSemana[$d->toDateString()] = $google->eventosDoDia(auth()->id(), $d);
+        }
+
+        return view('agenda.semana', [
+            'inicio'              => $inicio,
+            'fim'                 => $fim,
+            'compromissos'        => $compromissos,
+            'rotinas'             => $rotinas,
+            'eventosGoogleSemana' => $eventosGoogleSemana,
         ]);
     }
 

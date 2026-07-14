@@ -42,6 +42,29 @@ class AppServiceProvider extends ServiceProvider
         }
     }
 
+    /** Roda um comando artisan no máximo 1x por intervalo (para alertas de minuto em minuto). */
+    private function rodarRotinaFrequente(string $nome, string $comando, int $intervaloSeg): void
+    {
+        $ultimo = Cache::get("{$nome}_ts");
+        if ($ultimo && now()->timestamp - $ultimo < $intervaloSeg) {
+            return;
+        }
+
+        $lock = Cache::lock("{$nome}_lock", 120);
+        if (!$lock->get()) {
+            return;
+        }
+
+        try {
+            Artisan::call($comando);
+            Cache::put("{$nome}_ts", now()->timestamp, 3600);
+        } catch (\Throwable $e) {
+            Log::error("Rotina frequente {$nome} falhou: " . $e->getMessage());
+        } finally {
+            $lock->release();
+        }
+    }
+
     /**
      * Bootstrap any application services.
      */
@@ -72,6 +95,7 @@ class AppServiceProvider extends ServiceProvider
             $this->rodarRotinaDiaria('backup_diario', 'finfoco:backup');
             $this->rodarRotinaDiaria('avisos_vencimento', 'finfoco:avisar-vencimentos');
             $this->rodarRotinaDiaria('agenda_do_dia', 'finfoco:agenda-do-dia');
+            $this->rodarRotinaFrequente('alertas_minuto', 'finfoco:alertas', 60);
         });
     }
 }

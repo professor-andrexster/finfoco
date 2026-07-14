@@ -12,6 +12,8 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FocoController;
 use App\Http\Controllers\MarketingController;
+use App\Http\Controllers\PushController;
+use App\Http\Controllers\TelegramController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\RoutineController;
 use App\Http\Controllers\ReportController;
@@ -96,6 +98,7 @@ Route::middleware(['auth', 'subscribed'])->group(function () {
 
     // Agenda
     Route::get('/agenda',                            [AgendaController::class, 'index'])->name('agenda.index');
+    Route::get('/agenda/semana',                     [AgendaController::class, 'semana'])->name('agenda.semana');
     Route::post('/agenda',                           [AgendaController::class, 'store'])->name('agenda.store');
     Route::post('/agenda/{appointment}/concluir',    [AgendaController::class, 'concluir'])->name('agenda.concluir');
     Route::delete('/agenda/{appointment}',           [AgendaController::class, 'destroy'])->name('agenda.destroy');
@@ -120,7 +123,19 @@ Route::middleware(['auth', 'subscribed'])->group(function () {
     // Configurações
     Route::get('/configuracoes',  [SettingController::class, 'show'])->name('settings.show');
     Route::post('/configuracoes', [SettingController::class, 'update'])->name('settings.update');
+
+    // Telegram (conectar/desconectar)
+    Route::get('/telegram/conectar',      [TelegramController::class, 'conectar'])->name('telegram.conectar');
+    Route::post('/telegram/desconectar',  [TelegramController::class, 'desconectar'])->name('telegram.desconectar');
+
+    // Web Push (assinatura do navegador)
+    Route::post('/push/assinar',    [PushController::class, 'assinar'])->name('push.assinar');
+    Route::post('/push/desassinar', [PushController::class, 'desassinar'])->name('push.desassinar');
 });
+
+// ─── Webhook do Telegram (público, segredo na URL) ─────────────────────────────
+Route::post('/telegram/webhook/{segredo}', [TelegramController::class, 'webhook'])
+    ->name('telegram.webhook');
 
 // ─── Feed iCal da agenda (público, protegido por token secreto de 40 chars) ───
 Route::get('/agenda/feed/{token}.ics', [AgendaController::class, 'feed'])
