@@ -71,6 +71,7 @@ class AppServiceProvider extends ServiceProvider
 
             $this->rodarRotinaDiaria('backup_diario', 'finfoco:backup');
             $this->rodarRotinaDiaria('avisos_vencimento', 'finfoco:avisar-vencimentos');
+            $this->rodarRotinaDiaria('agenda_do_dia', 'finfoco:agenda-do-dia');
         });
     }
 }
