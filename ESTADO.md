@@ -1,11 +1,12 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-13 (V15 — Rotinas recorrentes com streak, fase 2 TDAH — deployada em produção)
+Última atualização: 2026-07-13 (V16 — E-mail matinal "Seu dia hoje" + micro-passos, fase 3 TDAH — deployada em produção)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
-Sistema SaaS multi-usuário com autenticação, 11 módulos, parcelamentos e diagnóstico completo aplicado.
-**Remodelagem em curso**: de controlador financeiro para assistente completo para pessoas com TDAH
-(fase 1 = Agenda e fase 2 = Rotinas com streak, ambas concluídas em 2026-07-13; fase 3 no roadmap em PENDÊNCIAS).
+Sistema SaaS multi-usuário com autenticação, 12 módulos, parcelamentos e diagnóstico completo aplicado.
+**Remodelagem TDAH COMPLETA (fases 1–3)**: de controlador financeiro para assistente completo
+para pessoas com TDAH — fase 1 = Agenda, fase 2 = Rotinas com streak, fase 3 = e-mail matinal
+"Seu dia hoje" + micro-passos, todas concluídas e deployadas em 2026-07-13.
 Raiz `/` agora é landing page pública de divulgação (SEO completo); o app vive em `/painel`.
 **Cobrança recorrente via Stripe (Laravel Cashier) está 100% funcional em produção**, modo LIVE,
 testada de ponta a ponta com fluxo real de trial em produção (registro real via HTTP, dashboard/`/assinatura`
@@ -25,7 +26,7 @@ acessíveis durante o trial, bloqueio correto após expiração) — não é só
 - [x] SaaS: Cobrança recorrente via Stripe (Laravel Cashier) — trial 7 dias + assinatura mensal
 - [x] 10. Agenda TDAH (fase 1) — visão do dia, linha do AGORA, alertas no navegador, feed iCal
 - [x] 11. Rotinas recorrentes com streak (fase 2 TDAH)
-- [ ] 12. E-mail diário "Seu dia hoje" + micro-passos em tarefas (fase 3 da remodelagem TDAH)
+- [x] 12. E-mail matinal Seu dia hoje + micro-passos (fase 3 TDAH)
 
 ---
 
@@ -71,6 +72,8 @@ routines         — id, user_id FK cascade, titulo varchar(80), hora time NULL
                    (null = qualquer hora), dias char(7) default '1111111'
                    (posições seg..dom, '1' = ativo), timestamps, index user_id
 routine_checks   — id, routine_id FK cascade, data date, unique(routine_id, data)
+appointment_steps — id, appointment_id FK cascade, titulo varchar(80),
+                   concluido boolean, timestamps
 ```
 
 Migrations rodadas em produção:
@@ -89,10 +92,71 @@ Migrations rodadas em produção:
 - `2026_07_09_132208` — add_is_admin_to_users_table
 - `2026_07_13_000001` — create_appointments_table (guarda `Schema::hasTable`)
 - `2026_07_13_000002` — create_routines_tables (routines + routine_checks, guardas `Schema::hasTable`)
+- `2026_07_13_000003` — create_appointment_steps_table (guarda `Schema::hasTable`)
 
 ---
 
 ## O QUE FOI CONSTRUÍDO
+
+### V16 — E-mail matinal "Seu dia hoje" + micro-passos (fase 3 da remodelagem TDAH, 2026-07-13, commits `bfbe9d3` e `6722e9c`)
+Fecha a remodelagem TDAH iniciada na V14 (Agenda) e V15 (Rotinas). Fase 3 =
+lembrete externo logo cedo (e-mail) + quebra de tarefas em micro-passos
+(estilo Goblin Tools), os dois últimos pilares da pesquisa.
+
+#### A) E-mail matinal "Seu dia hoje"
+- `app/Mail/AgendaDoDia.php` + `resources/views/emails/agenda-do-dia.blade.php`
+  (HTML puro, mesmo padrão do aviso-vencimentos): saudação "Bom dia", tabela de
+  compromissos (hora ou "Dia todo"), tabela de rotinas do dia com streak 🔥,
+  botão "Abrir minha agenda", tom acolhedor ("Um passo de cada vez. Você
+  consegue. 💜"). Assunto: "☀️ Seu dia hoje — N compromissos e M rotinas"
+- `app/Console/Commands/EnviarAgendaDoDia.php` (`finfoco:agenda-do-dia`): um
+  e-mail por usuário que tenha compromissos NÃO concluídos ou rotinas agendadas
+  hoje; quem não tem nada não recebe; falha de um endereço não bloqueia os demais
+- **Disparo**: NÃO há crontab na Hostinger compartilhada — o disparo diário é
+  pelo tráfego via `rodarRotinaDiaria()` no `AppServiceProvider::boot()`
+  (terminating callback, lock atômico em cache file, 1x/dia). Adicionada a
+  linha `rodarRotinaDiaria('agenda_do_dia', 'finfoco:agenda-do-dia')` junto de
+  backup_diario e avisos_vencimento
+
+#### B) Micro-passos nos compromissos
+- Migration `2026_07_13_000003_create_appointment_steps_table.php` (guarda
+  hasTable): `appointment_steps` — id, appointment_id FK cascade, titulo
+  varchar(80), concluido boolean, timestamps
+- Model `app/Models/AppointmentStep.php`; `Appointment` ganhou relação `steps()`
+- `AgendaController`: `storePasso` (valida titulo), `togglePasso`,
+  `destroyPasso` — autorização via `$step->appointment->user_id`; index
+  eager-loada `with('steps')`
+- Rotas (auth+subscribed): POST `/agenda/{appointment}/passos`,
+  POST `/passos/{step}/toggle`, DELETE `/passos/{step}`
+- View agenda: card do compromisso virou coluna — linha principal + botão
+  "Passos" (ícone list-tree; vira chip roxo "N/M" quando há passos) que abre
+  painel x-show com os passos (check pequeno com feedback Alpine, excluir com
+  x) e formulário inline de 1 campo "Um passo pequeno. Ex.: separar os
+  documentos" + botão "Adicionar passo"
+
+#### QA local (tudo passou)
+- `php -l` em todos os arquivos; migrate OK; 3 rotas de passos no route:list;
+  view:cache OK
+- Mailable renderizado via tinker com asserts (saudação, rotina, streak 🔥 2,
+  botão, "Dia todo" — todos OK); comando com MAIL_MAILER=log enviou 1 resumo
+- Fluxo HTTP logado: criar passo 302, toggle 302, UI mostra chip "1/1" e
+  "Separar documentos", concluido=1 no banco
+
+#### Deploy em produção (2026-07-13)
+- rsync cirúrgico (9 arquivos da fase + AppServiceProvider),
+  `migrate --force` [10] Ran, caches reconstruídos
+- `php artisan list` confirma o comando registrado;
+  `php artisan finfoco:agenda-do-dia` rodado em produção → "Resumos do dia
+  enviados: 0" (esperado, ninguém tem agenda ainda). Landing e /agenda 200
+
+Checklist binário de aceitação:
+- [x] Tabela appointment_steps em produção
+- [x] Criar/marcar/excluir micro-passo funcionando
+- [x] Chip N/M no card do compromisso
+- [x] E-mail renderiza com compromissos, rotinas e streak
+- [x] Comando só envia pra quem tem algo no dia
+- [x] Disparo diário automático via rodarRotinaDiaria (sem cron)
+- [x] Nada existente quebrou (landing 200)
 
 ### V15 — Rotinas recorrentes com streak (fase 2 da remodelagem TDAH, 2026-07-13, commit `328b20f`)
 Continuação da remodelagem TDAH (fase 1 = V14 Agenda). Entrega rotinas/hábitos
@@ -741,13 +805,21 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
   limite de 366 iterações pra evitar loop infinito)
 - Dedupe de notificações no localStorage precisa incluir a DATA na chave quando o item
   se repete (rotinas): ids prefixados 'c'/'r' pra compromissos/rotinas não colidirem
+- **E-mail matinal sem cron**: Hostinger compartilhada não dá crontab — o disparo diário
+  do `finfoco:agenda-do-dia` é pelo tráfego via `rodarRotinaDiaria('agenda_do_dia', ...)`
+  no `AppServiceProvider::boot()` (terminating callback + lock atômico em cache file,
+  1x/dia), mesmo mecanismo de backup_diario e avisos_vencimento
+- `finfoco:agenda-do-dia` só envia pra quem tem compromisso não concluído OU rotina
+  agendada no dia; falha de um endereço não bloqueia os demais
+- Autorização de micro-passos via relação: `$step->appointment->user_id` (o passo não
+  tem user_id próprio — herda do compromisso pai)
 
 ---
 
 ## PENDÊNCIAS / BLOQUEIOS
-- **Roadmap da remodelagem TDAH** (fases 1 e 2 concluídas em 2026-07-13):
-  - Fase 3 — E-mail diário "Seu dia hoje" (reusar cron do `finfoco:avisar-vencimentos`)
-    + micro-passos em tarefas
+- **Remodelagem TDAH COMPLETA** — fases 1, 2 e 3 concluídas e deployadas em 2026-07-13.
+  Ideias futuras (NÃO comprometidas): timer de foco visual (pomodoro), integração
+  WhatsApp para alertas, web push com service worker
 - Google Search Console: propriedade VERIFICADA (2026-07-07) — falta o usuário enviar o
   `sitemap.xml` no menu Sitemaps e solicitar indexação da home via Inspeção de URL
 - Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HISTÓRICO).
@@ -757,10 +829,22 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
   (ver HISTÓRICO).
 - Nenhuma pendência de V15 (Rotinas com streak) — deployada em produção com sucesso em
   2026-07-13 (ver HISTÓRICO).
+- Nenhuma pendência de V16 (e-mail matinal + micro-passos) — deployada em produção com
+  sucesso em 2026-07-13 (ver HISTÓRICO).
 
 ---
 
-## QA — Último resultado (2026-07-13, V15 Rotinas com streak)
+## QA — Último resultado (2026-07-13, V16 e-mail matinal + micro-passos)
+- `php -l` OK em todos os arquivos; migrate local OK; 3 rotas de passos no
+  route:list; view:cache OK
+- Mailable renderizado via tinker com asserts (saudação, rotina, streak 🔥 2,
+  botão, "Dia todo") — todos OK; comando com MAIL_MAILER=log enviou 1 resumo
+- Fluxo HTTP logado: criar passo 302, toggle 302, chip "1/1" na UI, concluido=1 no banco
+- Produção pós-deploy: migrate --force [10] Ran, comando registrado no artisan list,
+  `finfoco:agenda-do-dia` em produção → "Resumos do dia enviados: 0" (esperado),
+  landing e /agenda 200
+
+## QA — Resultado anterior (2026-07-13, V15 Rotinas com streak)
 - `php -l` OK nos 4 arquivos PHP; migrate local OK; 4 rotas no route:list; view:cache OK
 - Fluxo HTTP real logado: GET /rotinas 200, POST store 302 (rotina "Tomar o remédio"
   08:00 todos os dias), POST check 302 → check no banco, streak=1; com check de ontem
@@ -801,6 +885,29 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-13 — V16: E-mail matinal "Seu dia hoje" + micro-passos (fase 3 TDAH) — commits bfbe9d3 e 6722e9c, deployada em produção
+- Fecha a remodelagem TDAH (fases 1–3 COMPLETAS): lembrete externo logo cedo
+  (e-mail matinal) + quebra de tarefas em micro-passos (estilo Goblin Tools)
+- E-mail "Seu dia hoje": `AgendaDoDia` Mailable + view HTML pura com tabelas de
+  compromissos e rotinas (com streak 🔥), botão "Abrir minha agenda", tom
+  acolhedor; comando `finfoco:agenda-do-dia` envia um resumo por usuário que
+  tenha algo no dia (quem não tem nada não recebe)
+- Disparo diário SEM cron (Hostinger não dá crontab): nova linha
+  `rodarRotinaDiaria('agenda_do_dia', 'finfoco:agenda-do-dia')` no
+  AppServiceProvider, junto de backup_diario e avisos_vencimento
+- Micro-passos: tabela `appointment_steps`, model `AppointmentStep`, relação
+  `steps()` em Appointment, 3 rotas (criar/toggle/excluir) no AgendaController
+  com autorização via `$step->appointment->user_id`; card do compromisso ganhou
+  botão "Passos" (chip roxo N/M), painel x-show e form inline de 1 campo
+- QA local completo aprovado (php -l, migrate, route:list, Mailable via tinker
+  com asserts, comando com MAIL_MAILER=log, fluxo HTTP de passos com chip 1/1)
+- Deploy em produção: rsync cirúrgico (9 arquivos + AppServiceProvider),
+  migrate --force [10] Ran, caches reconstruídos, comando confirmado no artisan
+  list e rodado em produção ("Resumos do dia enviados: 0", esperado); landing e
+  /agenda 200; checklist binário 7/7 (ver seção V16)
+- Ideias futuras registradas (não comprometidas): timer de foco visual
+  (pomodoro), integração WhatsApp para alertas, web push com service worker
 
 ### 2026-07-13 — V15: Rotinas recorrentes com streak (fase 2 TDAH) — commit 328b20f, deployada em produção
 - Fase 2 da remodelagem TDAH: rotinas/hábitos recorrentes com recompensa imediata
