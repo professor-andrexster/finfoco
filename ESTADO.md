@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — Norte (ex-FinFoco)
-Última atualização: 2026-07-14 (V22 — PIVÔ: rebrand Norte + módulo Conquistas + sessões de foco — deployada em produção)
+Última atualização: 2026-07-14 (V23 — landing com efeitos modernos + camada extra de SEO — deployada em produção)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -32,6 +32,11 @@ prefers-reduced-motion respeitado — tudo só no layout, nenhuma view individua
 Speculation Rules com prerender no hover (navegação percebida como instantânea, com exclusão
 das rotas GET com efeito colateral) e refinamentos de contraste/foco/color-scheme nos dois temas.
 NOVA DIRETRIZ PERMANENTE de design do Andre registrada em DECISÕES.
+**V23 (2026-07-14)**: landing com efeitos de "landing moderna" (feel de React/Next feito com
+CSS + IntersectionObserver vanilla): header sticky com backdrop-blur, gradient text no hero,
+glow radial, hover lift nos cards, revelação no scroll com stagger — tudo respeitando
+prefers-reduced-motion. SEO expandido: 4 blocos JSON-LD (WebApplication, Organization,
+WebSite, FAQPage), nova seção semântica de conteúdo TDAH e sitemap atualizado no docroot.
 **Cobrança recorrente via Stripe (Laravel Cashier) está 100% funcional em produção**, modo LIVE,
 testada de ponta a ponta com fluxo real de trial em produção (registro real via HTTP, dashboard/`/assinatura`
 acessíveis durante o trial, bloqueio correto após expiração) — não é só "deployada", é validada com uso real.
@@ -57,6 +62,7 @@ acessíveis durante o trial, bloqueio correto após expiração) — não é só
 - [x] 16. Atalhos de teclado + modo escuro + micro-animações
 - [x] 17. Design sóbrio + View Transitions + Speculation Rules
 - [x] 18. PIVÔ: rebrand Norte + módulo Conquistas + sessões de foco
+- [x] 19. Landing com efeitos modernos + SEO expandido
 
 ---
 
@@ -138,6 +144,53 @@ Migrations rodadas em produção:
 ---
 
 ## O QUE FOI CONSTRUÍDO
+
+### V23 — Landing com efeitos de landing moderna + camada extra de SEO (2026-07-14, commit `f4f89d5`, deployada em produção)
+Pedido do Andre: "efeitos de react e next" na landing + mais SEO. Implementado
+com CSS + IntersectionObserver vanilla (stack é Blade/Alpine em Hostinger —
+sem framework), entregando o mesmo feel.
+
+#### Efeitos (marketing/home.blade.php)
+- Header sticky com backdrop-blur (`.nav-blur`: rgba(255,255,255,.72) +
+  blur 14px saturate 1.6)
+- Headline do hero com gradient text (indigo→violeta→indigo,
+  background-clip: text)
+- Glow radial sutil atrás do hero (`.hero-glow`, 2 radial-gradients
+  indigo/violeta, pointer-events none)
+- Cards com hover lift (-3px + sombra maior, cubic-bezier(.22,1,.36,1))
+- CTA "Conhecer meus superpoderes" com seta que desliza 3px no hover
+  (`.cta-seta`)
+- **Revelação no scroll com stagger**: JS no DOMContentLoaded adiciona
+  `.reveal` a main h1/h2/.card/ol>li/section p/#faq details, calcula delay por
+  posição entre irmãos (index%6 × 70ms via `--d`) e um IntersectionObserver
+  (threshold .12, rootMargin -36px) adiciona `.visivel` uma vez (unobserve
+  depois). TUDO desativado com prefers-reduced-motion (checado no JS e no CSS)
+
+#### SEO
+- JSON-LD agora com 4 blocos válidos (validados com json.loads):
+  WebApplication, **Organization** (novo, com logo), **WebSite** (novo,
+  inLanguage pt-BR), FAQPage
+- Nova seção de conteúdo semântico antes do FAQ ("Um app para TDAH em
+  português, do jeito que o cérebro TDAH funciona") — 2 parágrafos honestos
+  com keywords: cegueira temporal, memória de trabalho, paralisia de início
+  de tarefa, timer pomodoro adaptado para TDAH, rotinas com sequência,
+  conquistas
+- sitemap.xml lastmod → 2026-07-14 (copiado também pro docroot public_html)
+
+#### QA (tudo passou)
+- view:cache OK, landing 200, 4 JSON-LD parseando,
+  hero-glow/nav-blur/gradient-text/reveal/IntersectionObserver presentes no
+  HTML
+- Produção: landing 200 com os efeitos servidos (4 ocorrências
+  hero-glow/nav-blur), sitemap novo no docroot
+
+Checklist binário de aceitação:
+- [x] Header blur + gradient text + glow + reveal com stagger no ar
+- [x] prefers-reduced-motion respeitado (JS e CSS)
+- [x] 4 blocos JSON-LD válidos
+- [x] Seção semântica de SEO publicada
+- [x] Sitemap atualizado no docroot
+- [x] Nada quebrou
 
 ### V22 — PIVÔ DE MARCA E PRODUTO: FinFoco vira NORTE (2026-07-14, commit `7b001a2`, deployada em produção)
 Contexto: Andre decidiu completar a transformação — de app financeiro para
@@ -1384,7 +1437,13 @@ original do CLAUDE.md, accent clareado pra #818CF8).
 
 ---
 
-## QA — Último resultado (2026-07-14, V22 — rebrand Norte + Conquistas + sessões de foco)
+## QA — Último resultado (2026-07-14, V23 — landing com efeitos modernos + SEO expandido)
+- Local: view:cache OK; landing 200; 4 blocos JSON-LD parseando (json.loads);
+  hero-glow/nav-blur/gradient-text/reveal/IntersectionObserver presentes no HTML
+- Produção: landing 200 com os efeitos servidos (4 ocorrências
+  hero-glow/nav-blur); sitemap novo no docroot
+
+## QA — Resultado anterior (2026-07-14, V22 — rebrand Norte + Conquistas + sessões de foco)
 - Local: lint OK; migrate OK; login mostra Norte; POST /foco/sessao 204 e grava;
   /conquistas 200 com todos os blocos; zero "FinFoco" nas páginas renderizadas
 - Produção: migrate [12] Ran; landing com 26× Norte e 0× FinFoco; /conquistas e
@@ -1470,6 +1529,20 @@ original do CLAUDE.md, accent clareado pra #818CF8).
 ---
 
 ## HISTÓRICO
+
+### 2026-07-14 — V23: landing com efeitos de landing moderna + camada extra de SEO — commit f4f89d5, deployada em produção
+- Pedido do Andre: "efeitos de react e next" na landing + mais SEO; feito com
+  CSS + IntersectionObserver vanilla (sem framework, stack Blade/Alpine)
+- Efeitos: header sticky com backdrop-blur (.nav-blur), gradient text no H1,
+  glow radial atrás do hero, hover lift nos cards, seta do CTA que desliza,
+  revelação no scroll com stagger (index%6 × 70ms via --d, IntersectionObserver
+  threshold .12); tudo desativado com prefers-reduced-motion (JS e CSS)
+- SEO: 4 blocos JSON-LD válidos (WebApplication + Organization e WebSite novos
+  + FAQPage), nova seção semântica de conteúdo TDAH antes do FAQ (keywords:
+  cegueira temporal, memória de trabalho, paralisia de início de tarefa, timer
+  pomodoro adaptado para TDAH), sitemap.xml lastmod 2026-07-14 no docroot
+- QA local e produção OK (landing 200 com efeitos servidos, sitemap novo no
+  docroot); checklist binário 6/6
 
 ### 2026-07-14 — V22: PIVÔ — FinFoco vira NORTE + módulo Conquistas + sessões de foco — commit 7b001a2, deployada em produção
 - Pivô de marca e produto: de app financeiro para SISTEMA PARA PESSOAS COM
