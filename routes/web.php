@@ -98,6 +98,9 @@ Route::middleware(['auth', 'subscribed'])->group(function () {
     Route::post('/agenda',                           [AgendaController::class, 'store'])->name('agenda.store');
     Route::post('/agenda/{appointment}/concluir',    [AgendaController::class, 'concluir'])->name('agenda.concluir');
     Route::delete('/agenda/{appointment}',           [AgendaController::class, 'destroy'])->name('agenda.destroy');
+    Route::post('/agenda/{appointment}/passos',      [AgendaController::class, 'storePasso'])->name('agenda.passos.store');
+    Route::post('/passos/{step}/toggle',             [AgendaController::class, 'togglePasso'])->name('agenda.passos.toggle');
+    Route::delete('/passos/{step}',                  [AgendaController::class, 'destroyPasso'])->name('agenda.passos.destroy');
 
     // Rotinas
     Route::get('/rotinas',                    [RoutineController::class, 'index'])->name('routines.index');

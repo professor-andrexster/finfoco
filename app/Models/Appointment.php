@@ -15,7 +15,8 @@ class Appointment extends Model
         'lembrete_min' => 'integer',
     ];
 
-    public function user() { return $this->belongsTo(User::class); }
+    public function user()  { return $this->belongsTo(User::class); }
+    public function steps() { return $this->hasMany(AppointmentStep::class); }
 
     public function scopeDoDia(Builder $query, \DateTimeInterface|string $data): Builder
     {

@@ -152,42 +152,98 @@
                 $minutos  = $c->hora ? ((int) substr($c->hora, 0, 2)) * 60 + (int) substr($c->hora, 3, 2) : null;
                 $atrasado = $ehHoje && !$c->concluido && $minutos !== null && $minutos < (now()->hour * 60 + now()->minute);
             @endphp
-            <li data-min="{{ $minutos ?? -1 }}"
-                class="card card-hover p-4 flex items-center gap-4 transition-opacity
+            @php
+                $passosFeitos = $c->steps->where('concluido', true)->count();
+                $passosTotal  = $c->steps->count();
+            @endphp
+            <li data-min="{{ $minutos ?? -1 }}" x-data="{ passos: false }"
+                class="card card-hover p-4 transition-opacity
                        {{ $c->concluido ? 'opacity-50' : '' }}
                        {{ $atrasado ? 'ring-2 ring-foco-alerta' : '' }}">
 
-                {{-- Check grande: feedback < 200ms via Alpine antes do POST --}}
-                <form action="{{ route('agenda.concluir', $c) }}" method="POST" x-data="{ ok: {{ $c->concluido ? 'true' : 'false' }} }">
-                    @csrf
-                    <button type="submit" @click="ok = !ok"
-                            class="w-11 h-11 rounded-full border-2 flex items-center justify-center transition-colors shrink-0"
-                            :class="ok ? 'bg-foco-entrada border-foco-entrada text-white' : 'border-foco-border text-transparent hover:border-foco-entrada'"
-                            title="{{ $c->concluido ? 'Desmarcar compromisso' : 'Concluir compromisso' }}">
-                        <i data-lucide="check" class="w-5 h-5"></i>
-                    </button>
-                </form>
+                <div class="flex items-center gap-4">
+                    {{-- Check grande: feedback < 200ms via Alpine antes do POST --}}
+                    <form action="{{ route('agenda.concluir', $c) }}" method="POST" x-data="{ ok: {{ $c->concluido ? 'true' : 'false' }} }">
+                        @csrf
+                        <button type="submit" @click="ok = !ok"
+                                class="w-11 h-11 rounded-full border-2 flex items-center justify-center transition-colors shrink-0"
+                                :class="ok ? 'bg-foco-entrada border-foco-entrada text-white' : 'border-foco-border text-transparent hover:border-foco-entrada'"
+                                title="{{ $c->concluido ? 'Desmarcar compromisso' : 'Concluir compromisso' }}">
+                            <i data-lucide="check" class="w-5 h-5"></i>
+                        </button>
+                    </form>
 
-                <div class="flex-1 min-w-0">
-                    <p class="font-semibold text-base {{ $c->concluido ? 'line-through' : '' }}">{{ $c->titulo }}</p>
-                    <p class="text-sm {{ $atrasado ? 'text-foco-alerta font-semibold' : 'text-foco-muted' }}">
-                        @if($c->hora)
-                            <i data-lucide="clock" class="w-3.5 h-3.5 inline -mt-0.5"></i>
-                            {{ substr($c->hora, 0, 5) }}
-                            @if($atrasado) · passou da hora @endif
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-base {{ $c->concluido ? 'line-through' : '' }}">{{ $c->titulo }}</p>
+                        <p class="text-sm {{ $atrasado ? 'text-foco-alerta font-semibold' : 'text-foco-muted' }}">
+                            @if($c->hora)
+                                <i data-lucide="clock" class="w-3.5 h-3.5 inline -mt-0.5"></i>
+                                {{ substr($c->hora, 0, 5) }}
+                                @if($atrasado) · passou da hora @endif
+                            @else
+                                O dia todo
+                            @endif
+                        </p>
+                    </div>
+
+                    {{-- Micro-passos: abre o painel de quebrar em pedaços pequenos --}}
+                    <button @click="passos = !passos"
+                            class="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors shrink-0
+                                   {{ $passosTotal > 0 ? 'text-foco-accent' : 'text-foco-muted hover:text-foco-accent' }}"
+                            style="{{ $passosTotal > 0 ? 'background:#6366F118' : '' }}"
+                            title="Quebrar em passos pequenos">
+                        <i data-lucide="list-tree" class="w-4 h-4"></i>
+                        @if($passosTotal > 0)
+                            {{ $passosFeitos }}/{{ $passosTotal }}
                         @else
-                            O dia todo
+                            <span class="hidden sm:inline">Passos</span>
                         @endif
-                    </p>
+                    </button>
+
+                    <form action="{{ route('agenda.destroy', $c) }}" method="POST"
+                          onsubmit="return confirm('Remover este compromisso?')">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="text-foco-muted hover:text-foco-saida transition-colors p-2" title="Excluir compromisso">
+                            <i data-lucide="trash-2" class="w-4.5 h-4.5" style="width:18px;height:18px"></i>
+                        </button>
+                    </form>
                 </div>
 
-                <form action="{{ route('agenda.destroy', $c) }}" method="POST"
-                      onsubmit="return confirm('Remover este compromisso?')">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="text-foco-muted hover:text-foco-saida transition-colors p-2" title="Excluir compromisso">
-                        <i data-lucide="trash-2" class="w-4.5 h-4.5" style="width:18px;height:18px"></i>
-                    </button>
-                </form>
+                {{-- Painel de micro-passos --}}
+                <div x-show="passos" x-transition x-cloak class="mt-3 ml-[60px] space-y-2">
+                    @foreach($c->steps as $passo)
+                    <div class="flex items-center gap-2.5">
+                        <form action="{{ route('agenda.passos.toggle', $passo) }}" method="POST"
+                              x-data="{ ok: {{ $passo->concluido ? 'true' : 'false' }} }">
+                            @csrf
+                            <button type="submit" @click="ok = !ok"
+                                    class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors shrink-0"
+                                    :class="ok ? 'bg-foco-entrada border-foco-entrada text-white' : 'border-foco-border text-transparent hover:border-foco-entrada'"
+                                    title="{{ $passo->concluido ? 'Desmarcar passo' : 'Concluir passo' }}">
+                                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </form>
+                        <span class="flex-1 text-sm {{ $passo->concluido ? 'line-through text-foco-muted' : '' }}">{{ $passo->titulo }}</span>
+                        <form action="{{ route('agenda.passos.destroy', $passo) }}" method="POST">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="text-foco-muted hover:text-foco-saida transition-colors p-1" title="Excluir passo">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </form>
+                    </div>
+                    @endforeach
+
+                    <form action="{{ route('agenda.passos.store', $c) }}" method="POST" class="flex gap-2">
+                        @csrf
+                        <input type="text" name="titulo" maxlength="80" required
+                               placeholder="Um passo pequeno. Ex.: separar os documentos"
+                               class="flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foco-accent">
+                        <button type="submit"
+                                class="rounded-lg px-3 py-2 text-sm font-semibold text-white bg-foco-accent hover:opacity-90 transition-opacity shrink-0">
+                            Adicionar passo
+                        </button>
+                    </form>
+                </div>
             </li>
             @endforeach
 

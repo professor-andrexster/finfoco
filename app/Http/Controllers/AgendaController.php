@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
+use App\Models\AppointmentStep;
 use App\Models\Routine;
 use App\Models\Setting;
 use App\Models\User;
@@ -24,6 +25,7 @@ class AgendaController extends Controller
 
         $compromissos = Appointment::where('user_id', auth()->id())
             ->doDia($dia)
+            ->with('steps')
             ->get();
 
         $rotinas = Routine::where('user_id', auth()->id())
@@ -85,6 +87,38 @@ class AgendaController extends Controller
 
         return redirect()->route('agenda.index', ['data' => $data])
             ->with('sucesso', 'Compromisso removido.');
+    }
+
+    /** Micro-passo: quebrar o compromisso em pedaços pequenos. */
+    public function storePasso(Request $request, Appointment $appointment)
+    {
+        abort_unless($appointment->user_id === auth()->id(), 403);
+
+        $request->validate(
+            ['titulo' => 'required|max:80'],
+            ['titulo.required' => 'Escreva o passo.']
+        );
+
+        $appointment->steps()->create(['titulo' => $request->titulo]);
+
+        return redirect()->route('agenda.index', ['data' => $appointment->data->toDateString()]);
+    }
+
+    public function togglePasso(AppointmentStep $step)
+    {
+        abort_unless($step->appointment->user_id === auth()->id(), 403);
+        $step->update(['concluido' => !$step->concluido]);
+
+        return redirect()->route('agenda.index', ['data' => $step->appointment->data->toDateString()]);
+    }
+
+    public function destroyPasso(AppointmentStep $step)
+    {
+        abort_unless($step->appointment->user_id === auth()->id(), 403);
+        $data = $step->appointment->data->toDateString();
+        $step->delete();
+
+        return redirect()->route('agenda.index', ['data' => $data]);
     }
 
     /**
