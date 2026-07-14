@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-14 (V19 — UX desktop ≠ mobile: sidebar + tab bar com FAB + painel centro do dia — deployada em produção)
+Última atualização: 2026-07-14 (V20 — atalhos de teclado + modo escuro + micro-animações — deployada em produção)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -18,6 +18,11 @@ tráfego a cada 60s. Falta só o Andre criar o bot no @BotFather pra ativar o Te
 sidebar fixa (grupos MEU DIA / DINHEIRO), mobile com barra inferior de 5 alvos + FAB Lançar +
 bottom sheet "Mais"; painel agora abre com o dia (agenda, rotinas, hiperfoco) antes do dinheiro;
 agenda em 2 colunas no desktop. Próxima etapa combinada: continuar melhorias de UX/layout.
+**V20 (2026-07-14)**: atalhos de teclado no desktop (P/A/S/F/R/L/C/H/E/?/Esc com modal de ajuda
+e dicas `<kbd>` na sidebar), modo escuro completo via tokens CSS `--c-*` (toggle persistido em
+localStorage + prefers-color-scheme, sem flash; views ganham dark de graça pelas cores foco-*)
+e micro-animações (cards surgem, botões :active scale, pop nos checks), com
+prefers-reduced-motion respeitado — tudo só no layout, nenhuma view individual tocada.
 **Cobrança recorrente via Stripe (Laravel Cashier) está 100% funcional em produção**, modo LIVE,
 testada de ponta a ponta com fluxo real de trial em produção (registro real via HTTP, dashboard/`/assinatura`
 acessíveis durante o trial, bloqueio correto após expiração) — não é só "deployada", é validada com uso real.
@@ -40,6 +45,7 @@ acessíveis durante o trial, bloqueio correto após expiração) — não é só
 - [x] 13. Modo Hiperfoco + reposicionamento superpoder TDAH (landing/SEO)
 - [x] 14. Integrações: semana + Google Agenda import + Telegram + Web Push
 - [x] 15. UX desktop ≠ mobile (sidebar + tab bar + painel centro do dia)
+- [x] 16. Atalhos de teclado + modo escuro + micro-animações
 
 ---
 
@@ -118,6 +124,69 @@ Migrations rodadas em produção:
 ---
 
 ## O QUE FOI CONSTRUÍDO
+
+### V20 — Atalhos de teclado + modo escuro + micro-animações (2026-07-14, commit `d09400a`, deployada em produção)
+Tudo em `resources/views/layouts/app.blade.php` — nenhuma view individual tocada.
+
+#### Atalhos de teclado (desktop)
+- Teclas: P (Painel), A (Agenda), S (Semana), F (Hiperfoco), R (Rotinas),
+  L (Lançar), C (Contas), H (Histórico), E (alterna tema), ? (abre/fecha modal
+  de ajuda), Esc (fecha modal)
+- Ignorados quando o foco está em INPUT/TEXTAREA/SELECT/contentEditable ou com
+  meta/ctrl/alt pressionados
+- Dicas visuais: `<kbd>` ao lado dos itens da sidebar (P, A, F, R, L, C, H) e
+  botão "Atalhos" no rodapé da sidebar; modal `#modal-atalhos` (display
+  flex/none via JS puro, overlay clicável, lista completa)
+
+#### Modo escuro
+- Sistema de tokens: `:root` com variáveis `--c-bg/card/surface/border/border2/
+  text/muted/accent/entrada/saida/alerta/sombra/anel`; classe `.dark` no
+  `<html>` troca os valores (paleta escura original do CLAUDE.md: bg #0F0F13,
+  card #1A1A22, border #2A2A38, text #F1F5F9; accent clareado pra #818CF8 no
+  escuro)
+- As cores tailwind `foco-*` agora apontam pra `var(--c-*)` no tailwind.config
+  — TODAS as views que usam classes foco-* ganham dark de graça. Nota:
+  modificadores de opacidade tipo `bg-foco-accent/80` degradam pra cor cheia
+  (aceitável)
+- Script inline no `<head>` ANTES do CSS aplica o tema salvo
+  (`localStorage.finfoco_tema`) ou o `prefers-color-scheme` — sem flash de
+  tema errado
+- Toggle: botão "Modo escuro/claro" no rodapé da sidebar (desktop) e no
+  dropdown do avatar (mobile); ícones sun/moon trocados via classes
+  `.so-claro`/`.so-escuro`
+- Overrides p/ cores fixas herdadas das views (sem tocar nas views):
+  `.dark .bg-white`, `[style*="#E4E4F0"]`→border-color, `[style*="#F3F3FB"]`,
+  `background:#EEF2FF/#E0E7FF`→rgba accent, `#FEF2F2`/`#FFFBEB`→rgba
+  vermelho/âmbar, `color:#1E1B4B`→text, `circle[stroke=...]` pro anel do
+  timer e logo, `color-scheme: dark` nos inputs date/time
+- Views standalone (login/registro/landing) continuam claras — dark é do app
+  logado
+
+#### Micro-animações
+- `.card { animation: surgir .22s }` (fade + translateY 5px), hover de
+  `.card-hover` eleva 1px
+- Botões: `transition transform .12s` + `:active scale(.94)`; checks
+  circulares (selecionados por `button[title^="Concluir"],
+  [title^="Desmarcar"]`) ganham keyframe `pop` (scale 1.18) ao clicar —
+  dopamina visual sem tocar nas views
+- `@media (prefers-reduced-motion: reduce)` desliga TODAS as
+  animações/transições (acessibilidade)
+
+#### QA (tudo passou)
+- view:cache OK; 8 telas autenticadas 200; HTML verificado
+  (4× finfocoAlternarTema, modal-atalhos, keyframes surgir/pop,
+  prefers-reduced-motion, kbd P, tokens --c-bg)
+
+#### Deploy em produção (2026-07-14)
+- rsync do layout + view:cache em produção; /painel 200
+
+Checklist binário de aceitação:
+- [x] Atalhos navegam e não disparam digitando
+- [x] Modal ? com lista completa
+- [x] Tema escuro sem flash, persistido, com toggle nos dois layouts
+- [x] Cores fixas herdadas cobertas no escuro
+- [x] Animações com prefers-reduced-motion respeitado
+- [x] Produção no ar
 
 ### V19 — UX como maior força: desktop ≠ mobile + painel centro do dia (2026-07-14, commit `6e6c315`, deployada em produção)
 Contexto: Andre reclamou que usar no computador parecia "um app de celular
@@ -947,6 +1016,10 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 'foco-accent':  '#6366F1',   // roxo — ação principal
 ```
 
+Desde a V20 as cores `foco-*` resolvem via tokens CSS `var(--c-*)` definidos no
+layout (`:root` = paleta clara acima; `.dark` no `<html>` = paleta escura
+original do CLAUDE.md, accent clareado pra #818CF8).
+
 ---
 
 ## DECISÕES TÉCNICAS
@@ -1085,6 +1158,16 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
   `minishlink/web-push` com `--ignore-platform-reqs --prefer-source`
 - **Armadilha de QA local (V18)**: testar URL ICS apontando pro próprio `artisan serve`
   deadlocka (servidor single-thread se chama e trava) — aquecer o cache via tinker
+- **Modo escuro por tokens CSS (V20)**: cores `foco-*` do tailwind.config apontam pra
+  `var(--c-*)`; `.dark` no `<html>` troca os valores — views ganham dark sem serem
+  tocadas. Trade-off: modificadores de opacidade (`bg-foco-accent/80`) degradam pra
+  cor cheia. Script inline no `<head>` ANTES do CSS aplica o tema salvo/preferido
+  (sem flash). Cores fixas hardcoded nas views são cobertas por overrides de seletor
+  de atributo (`[style*="#..."]`) no layout. Dark é só do app logado — login/registro/
+  landing (standalone) seguem claras
+- Atalhos de teclado (V20) só disparam fora de INPUT/TEXTAREA/SELECT/contentEditable
+  e sem meta/ctrl/alt; micro-animações sempre com `@media (prefers-reduced-motion:
+  reduce)` desligando tudo (acessibilidade)
 
 ---
 
@@ -1094,7 +1177,8 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
   no .env de produção, rodar `php artisan config:cache` e registrar o webhook:
   `curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://finfoco.nexialabs.com.br/telegram/webhook/<SEGREDO>"`.
   Todo o código já está em produção — sem o bot o card nem aparece em Configurações
-- **Próxima etapa combinada**: melhoria de UX/layout focada em TDAH
+- **Próxima etapa combinada**: continuar melhorias de UX/layout focadas em TDAH
+  (V19 e V20 já entregues nessa frente)
 - **Remodelagem TDAH COMPLETA** — fases 1, 2 e 3 concluídas e deployadas em 2026-07-13;
   timer de foco visual entregue na V17 (Modo Hiperfoco); web push com service worker
   entregue na V18
@@ -1113,10 +1197,18 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
   com sucesso em 2026-07-13 (ver HISTÓRICO).
 - V18 deployada em produção com sucesso em 2026-07-13 — única pendência é a ativação do
   bot do Telegram pelo Andre (item acima).
+- Nenhuma pendência de V19 (UX desktop ≠ mobile) nem de V20 (atalhos + modo escuro +
+  micro-animações) — ambas deployadas em produção em 2026-07-14.
 
 ---
 
-## QA — Último resultado (2026-07-13, V18 — 4 integrações)
+## QA — Último resultado (2026-07-14, V20 — atalhos + modo escuro + micro-animações)
+- view:cache OK; 8 telas autenticadas 200
+- HTML verificado: 4× finfocoAlternarTema, modal-atalhos, keyframes surgir/pop,
+  prefers-reduced-motion, kbd P, tokens --c-bg
+- Produção pós-deploy: rsync do layout + view:cache; /painel 200
+
+## QA — Resultado anterior (2026-07-13, V18 — 4 integrações)
 - Local: lint em 11 arquivos; migrate; rotas; parser ICS validado via tinker (evento
   com hora TZID, dia-todo, recorrente semanal na segunda certa; cache na 2ª chamada
   OK; amanhã 0; próxima segunda 1); agenda renderiza 3 eventos GOOGLE; semana 200;
@@ -1184,6 +1276,30 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-14 — V20: atalhos de teclado + modo escuro + micro-animações — commit d09400a, deployada em produção
+- Tudo em `layouts/app.blade.php`, nenhuma view individual tocada
+- Atalhos desktop: P/A/S/F/R/L/C/H/E/?/Esc, ignorados digitando em campos ou com
+  meta/ctrl/alt; dicas `<kbd>` na sidebar e modal de ajuda `#modal-atalhos`
+- Modo escuro: tokens CSS `--c-*` no `:root` + classe `.dark` no `<html>`
+  (paleta escura original do CLAUDE.md, accent #818CF8); cores tailwind `foco-*`
+  viram `var(--c-*)` — views ganham dark de graça; script inline no `<head>`
+  antes do CSS (localStorage `finfoco_tema` + prefers-color-scheme, sem flash);
+  toggle na sidebar (desktop) e no dropdown do avatar (mobile); overrides pras
+  cores fixas herdadas das views; standalone (login/registro/landing) seguem claras
+- Micro-animações: cards com keyframe `surgir`, botões :active scale(.94), `pop`
+  nos checks circulares; `prefers-reduced-motion: reduce` desliga tudo
+- QA: view:cache OK, 8 telas autenticadas 200, HTML verificado; deploy: rsync do
+  layout + view:cache em produção, /painel 200; checklist binário 6/6 (ver seção V20)
+
+### 2026-07-14 — V19: UX desktop ≠ mobile — sidebar + tab bar com FAB + painel centro do dia — commit 6e6c315, deployada em produção
+- Layout reescrito: desktop com sidebar fixa 264px (grupos MEU DIA / DINHEIRO);
+  mobile com topo mínimo + barra inferior de 5 alvos com FAB Lançar central e
+  bottom sheet "Mais"; navbar horizontal antiga eliminada
+- Painel abre com o dia (saudação + 3 cards: Agora na agenda, Rotinas de hoje,
+  Entrar em hiperfoco) antes do dinheiro; agenda em 2 colunas no desktop
+- QA: 13 telas autenticadas 200, markup verificado; deploy rsync 4 arquivos +
+  caches, /painel 200; checklist binário 6/6 (ver seção V19)
 
 ### 2026-07-13 — V18: 4 integrações — visão semanal, Google Agenda dentro do FinFoco, Telegram e Web Push — commit b5fcafc, deployada em produção
 - Visão semanal: /agenda/semana com grade de 7 dias, badge HOJE, rotinas feitas/total
