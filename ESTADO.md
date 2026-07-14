@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — Norte (ex-FinFoco)
-Última atualização: 2026-07-14 (V23 — landing com efeitos modernos + camada extra de SEO — deployada em produção)
+Última atualização: 2026-07-14 (V24 — landing viva: mockup animado do app + experiências distintas mobile/desktop — deployada em produção)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -37,6 +37,12 @@ CSS + IntersectionObserver vanilla): header sticky com backdrop-blur, gradient t
 glow radial, hover lift nos cards, revelação no scroll com stagger — tudo respeitando
 prefers-reduced-motion. SEO expandido: 4 blocos JSON-LD (WebApplication, Organization,
 WebSite, FAQPage), nova seção semântica de conteúdo TDAH e sitemap atualizado no docroot.
+**V24 (2026-07-14)**: landing "viva" — mockup animado do app (partial em HTML/CSS puro
+reproduzindo a tela Hoje, animações CSS em loop de 5.5s) dentro de janela de navegador no
+desktop (hero 2 colunas) e de moldura de celular no mobile; no mobile os 3 grids viraram
+carrossel com scroll-snap e há CTA fixo no rodapé (pós-hero, só @guest, safe-area).
+Feedback do Andre ("falta vida" / "emulador de celular no computador") atendido; ele não via
+os efeitos da V23 por cache do navegador (produção estava servindo certo — hard refresh).
 **Cobrança recorrente via Stripe (Laravel Cashier) está 100% funcional em produção**, modo LIVE,
 testada de ponta a ponta com fluxo real de trial em produção (registro real via HTTP, dashboard/`/assinatura`
 acessíveis durante o trial, bloqueio correto após expiração) — não é só "deployada", é validada com uso real.
@@ -63,6 +69,7 @@ acessíveis durante o trial, bloqueio correto após expiração) — não é só
 - [x] 17. Design sóbrio + View Transitions + Speculation Rules
 - [x] 18. PIVÔ: rebrand Norte + módulo Conquistas + sessões de foco
 - [x] 19. Landing com efeitos modernos + SEO expandido
+- [x] 20. Landing viva — mockup animado + mobile/desktop distintos
 
 ---
 
@@ -144,6 +151,54 @@ Migrations rodadas em produção:
 ---
 
 ## O QUE FOI CONSTRUÍDO
+
+### V24 — Landing viva: mockup animado do app + experiências distintas mobile/desktop (2026-07-14, commit `af39715`, deployada em produção)
+Feedback do Andre: "falta vida nessa página" e no celular parecia "emulador de
+celular no computador". Ele também relatou não ver os efeitos da V23 —
+diagnóstico: cache do navegador dele (produção servia certo; cache-control:
+no-cache e x-hcdn-cache-status: DYNAMIC confirmados; orientado a dar hard
+refresh).
+
+#### Mockup animado (`resources/views/marketing/partials/mockup.blade.php`, novo)
+- Prévia do app em HTML/CSS puro reproduzindo a tela Hoje real: cabeçalho com
+  data de hoje (today()->translatedFormat), chip "2 de 4", barra de progresso,
+  rotina feita com streak em **SVG flame inline (SEM emoji, diretriz de
+  design)**, linha do AGORA, compromisso, evento GOOGLE, fileira de constância
+- Animações CSS em loop de 5.5s: `.anima-barra` (largura 38→64%),
+  `.anima-pulso` (anel do AGORA), `.anima-check` (compromisso sendo concluído:
+  círculo vazio → verde com check em scale), `.anima-quadrado` (quadrado de
+  constância acendendo), `flutuar` (moldura levita 8px)
+- Tudo desligado em prefers-reduced-motion, com estado final estático
+  (check verde fixo)
+
+#### Desktop (lg+)
+- Hero virou grid 2 colunas: conteúdo à esquerda (text-left), app numa
+  **janela de navegador** `.frame-browser` (3 bolinhas + barra de URL) à direita
+
+#### Mobile
+- Mesmo mockup dentro de **moldura de celular** `.frame-phone` (272px, borda
+  9px #1E1B4B, notch via ::before)
+- Os 3 grids de cards (superpoderes, dores, recursos) viraram **carrossel com
+  scroll-snap** (`.fileira-mobile`, cards min-width 82%, snap-center, scrollbar
+  oculta, `!important` para vencer o Tailwind CDN em <640px)
+- **CTA fixo no rodapé** (`#cta-mobile`, blur, safe-area-inset-bottom) que
+  desliza pra cima quando o hero sai da tela (IntersectionObserver toggle
+  `.visivel`), só para @guest; footer com pb-28 no mobile guest pra não ser
+  coberto
+
+#### QA (tudo passou)
+- view:cache OK, landing 200, HTML com frame-browser/frame-phone/anima-*/
+  cta-mobile/fileira-mobile presentes, mockup renderizado 2× (uma por moldura)
+- Produção: 15 ocorrências das classes novas no HTML servido
+
+Checklist binário de aceitação:
+- [x] Mockup animado no ar nas duas molduras
+- [x] Hero 2 colunas no desktop / moldura de celular no mobile
+- [x] Carrossel snap nos cards do mobile
+- [x] CTA fixo mobile com safe-area aparecendo pós-hero
+- [x] prefers-reduced-motion cobre as animações novas
+- [x] Sem emoji no mockup (flame em SVG)
+- [x] Produção servindo (15 classes novas no HTML)
 
 ### V23 — Landing com efeitos de landing moderna + camada extra de SEO (2026-07-14, commit `f4f89d5`, deployada em produção)
 Pedido do Andre: "efeitos de react e next" na landing + mais SEO. Implementado
@@ -1269,6 +1324,9 @@ original do CLAUDE.md, accent clareado pra #818CF8).
   (todos os `route('dashboard')` do código seguem válidos sem alteração)
 - JSON-LD em Blade DEVE ser envolvido em `@verbatim`: `@context` do schema.org colide com a
   diretiva Blade `@context` do Laravel 11 e quebra a renderização silenciosamente
+- **Armadilha do Bash do Claude Code**: o cwd PERSISTE entre comandos — um
+  `cd resources/views/marketing` deixado para trás quebrou `php artisan` ("Could not open
+  input file"); sempre voltar pra raiz do projeto ou usar caminhos absolutos
 - Rotas NUNCA podem usar closure: produção roda `php artisan route:cache`, que não serializa
   closures — toda rota deve apontar pra Controller (ver conversão da `/` pra `MarketingController@home`)
 - **AVISO — `deploy_hostinger.sh` sobrescreve o `.env` de produção** com uma versão local
@@ -1437,7 +1495,13 @@ original do CLAUDE.md, accent clareado pra #818CF8).
 
 ---
 
-## QA — Último resultado (2026-07-14, V23 — landing com efeitos modernos + SEO expandido)
+## QA — Último resultado (2026-07-14, V24 — landing viva: mockup animado + mobile/desktop distintos)
+- Local: view:cache OK; landing 200; HTML com frame-browser/frame-phone/
+  anima-*/cta-mobile/fileira-mobile presentes; mockup renderizado 2×
+  (uma por moldura)
+- Produção: 15 ocorrências das classes novas no HTML servido
+
+## QA — Resultado anterior (2026-07-14, V23 — landing com efeitos modernos + SEO expandido)
 - Local: view:cache OK; landing 200; 4 blocos JSON-LD parseando (json.loads);
   hero-glow/nav-blur/gradient-text/reveal/IntersectionObserver presentes no HTML
 - Produção: landing 200 com os efeitos servidos (4 ocorrências
@@ -1529,6 +1593,25 @@ original do CLAUDE.md, accent clareado pra #818CF8).
 ---
 
 ## HISTÓRICO
+
+### 2026-07-14 — V24: landing viva — mockup animado do app + mobile/desktop distintos — commit af39715, deployada em produção
+- Feedback do Andre: "falta vida nessa página" e mobile parecia "emulador de
+  celular no computador"; efeitos da V23 que ele não via eram cache do
+  navegador dele (produção OK, orientado a hard refresh)
+- Novo partial marketing/partials/mockup.blade.php: prévia da tela Hoje em
+  HTML/CSS puro (data real, progresso, rotina com flame em SVG — sem emoji —,
+  linha do AGORA, compromisso, evento GOOGLE, constância) com animações CSS em
+  loop de 5.5s (anima-barra/pulso/check/quadrado + flutuar), desligadas em
+  prefers-reduced-motion com estado final estático
+- Desktop: hero em grid 2 colunas com o mockup numa janela de navegador
+  (.frame-browser); mobile: moldura de celular (.frame-phone com notch)
+- Mobile: 3 grids de cards viraram carrossel scroll-snap (.fileira-mobile) e
+  CTA fixo no rodapé (#cta-mobile, safe-area, IntersectionObserver pós-hero,
+  só @guest; footer pb-28)
+- QA local e produção OK (mockup 2×, 15 ocorrências das classes novas no HTML
+  servido); checklist binário 7/7
+- Armadilha nova em DECISÕES: cwd do Bash persiste entre comandos — cd deixado
+  para trás quebra php artisan; usar caminhos absolutos
 
 ### 2026-07-14 — V23: landing com efeitos de landing moderna + camada extra de SEO — commit f4f89d5, deployada em produção
 - Pedido do Andre: "efeitos de react e next" na landing + mais SEO; feito com
