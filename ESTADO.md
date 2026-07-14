@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-14 (V20 — atalhos de teclado + modo escuro + micro-animações — deployada em produção)
+Última atualização: 2026-07-14 (V21 — design sóbrio/moderno + View Transitions + Speculation Rules — deployada em produção)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -23,6 +23,11 @@ e dicas `<kbd>` na sidebar), modo escuro completo via tokens CSS `--c-*` (toggle
 localStorage + prefers-color-scheme, sem flash; views ganham dark de graça pelas cores foco-*)
 e micro-animações (cards surgem, botões :active scale, pop nos checks), com
 prefers-reduced-motion respeitado — tudo só no layout, nenhuma view individual tocada.
+**V21 (2026-07-14)**: design sóbrio/moderno — varredura completa de emojis na UI do app
+(copy adulta no lugar de copy infantilizada), View Transitions API entre páginas (180ms),
+Speculation Rules com prerender no hover (navegação percebida como instantânea, com exclusão
+das rotas GET com efeito colateral) e refinamentos de contraste/foco/color-scheme nos dois temas.
+NOVA DIRETRIZ PERMANENTE de design do Andre registrada em DECISÕES.
 **Cobrança recorrente via Stripe (Laravel Cashier) está 100% funcional em produção**, modo LIVE,
 testada de ponta a ponta com fluxo real de trial em produção (registro real via HTTP, dashboard/`/assinatura`
 acessíveis durante o trial, bloqueio correto após expiração) — não é só "deployada", é validada com uso real.
@@ -46,6 +51,7 @@ acessíveis durante o trial, bloqueio correto após expiração) — não é só
 - [x] 14. Integrações: semana + Google Agenda import + Telegram + Web Push
 - [x] 15. UX desktop ≠ mobile (sidebar + tab bar + painel centro do dia)
 - [x] 16. Atalhos de teclado + modo escuro + micro-animações
+- [x] 17. Design sóbrio + View Transitions + Speculation Rules
 
 ---
 
@@ -124,6 +130,59 @@ Migrations rodadas em produção:
 ---
 
 ## O QUE FOI CONSTRUÍDO
+
+### V21 — Design sóbrio/moderno + View Transitions + Speculation Rules (2026-07-14, commit `1ddaf2e`, deployada em produção)
+Contexto: o sistema estava ganhando cara infantil com emojis. NOVA DIRETRIZ
+PERMANENTE de design do Andre (ver DECISÕES): minimalista, moderno, nunca
+infantil, cores conservadoras, e SEMPRE validar cada cor nos dois temas
+(claro e escuro).
+
+#### Varredura de emojis na UI do app
+- Emojis removidos (🎉 💜 🎈 👋 🔥 ⏰ ☀️ 🔁) de: dashboard (saudação,
+  "Dia livre"), agenda (estado vazio, card de rotinas, notificações do
+  navegador), foco (título da aba, notificação; o 🎉 gigante virou ícone
+  check em círculo verde `rgba(34,197,94,.14)`), rotinas (header e estado
+  vazio), landing (3 pontos), Telegram/push (`EnviarAlertas` sem emoji e sem
+  "Um passo de cada vez 💜"), assunto do e-mail matinal (sem ☀️)
+- Copy infantilizada trocada por copy adulta: "Você é grande" removido;
+  "Dia completo!" → "Dia completo" com ícone check-check no lugar de
+  party-popper. O streak continua com o ícone flame do Lucide (sóbrio)
+
+#### View Transitions API (cross-document)
+- `@view-transition { navigation: auto; }` + duração 180ms — transição suave
+  entre páginas, degrada em silêncio em browsers antigos
+
+#### Speculation Rules API
+- `<script type="speculationrules">` com prerender `eagerness: moderate`
+  (pré-renderiza no hover) para todas as rotas EXCETO /telegram/* (GET com
+  efeito colateral), /agenda/feed/* e /historico/exportar — navegação
+  percebida como instantânea. Mutações são todas POST/DELETE, seguras
+  contra prerender
+
+#### Refinamentos
+- `color-scheme: light` / `.dark { color-scheme: dark }` — scrollbar e
+  controles nativos acompanham o tema
+- `:focus-visible` com anel accent; antialiasing + letter-spacing -0.011em
+  no body
+- `--c-muted` do tema claro escurecido de #9794B8 para **#7C78A0**
+  (contraste ~4.2:1 em branco)
+- Anel do timer do foco agora usa `stroke="currentColor"` + text-foco-accent
+  (correto nos dois temas; antes era #6366F1 fixo)
+
+#### QA (tudo passou)
+- view:cache OK, php -l OK, 4 telas 200, grep de emojis nas páginas
+  renderizadas = 0, speculationrules e view-transition presentes no HTML
+
+#### Deploy em produção (2026-07-14)
+- rsync 8 arquivos + caches; /painel e landing 200
+
+Checklist binário de aceitação:
+- [x] Zero emojis na UI do app logado
+- [x] View Transitions ativas
+- [x] Prerender com exclusões de rotas com efeito colateral
+- [x] Contraste do muted claro ≥ 4:1
+- [x] Anel do timer correto nos dois temas
+- [x] Produção no ar
 
 ### V20 — Atalhos de teclado + modo escuro + micro-animações (2026-07-14, commit `d09400a`, deployada em produção)
 Tudo em `resources/views/layouts/app.blade.php` — nenhuma view individual tocada.
@@ -1168,6 +1227,19 @@ original do CLAUDE.md, accent clareado pra #818CF8).
 - Atalhos de teclado (V20) só disparam fora de INPUT/TEXTAREA/SELECT/contentEditable
   e sem meta/ctrl/alt; micro-animações sempre com `@media (prefers-reduced-motion:
   reduce)` desligando tudo (acessibilidade)
+- **DIRETRIZ PERMANENTE DE DESIGN (Andre, V21 — vale para TODA UI futura)**:
+  minimalista, moderno, **nunca infantil**, cores conservadoras, e SEMPRE validar
+  cada cor nos dois temas (claro E escuro). Sem emojis na UI do app logado — quando
+  precisar de acento visual, usar ícone Lucide sóbrio (ex.: flame para streak,
+  check em círculo para conclusão). Copy adulta, sem tom infantilizado
+- Speculation Rules (V21): prerender `eagerness: moderate` NUNCA pode incluir rotas
+  GET com efeito colateral — exclusões atuais: /telegram/*, /agenda/feed/* e
+  /historico/exportar. Toda rota GET nova com efeito colateral deve entrar na
+  lista de exclusão (mutações são POST/DELETE, seguras contra prerender)
+- View Transitions cross-document (V21): `@view-transition { navigation: auto; }`
+  com 180ms — degrada em silêncio em browsers sem suporte, nenhum fallback JS
+- Cores fixas em SVG são armadilha de tema: usar `stroke="currentColor"` + classe
+  de texto (ex.: anel do timer do foco com text-foco-accent), nunca hex hardcoded
 
 ---
 
@@ -1178,7 +1250,7 @@ original do CLAUDE.md, accent clareado pra #818CF8).
   `curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://finfoco.nexialabs.com.br/telegram/webhook/<SEGREDO>"`.
   Todo o código já está em produção — sem o bot o card nem aparece em Configurações
 - **Próxima etapa combinada**: continuar melhorias de UX/layout focadas em TDAH
-  (V19 e V20 já entregues nessa frente)
+  (V19, V20 e V21 já entregues nessa frente)
 - **Remodelagem TDAH COMPLETA** — fases 1, 2 e 3 concluídas e deployadas em 2026-07-13;
   timer de foco visual entregue na V17 (Modo Hiperfoco); web push com service worker
   entregue na V18
@@ -1199,10 +1271,18 @@ original do CLAUDE.md, accent clareado pra #818CF8).
   bot do Telegram pelo Andre (item acima).
 - Nenhuma pendência de V19 (UX desktop ≠ mobile) nem de V20 (atalhos + modo escuro +
   micro-animações) — ambas deployadas em produção em 2026-07-14.
+- Nenhuma pendência de V21 (design sóbrio + View Transitions + Speculation Rules) —
+  deployada em produção em 2026-07-14.
 
 ---
 
-## QA — Último resultado (2026-07-14, V20 — atalhos + modo escuro + micro-animações)
+## QA — Último resultado (2026-07-14, V21 — design sóbrio + View Transitions + Speculation Rules)
+- view:cache OK, php -l OK, 4 telas 200
+- grep de emojis nas páginas renderizadas = 0
+- speculationrules e view-transition presentes no HTML
+- Produção pós-deploy: rsync 8 arquivos + caches; /painel e landing 200
+
+## QA — Resultado anterior (2026-07-14, V20 — atalhos + modo escuro + micro-animações)
 - view:cache OK; 8 telas autenticadas 200
 - HTML verificado: 4× finfocoAlternarTema, modal-atalhos, keyframes surgir/pop,
   prefers-reduced-motion, kbd P, tokens --c-bg
@@ -1276,6 +1356,20 @@ original do CLAUDE.md, accent clareado pra #818CF8).
 ---
 
 ## HISTÓRICO
+
+### 2026-07-14 — V21: design sóbrio/moderno + View Transitions + Speculation Rules — commit 1ddaf2e, deployada em produção
+- NOVA DIRETRIZ PERMANENTE de design do Andre (registrada em DECISÕES): minimalista,
+  moderno, nunca infantil, cores conservadoras, validar cada cor nos dois temas
+- Varredura de emojis na UI do app (dashboard, agenda, foco, rotinas, landing,
+  Telegram/push, e-mail matinal); copy infantilizada trocada por copy adulta;
+  🎉 gigante do foco virou ícone check em círculo verde; streak segue com flame Lucide
+- View Transitions API cross-document (`@view-transition`, 180ms, degrada em silêncio)
+- Speculation Rules com prerender `eagerness: moderate` no hover, excluindo /telegram/*,
+  /agenda/feed/* e /historico/exportar (rotas GET com efeito colateral)
+- Refinamentos: color-scheme por tema, :focus-visible accent, antialiasing,
+  `--c-muted` claro → #7C78A0 (contraste ~4.2:1), anel do timer com currentColor
+- QA: view:cache OK, php -l OK, 4 telas 200, zero emojis no HTML renderizado;
+  deploy: rsync 8 arquivos + caches, /painel e landing 200; checklist binário 6/6
 
 ### 2026-07-14 — V20: atalhos de teclado + modo escuro + micro-animações — commit d09400a, deployada em produção
 - Tudo em `layouts/app.blade.php`, nenhuma view individual tocada
