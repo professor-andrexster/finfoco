@@ -43,7 +43,7 @@ class EnviarAlertas extends Command
                 $avisa  = $inicio->copy()->subMinutes($c->lembrete_min);
                 if ($agora->between($avisa, $inicio) && Cache::add("alerta_c{$c->id}_{$hoje}", 1, 86400)) {
                     $falta = max(1, (int) $agora->diffInMinutes($inicio));
-                    $mensagens[] = "⏰ " . substr($c->hora, 0, 5) . " — {$c->titulo} (em {$falta} min)";
+                    $mensagens[] = "" . substr($c->hora, 0, 5) . " — {$c->titulo} (em {$falta} min)";
                 }
             }
 
@@ -60,14 +60,14 @@ class EnviarAlertas extends Command
                 }
                 $inicio = today()->setTimeFromTimeString($r->hora);
                 if ($agora->between($inicio->copy()->subMinutes(10), $inicio) && Cache::add("alerta_r{$r->id}_{$hoje}", 1, 86400)) {
-                    $mensagens[] = "🔁 " . substr($r->hora, 0, 5) . " — {$r->titulo}";
+                    $mensagens[] = "" . substr($r->hora, 0, 5) . " — {$r->titulo}";
                 }
             }
 
             foreach ($mensagens as $m) {
                 $push->enviarParaUsuario($userId, 'FinFoco — chegou a hora', $m, '/agenda');
                 if ($chat = $chatsTelegram->get($userId)) {
-                    $telegram->enviar($chat, "<b>FinFoco</b>\n{$m}\nUm passo de cada vez. 💜");
+                    $telegram->enviar($chat, "<b>FinFoco</b>\n{$m}");
                 }
                 $enviados++;
             }

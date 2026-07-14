@@ -14,7 +14,7 @@
 <div class="mb-6">
     <div class="flex items-end justify-between flex-wrap gap-2 mb-4">
         <div>
-            <h1 class="text-2xl font-bold">{{ $saudacao }}, {{ $primeiroNome }} 👋</h1>
+            <h1 class="text-2xl font-bold">{{ $saudacao }}, {{ $primeiroNome }}</h1>
             <p class="text-sm text-foco-muted capitalize">{{ today()->translatedFormat('l, d \d\e F') }}</p>
         </div>
         <a href="{{ route('agenda.index') }}" class="text-sm font-semibold text-foco-accent hover:underline flex items-center gap-1">
@@ -39,7 +39,7 @@
                     <span class="block text-xs text-foco-muted mt-0.5">+ {{ $pendentesHoje - 1 }} para hoje</span>
                     @endif
                 @else
-                    <span class="block font-bold mt-0.5">Dia livre 🎈</span>
+                    <span class="block font-bold mt-0.5">Dia livre</span>
                     <span class="block text-xs text-foco-muted mt-0.5">Nada pendente na agenda de hoje</span>
                 @endif
             </span>

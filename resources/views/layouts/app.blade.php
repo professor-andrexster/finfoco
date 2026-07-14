@@ -64,7 +64,7 @@
             --c-border:  #E4E4F0;
             --c-border2: #F3F3FB;
             --c-text:    #1E1B4B;
-            --c-muted:   #9794B8;
+            --c-muted:   #7C78A0;
             --c-accent:  #6366F1;
             --c-entrada: #16A34A;
             --c-saida:   #DC2626;
@@ -88,7 +88,22 @@
             --c-anel:    rgba(255,255,255,.07);
         }
 
-        body { font-size: 16px; background-color: var(--c-bg); color: var(--c-text); }
+        :root { color-scheme: light; }
+        .dark { color-scheme: dark; }
+
+        /* Transição suave entre páginas (View Transitions API — degrada em silêncio) */
+        @view-transition { navigation: auto; }
+        ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .18s; }
+
+        body {
+            font-size: 16px;
+            background-color: var(--c-bg);
+            color: var(--c-text);
+            -webkit-font-smoothing: antialiased;
+            letter-spacing: -0.011em;
+        }
+
+        :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 4px; }
         .btn-primary { font-size: 18px; font-weight: 700; }
         [x-cloak] { display: none !important; }
 
@@ -471,6 +486,23 @@
     </div>
 
     <script>lucide.createIcons();</script>
+
+    {{-- Navegação instantânea: pré-renderiza a próxima página no hover (Speculation Rules) --}}
+    <script type="speculationrules">
+    {
+        "prerender": [{
+            "where": {
+                "and": [
+                    { "href_matches": "/*" },
+                    { "not": { "href_matches": "/telegram/*" } },
+                    { "not": { "href_matches": "/agenda/feed/*" } },
+                    { "not": { "href_matches": "/historico/exportar*" } }
+                ]
+            },
+            "eagerness": "moderate"
+        }]
+    }
+    </script>
 
     {{-- Atalhos de teclado (desktop) --}}
     <script>

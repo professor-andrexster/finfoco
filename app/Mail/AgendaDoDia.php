@@ -26,7 +26,7 @@ class AgendaDoDia extends Mailable
             $partes[] = $this->rotinas->count() . ' rotina' . ($this->rotinas->count() > 1 ? 's' : '');
         }
 
-        return new Envelope(subject: '☀️ Seu dia hoje — ' . implode(' e ', $partes));
+        return new Envelope(subject: 'Seu dia hoje — ' . implode(' e ', $partes));
     }
 
     public function content(): Content

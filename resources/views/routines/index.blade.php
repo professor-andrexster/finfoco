@@ -14,7 +14,7 @@
             <h1 class="text-2xl font-bold flex items-center gap-2">
                 <i data-lucide="repeat" class="w-6 h-6 text-foco-accent"></i> Rotinas
             </h1>
-            <p class="text-sm text-foco-muted mt-1">Hábitos que se repetem. Cada dia feito soma na sequência 🔥</p>
+            <p class="text-sm text-foco-muted mt-1">Hábitos que se repetem. Cada dia cumprido soma na sequência.</p>
         </div>
         <a href="{{ route('agenda.index') }}" class="text-sm font-semibold text-foco-accent hover:underline shrink-0">
             Voltar para agenda
@@ -61,7 +61,7 @@
         <div class="card p-10 text-center space-y-3">
             <i data-lucide="repeat" class="w-10 h-10 mx-auto text-foco-muted"></i>
             <p class="font-semibold">Nenhuma rotina ainda.</p>
-            <p class="text-sm text-foco-muted">Comece com uma só — a mais importante. Ex.: "Tomar o remédio". 💜</p>
+            <p class="text-sm text-foco-muted">Comece com uma só — a mais importante. Ex.: "Tomar o remédio".</p>
         </div>
     @else
         <ul class="space-y-3">

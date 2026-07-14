@@ -36,9 +36,9 @@
         terminar() {
             clearInterval(this.timer);
             this.etapa = 'fim';
-            document.title = 'Conseguiu! 🎉 | FinFoco';
+            document.title = 'Sessão concluída | FinFoco';
             if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('🎉 Hiperfoco completo!', { body: this.tarefa + ' — ' + this.minutos + ' minutos de foco. Você é grande.', icon: '/icon.svg' });
+                new Notification('Hiperfoco completo', { body: this.tarefa + ' — ' + this.minutos + ' minutos de foco.', icon: '/icon.svg' });
             }
         },
         parar() {
@@ -123,7 +123,7 @@
         <div class="relative w-64 h-64 mx-auto">
             <svg viewBox="0 0 200 200" class="w-full h-full -rotate-90">
                 <circle cx="100" cy="100" r="88" fill="none" stroke="#E4E4F0" stroke-width="10"/>
-                <circle cx="100" cy="100" r="88" fill="none" stroke="#6366F1" stroke-width="10"
+                <circle cx="100" cy="100" r="88" fill="none" stroke="currentColor" class="text-foco-accent" stroke-width="10"
                         stroke-linecap="round"
                         :stroke-dasharray="2 * Math.PI * 88"
                         :stroke-dashoffset="2 * Math.PI * 88 * progresso"/>
@@ -140,8 +140,11 @@
 
     {{-- ─── Etapa 3: conseguiu ──────────────────────────────────────────── --}}
     <div x-show="etapa === 'fim'" x-cloak class="text-center space-y-6 py-10">
-        <p class="text-6xl">🎉</p>
-        <h1 class="text-2xl font-bold">Você hiperfocou por <span x-text="minutos"></span> minutos!</h1>
+        <span class="w-16 h-16 mx-auto rounded-full flex items-center justify-center"
+              style="background:rgba(34,197,94,.14)">
+            <i data-lucide="check" class="w-8 h-8 text-foco-entrada"></i>
+        </span>
+        <h1 class="text-2xl font-bold">Você hiperfocou por <span x-text="minutos"></span> minutos</h1>
         <p class="text-foco-muted" x-text="tarefa"></p>
 
         <div class="flex flex-col gap-3 max-w-xs mx-auto">

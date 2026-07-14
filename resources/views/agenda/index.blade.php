@@ -84,7 +84,7 @@
             <span class="text-sm font-semibold">{{ $feitos }} de {{ $total }} concluído{{ $total > 1 ? 's' : '' }}</span>
             @if($feitos === $total)
                 <span class="text-sm font-bold text-foco-entrada flex items-center gap-1">
-                    <i data-lucide="party-popper" class="w-4 h-4"></i> Dia completo!
+                    <i data-lucide="check-check" class="w-4 h-4"></i> Dia completo
                 </span>
             @endif
         </div>
@@ -120,7 +120,7 @@
         <div class="card p-10 text-center space-y-3">
             <i data-lucide="calendar" class="w-10 h-10 mx-auto text-foco-muted"></i>
             <p class="font-semibold">Nada marcado {{ $ehHoje ? 'para hoje' : 'neste dia' }}.</p>
-            <p class="text-sm text-foco-muted">Adicione um compromisso no campo acima. Um de cada vez. 💜</p>
+            <p class="text-sm text-foco-muted">Adicione um compromisso no campo acima. Um de cada vez.</p>
         </div>
     @else
         <ul id="timeline" class="space-y-3" data-hoje="{{ $ehHoje ? '1' : '0' }}">
@@ -307,7 +307,7 @@
         </span>
         <span>
             <span class="block font-semibold text-sm">Criar rotinas diárias</span>
-            <span class="block text-xs text-foco-muted">Hábitos com sequência 🔥 que aparecem aqui todo dia.</span>
+            <span class="block text-xs text-foco-muted">Hábitos que aparecem aqui todo dia, com contagem de sequência.</span>
         </span>
     </a>
     @endif
@@ -404,8 +404,8 @@
                 const avisarEm = new Date(inicio.getTime() - e.avisar * 60000);
                 const chave = 'finfoco-notif-' + e.id + '-' + e.data;
                 if (agora >= avisarEm && agora <= inicio && !localStorage.getItem(chave)) {
-                    new Notification('⏰ ' + e.hora + ' — ' + e.titulo, {
-                        body: 'Começa em breve. Respira, você consegue.',
+                    new Notification(e.hora + ' — ' + e.titulo, {
+                        body: 'Começa em breve.',
                         icon: '/icon.svg',
                     });
                     localStorage.setItem(chave, '1');

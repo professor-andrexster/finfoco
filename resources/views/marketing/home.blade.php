@@ -215,7 +215,7 @@
             </h1>
             <p class="text-lg text-foco-muted max-w-2xl mx-auto mt-6">
                 O FinFoco é o manual: agenda visual que combate a cegueira temporal, Modo Hiperfoco,
-                rotinas com sequência 🔥, tarefas quebradas em micro-passos e finanças anti-impulso.
+                rotinas com sequência, tarefas quebradas em micro-passos e finanças anti-impulso.
                 Tudo num app só, em português, sem sobrecarga.
             </p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
@@ -263,7 +263,7 @@
                         <i data-lucide="battery-charging" class="w-8 h-8 text-foco-accent mb-3" aria-hidden="true"></i>
                         <h3 class="font-bold text-lg">Energia e entusiasmo</h3>
                         <p class="text-foco-muted text-sm mt-2">
-                            Energia de sobra precisa de trilho, não de freio. As <strong class="text-foco-text">rotinas com sequência 🔥</strong>
+                            Energia de sobra precisa de trilho, não de freio. As <strong class="text-foco-text">rotinas com sequência</strong>
                             canalizam o entusiasmo: cada dia cumprido soma, e ver a sequência crescer vicia — no bom sentido.
                         </p>
                     </article>
@@ -354,7 +354,7 @@
                 </article>
                 <article class="card p-6">
                     <i data-lucide="repeat" class="w-7 h-7 text-foco-accent mb-3" aria-hidden="true"></i>
-                    <h3 class="font-bold">Rotinas com sequência 🔥</h3>
+                    <h3 class="font-bold">Rotinas com sequência</h3>
                     <p class="text-foco-muted text-sm mt-2">Hábitos por dia da semana com check de 1 clique. A sequência cresce e o dia pendente não te pune.</p>
                 </article>
                 <article class="card p-6">
