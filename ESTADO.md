@@ -1,5 +1,5 @@
 # ESTADO DO PROJETO — FinFoco
-Última atualização: 2026-07-13 (V17 — Modo Hiperfoco + landing reposicionada "TDAH como superpoder" — deployada em produção)
+Última atualização: 2026-07-13 (V18 — 4 integrações: visão semanal, Google Agenda import, Telegram e Web Push — deployada em produção)
 
 ## STATUS GERAL
 **PRODUÇÃO NO AR** em https://finfoco.nexialabs.com.br
@@ -10,6 +10,10 @@ para pessoas com TDAH — fase 1 = Agenda, fase 2 = Rotinas com streak, fase 3 =
 **V17 (2026-07-13)**: reposicionamento "TDAH como superpoder" — Modo Hiperfoco (/foco) +
 landing reescrita com novo posicionamento e SEO ("Seu TDAH não é defeito. É um superpoder sem manual.").
 Raiz `/` agora é landing page pública de divulgação (SEO completo); o app vive em `/painel`.
+**V18 (2026-07-13)**: 4 integrações — visão semanal da agenda, Google Agenda DENTRO do FinFoco
+(import ICS com parser próprio e cache), alertas via Telegram (bot + webhook) e Web Push
+(notificação com navegador fechado), com comando unificado `finfoco:alertas` disparado por
+tráfego a cada 60s. Falta só o Andre criar o bot no @BotFather pra ativar o Telegram.
 **Cobrança recorrente via Stripe (Laravel Cashier) está 100% funcional em produção**, modo LIVE,
 testada de ponta a ponta com fluxo real de trial em produção (registro real via HTTP, dashboard/`/assinatura`
 acessíveis durante o trial, bloqueio correto após expiração) — não é só "deployada", é validada com uso real.
@@ -30,6 +34,7 @@ acessíveis durante o trial, bloqueio correto após expiração) — não é só
 - [x] 11. Rotinas recorrentes com streak (fase 2 TDAH)
 - [x] 12. E-mail matinal Seu dia hoje + micro-passos (fase 3 TDAH)
 - [x] 13. Modo Hiperfoco + reposicionamento superpoder TDAH (landing/SEO)
+- [x] 14. Integrações: semana + Google Agenda import + Telegram + Web Push
 
 ---
 
@@ -82,6 +87,8 @@ routines         — id, user_id FK cascade, titulo varchar(80), hora time NULL
 routine_checks   — id, routine_id FK cascade, data date, unique(routine_id, data)
 appointment_steps — id, appointment_id FK cascade, titulo varchar(80),
                    concluido boolean, timestamps
+push_subscriptions — id, user_id, endpoint text, endpoint_hash sha256 unique,
+                   p256dh, auth, timestamps
 ```
 
 Migrations rodadas em produção:
@@ -101,10 +108,99 @@ Migrations rodadas em produção:
 - `2026_07_13_000001` — create_appointments_table (guarda `Schema::hasTable`)
 - `2026_07_13_000002` — create_routines_tables (routines + routine_checks, guardas `Schema::hasTable`)
 - `2026_07_13_000003` — create_appointment_steps_table (guarda `Schema::hasTable`)
+- `2026_07_13_000004` — create_push_subscriptions_table ([11] Ran em produção)
 
 ---
 
 ## O QUE FOI CONSTRUÍDO
+
+### V18 — 4 integrações: visão semanal, Google Agenda dentro do FinFoco, Telegram e Web Push (2026-07-13, commit `b5fcafc`, deployada em produção)
+
+#### 1) Visão semanal
+- `AgendaController@semana` + rota GET `/agenda/semana` + view `agenda/semana.blade.php`:
+  grade de 7 dias (lg:grid-cols-7), hoje com ring roxo e badge HOJE, compromissos com
+  hora, contador de rotinas feitas/total por dia, eventos do Google com marcador "· G",
+  navegação semana anterior/próxima, links Dia↔Semana nas duas telas
+
+#### 2) Google Agenda DENTRO do FinFoco (direção que faltava — antes só exportava via iCal)
+- Campo "Endereço secreto em iCal" em Configurações (setting `google_ics_url`,
+  validação url+https; salvar limpa o cache `gcal_{userId}`)
+- `app/Services/GoogleAgendaService.php`: baixa o ICS (Http timeout 6s), cache 15 min,
+  parser RFC 5545 (unfold de linhas, VEVENT, DTSTART dia-todo/TZID/UTC-Z, SUMMARY com
+  unescape, STATUS:CANCELLED ignorado, EXDATE, RRULE aproximado: DAILY/WEEKLY(BYDAY)/
+  MONTHLY/YEARLY com INTERVAL e UNTIL). Nunca lança exceção — falha = lista vazia
+- Eventos aparecem: na timeline do dia (li read-only com badge GOOGLE, entram na
+  ordenação por hora, na linha do AGORA e nos alertas do navegador com aviso 30min)
+  e na visão semanal
+- **BUG descoberto e corrigido**: objeto Carbon dentro de array cacheado no driver
+  file volta como `__PHP_Incomplete_Class` — guardar datas como string no cache e
+  re-parsear
+
+#### 3) Telegram
+- `app/Services/TelegramService.php` (sendMessage via Bot API, silencioso sem token)
+- `TelegramController`: `conectar` (gera token em setting `telegram_connect_token` e
+  redireciona para t.me/{bot}?start={token}), `desconectar`, `webhook`
+  (POST `/telegram/webhook/{segredo}`, público, hash_equals com
+  `TELEGRAM_WEBHOOK_SECRET`, CSRF exception em bootstrap/app.php; /start {token} →
+  grava `telegram_chat_id` via upsert direto — Setting::set usa auth() e webhook não
+  tem sessão — e responde confirmação no chat)
+- Configurações: card "Alertas no Telegram" (só aparece se `TELEGRAM_BOT_USERNAME`
+  configurado) com conectar/desconectar
+- `config/services.php`: bloco `telegram` (TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_USERNAME,
+  TELEGRAM_WEBHOOK_SECRET)
+- **PENDENTE DO ANDRE para ativar**: criar bot no @BotFather, colocar as 3 variáveis
+  no .env de produção, rodar config:cache, e registrar o webhook:
+  `curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://finfoco.nexialabs.com.br/telegram/webhook/<SEGREDO>"`
+
+#### 4) Web Push (notificação com navegador fechado)
+- Pacote `minishlink/web-push` ^9 (composer.json/lock commitados; produção rodou
+  `composer install --no-dev --optimize-autoloader`; local sem gmp/bcmath/zip →
+  instalar com `--ignore-platform-reqs` e `--prefer-source`; composer local é
+  `php ~/composer`)
+- Chaves VAPID geradas e adicionadas aos .env local e de produção (backup
+  `.env.bak-v18` criado no servidor antes do append). `config/services.php` bloco
+  `webpush`
+- Migration `2026_07_13_000004_create_push_subscriptions_table.php`:
+  push_subscriptions (user_id, endpoint text, endpoint_hash sha256 unique, p256dh, auth)
+- `PushController@assinar/desassinar` (fetch JSON, retorna 204 — exceção consciente à
+  regra "controller nunca retorna JSON": endpoint de máquina)
+- `public/sw.js` (push → showNotification; notificationclick → foca/abre /agenda) —
+  **copiado também para o docroot** `~/domains/finfoco.nexialabs.com.br/public_html/sw.js`
+  (estáticos!)
+- Layout: função global `finfocoAssinarPush()` registra SW e assina quando permissão
+  granted (roda no load e após o botão "Ativar alertas" da agenda conceder)
+
+#### 5) Comando unificado finfoco:alertas
+- `app/Console/Commands/EnviarAlertas.php`: para usuários com push subscription ou
+  telegram_chat_id, avisa compromissos com hora não concluídos dentro da janela
+  [hora - lembrete_min, hora] e rotinas com hora não feitas (janela 10 min), dedupe
+  diário via `Cache::add("alerta_c{id}_{data}")`, envia push (WebPushService com
+  limpeza de assinaturas mortas 404/410) + Telegram
+- Disparo: novo `rodarRotinaFrequente('alertas_minuto','finfoco:alertas',60)` no
+  AppServiceProvider (terminating, máx 1x/60s, lock)
+
+#### QA local (tudo passou)
+- lint em 11 arquivos; migrate; rotas; parser ICS validado via tinker (evento com hora
+  TZID, dia-todo, recorrente semanal na segunda certa; cache 2ª chamada OK; amanhã 0;
+  próxima segunda 1); agenda renderiza 3 eventos GOOGLE; semana 200; push/assinar 204
+  e grava; webhook segredo errado 403, certo 204; finfoco:alertas enviou 1 na janela
+  e 0 na repetição (dedupe)
+- Armadilha de QA local: testar URL ICS apontando pro próprio `artisan serve`
+  deadlocka (single-thread) — aquecer o cache via tinker
+
+#### Deploy em produção (2026-07-13)
+- rsync 19 caminhos + composer install + VAPID no .env + migrate [11] Ran + caches +
+  sw.js no docroot
+- Smoke: /agenda/semana 200 via login, sw.js 200, webhook 403 sem segredo configurado
+  (esperado), landing 200, finfoco:alertas rodou (0)
+
+Checklist binário de aceitação:
+- [x] Visão semanal em produção
+- [x] Import Google Agenda com recorrência e cache funcionando
+- [x] Push subscriptions gravando e comando enviando com dedupe
+- [x] Webhook Telegram protegido e vinculando chat
+- [x] Disparo por tráfego a cada 60s
+- [x] Nada existente quebrou
 
 ### V17 — TDAH como superpoder: Modo Hiperfoco + landing reposicionada com SEO (2026-07-13, commit `07f74d4`)
 Contexto: Andre (que tem TDAH) pediu para reposicionar o FinFoco usando as FORÇAS
@@ -893,13 +989,44 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 - **Posicionamento de marca (V17)**: "TDAH como superpoder" — a landing usa as FORÇAS do
   TDAH (hiperfoco, criatividade, energia, coragem) mapeadas a ferramentas do app, com
   disclaimer honesto (não romantiza, não substitui tratamento)
+- **Armadilha cache file + Carbon (V18)**: objeto Carbon dentro de array cacheado no
+  driver file volta como `__PHP_Incomplete_Class` — guardar datas como STRING no cache
+  e re-parsear na leitura (GoogleAgendaService)
+- Import do Google Agenda via ICS secreto (setting `google_ics_url`), não via OAuth/API:
+  parser RFC 5545 próprio com RRULE aproximado (DAILY/WEEKLY/MONTHLY/YEARLY + INTERVAL
+  + UNTIL, EXDATE, CANCELLED), cache file 15 min por usuário (`gcal_{userId}`), nunca
+  lança exceção — falha de rede/parse = lista vazia (agenda nunca quebra)
+- **Setting::set usa auth()** — em contexto sem sessão (webhook do Telegram), gravar
+  setting via upsert direto no query builder com o user_id explícito
+- Webhook do Telegram protegido por segredo na URL comparado com `hash_equals`
+  (`TELEGRAM_WEBHOOK_SECRET`), rota pública com CSRF exception em bootstrap/app.php
+- `PushController` retorna JSON/204 — exceção CONSCIENTE à regra "controller nunca
+  retorna JSON": é endpoint de máquina (fetch do service worker), não de humano
+- `public/sw.js` precisa ser copiado TAMBÉM pro docroot
+  `~/domains/finfoco.nexialabs.com.br/public_html/sw.js` (estático, mesma regra do
+  robots/sitemap) — e service worker exige escopo servido da raiz
+- **Disparo frequente sem cron**: `rodarRotinaFrequente('alertas_minuto','finfoco:alertas',60)`
+  no AppServiceProvider (terminating callback, máx 1x/60s, lock em cache) — irmão do
+  `rodarRotinaDiaria`, para alertas de compromissos/rotinas por push+Telegram
+- Dedupe de alerta enviado: `Cache::add("alerta_c{id}_{data}")` (atômico, 1 aviso por
+  item por dia); assinaturas push mortas (404/410) são removidas no envio
+- Composer local: binário é `php ~/composer`; local sem gmp/bcmath/zip → instalar
+  `minishlink/web-push` com `--ignore-platform-reqs --prefer-source`
+- **Armadilha de QA local (V18)**: testar URL ICS apontando pro próprio `artisan serve`
+  deadlocka (servidor single-thread se chama e trava) — aquecer o cache via tinker
 
 ---
 
 ## PENDÊNCIAS / BLOQUEIOS
+- **Ativação do bot do Telegram (só o Andre pode fazer)**: criar bot no @BotFather,
+  colocar `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` e `TELEGRAM_WEBHOOK_SECRET`
+  no .env de produção, rodar `php artisan config:cache` e registrar o webhook:
+  `curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://finfoco.nexialabs.com.br/telegram/webhook/<SEGREDO>"`.
+  Todo o código já está em produção — sem o bot o card nem aparece em Configurações
+- **Próxima etapa combinada**: melhoria de UX/layout focada em TDAH
 - **Remodelagem TDAH COMPLETA** — fases 1, 2 e 3 concluídas e deployadas em 2026-07-13;
-  timer de foco visual entregue na V17 (Modo Hiperfoco). Ideias futuras (NÃO
-  comprometidas): integração WhatsApp para alertas, web push com service worker
+  timer de foco visual entregue na V17 (Modo Hiperfoco); web push com service worker
+  entregue na V18
 - Google Search Console: propriedade VERIFICADA (2026-07-07) — falta o usuário enviar o
   `sitemap.xml` no menu Sitemaps e solicitar indexação da home via Inspeção de URL
 - Nenhuma pendência de Stripe — setup manual concluído em 2026-07-02 (ver HISTÓRICO).
@@ -913,10 +1040,21 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
   sucesso em 2026-07-13 (ver HISTÓRICO).
 - Nenhuma pendência de V17 (Modo Hiperfoco + landing superpoder) — deployada em produção
   com sucesso em 2026-07-13 (ver HISTÓRICO).
+- V18 deployada em produção com sucesso em 2026-07-13 — única pendência é a ativação do
+  bot do Telegram pelo Andre (item acima).
 
 ---
 
-## QA — Último resultado (2026-07-13, V17 Modo Hiperfoco + landing superpoder)
+## QA — Último resultado (2026-07-13, V18 — 4 integrações)
+- Local: lint em 11 arquivos; migrate; rotas; parser ICS validado via tinker (evento
+  com hora TZID, dia-todo, recorrente semanal na segunda certa; cache na 2ª chamada
+  OK; amanhã 0; próxima segunda 1); agenda renderiza 3 eventos GOOGLE; semana 200;
+  push/assinar 204 e grava; webhook segredo errado 403, certo 204; finfoco:alertas
+  enviou 1 na janela e 0 na repetição (dedupe)
+- Produção pós-deploy: /agenda/semana 200 via login, sw.js 200, webhook 403 sem
+  segredo configurado (esperado), landing 200, finfoco:alertas rodou (0)
+
+## QA — Resultado anterior (2026-07-13, V17 Modo Hiperfoco + landing superpoder)
 - view:cache OK; landing local 200 com todas as âncoras/keywords
 - JSON-LD parseado válido com json.loads (WebApplication com featureList + audience
   "Adultos com TDAH", e FAQPage espelhando o FAQ visível de 7 perguntas)
@@ -975,6 +1113,31 @@ alterada e persistida, onboarding aparece pra usuário novo em produção e some
 ---
 
 ## HISTÓRICO
+
+### 2026-07-13 — V18: 4 integrações — visão semanal, Google Agenda dentro do FinFoco, Telegram e Web Push — commit b5fcafc, deployada em produção
+- Visão semanal: /agenda/semana com grade de 7 dias, badge HOJE, rotinas feitas/total
+  por dia, eventos do Google com "· G", navegação de semanas e links Dia↔Semana
+- Import do Google Agenda via ICS secreto (setting `google_ics_url`):
+  GoogleAgendaService com parser RFC 5545 (RRULE aproximado, EXDATE, CANCELLED),
+  cache 15 min, nunca lança exceção; eventos entram na timeline do dia (badge
+  GOOGLE), nos alertas do navegador e na semana. Bug corrigido: Carbon em cache
+  file vira `__PHP_Incomplete_Class` — datas como string no cache
+- Telegram: TelegramService + TelegramController (conectar via deep link
+  t.me/{bot}?start={token}, desconectar, webhook público protegido por segredo com
+  hash_equals; /start grava telegram_chat_id via upsert direto). Card em
+  Configurações só aparece com TELEGRAM_BOT_USERNAME configurado
+- Web Push: minishlink/web-push ^9, chaves VAPID nos .env (backup .env.bak-v18 no
+  servidor), tabela push_subscriptions (migration [11]), PushController
+  assinar/desassinar (204, endpoint de máquina), public/sw.js (também copiado pro
+  docroot public_html), finfocoAssinarPush() no layout
+- Comando unificado finfoco:alertas: push + Telegram pra compromissos com hora na
+  janela do lembrete e rotinas com hora (janela 10 min), dedupe diário via
+  Cache::add, limpeza de assinaturas mortas; disparo por tráfego via
+  rodarRotinaFrequente (1x/60s, lock)
+- QA local completo aprovado; deploy: rsync 19 caminhos + composer install + migrate
+  [11] Ran + caches + sw.js no docroot; smoke em produção OK
+- PENDENTE do Andre: criar o bot no @BotFather, 3 variáveis no .env, config:cache e
+  setWebhook (comando registrado em PENDÊNCIAS)
 
 ### 2026-07-13 — V17: TDAH como superpoder — Modo Hiperfoco + landing reposicionada com SEO — commit 07f74d4, deployada em produção
 - Reposicionamento pedido por Andre: usar as FORÇAS do TDAH a favor do usuário
