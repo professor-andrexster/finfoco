@@ -17,7 +17,7 @@
                 <div>
                     <p class="font-semibold text-foco-text">Acesso vitalício ativado</p>
                     <p class="text-sm text-foco-muted mt-1">
-                        Você tem acesso permanente ao FinFoco, sem mensalidade.
+                        Você tem acesso permanente ao Norte, sem mensalidade.
                     </p>
                 </div>
             </div>
@@ -33,7 +33,7 @@
                 <div>
                     <p class="font-semibold text-foco-text">Assinatura ativa</p>
                     <p class="text-sm text-foco-muted mt-1">
-                        Você tem acesso completo ao FinFoco. Obrigado por assinar!
+                        Você tem acesso completo ao Norte. Obrigado por assinar!
                     </p>
                 </div>
             </div>
@@ -134,7 +134,7 @@
                 <div>
                     <p class="font-semibold text-foco-text">Seu período gratuito acabou</p>
                     <p class="text-sm text-foco-muted mt-1">
-                        Assine o FinFoco para continuar controlando suas finanças sem perder seus dados.
+                        Assine o Norte para continuar controlando suas finanças sem perder seus dados.
                     </p>
                 </div>
             </div>

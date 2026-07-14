@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ConquistaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FocoController;
 use App\Http\Controllers\MarketingController;
@@ -107,7 +108,11 @@ Route::middleware(['auth', 'subscribed'])->group(function () {
     Route::delete('/passos/{step}',                  [AgendaController::class, 'destroyPasso'])->name('agenda.passos.destroy');
 
     // Modo Hiperfoco
-    Route::get('/foco', [FocoController::class, 'index'])->name('foco.index');
+    Route::get('/foco',         [FocoController::class, 'index'])->name('foco.index');
+    Route::post('/foco/sessao', [FocoController::class, 'registrarSessao'])->name('foco.sessao');
+
+    // Conquistas
+    Route::get('/conquistas', [ConquistaController::class, 'index'])->name('conquistas.index');
 
     // Rotinas
     Route::get('/rotinas',                    [RoutineController::class, 'index'])->name('routines.index');

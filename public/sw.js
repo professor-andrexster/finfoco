@@ -1,6 +1,6 @@
-// Service worker do FinFoco — recebe Web Push e mostra a notificação
+// Service worker do Norte — recebe Web Push e mostra a notificação
 self.addEventListener('push', (event) => {
-    let dados = { title: 'FinFoco', body: 'Você tem um lembrete.', url: '/agenda' };
+    let dados = { title: 'Norte', body: 'Você tem um lembrete.', url: '/agenda' };
     try {
         dados = Object.assign(dados, event.data.json());
     } catch (e) { /* payload não-JSON: usa o padrão */ }

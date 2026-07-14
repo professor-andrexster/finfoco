@@ -165,7 +165,7 @@ class AgendaController extends Controller
 
     /**
      * Feed iCal público (por token secreto) — o Google Calendar assina esta URL
-     * e os compromissos do FinFoco aparecem lá automaticamente.
+     * e os compromissos do Norte aparecem lá automaticamente.
      */
     public function feed(string $token)
     {
@@ -180,9 +180,9 @@ class AgendaController extends Controller
         $linhas = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
-            'PRODID:-//FinFoco//Agenda//PT-BR',
+            'PRODID:-//Norte//Agenda//PT-BR',
             'CALSCALE:GREGORIAN',
-            'X-WR-CALNAME:FinFoco',
+            'X-WR-CALNAME:Norte',
         ];
 
         foreach ($eventos as $e) {

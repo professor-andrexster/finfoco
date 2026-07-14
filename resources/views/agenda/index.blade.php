@@ -35,7 +35,7 @@
         ])
     )->values();
 
-    // Compromissos do FinFoco + eventos do Google numa linha do tempo só
+    // Compromissos do Norte + eventos do Google numa linha do tempo só
     $itens = $compromissos->map(fn($c) => ['tipo' => 'app', 'obj' => $c, 'hora' => $c->hora])
         ->concat(collect($eventosGoogle)->map(fn($g) => [
             'tipo' => 'google', 'titulo' => $g['titulo'],

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Criar conta — FinFoco</title>
+    <title>Criar conta — Norte</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
@@ -33,12 +33,10 @@
     <div style="text-align:center;margin-bottom:36px">
         <a href="{{ route('login') }}" style="display:inline-flex;align-items:center;gap:12px;text-decoration:none">
             <svg width="44" height="44" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="32" cy="32" r="26" fill="none" stroke="#E0DFFA" stroke-width="5"/>
-                <circle cx="32" cy="32" r="16" fill="none" stroke="#6366F1" stroke-width="5"/>
-                <circle cx="32" cy="32" r="7" fill="#22C55E"/>
+                <circle cx="32" cy="32" r="26" fill="none" stroke="#6366F1" stroke-width="4.5"/><path d="M32 16 L40 42.5 L32 37.5 L24 42.5 Z" fill="#6366F1"/>
             </svg>
             <span style="font-size:28px;font-weight:800;letter-spacing:-0.04em">
-                <span style="color:#1E1B4B">Fin</span><span style="color:#6366F1">Foco</span>
+                <span style="color:#1E1B4B">Norte</span>
             </span>
         </a>
         <p style="color:#9794B8;font-size:14px;margin-top:10px">Gratuito para começar · Sem cartão de crédito</p>

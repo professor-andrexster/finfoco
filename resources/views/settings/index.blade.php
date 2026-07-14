@@ -61,7 +61,7 @@
         <div class="card rounded-2xl p-6 space-y-5">
             <h2 class="font-semibold text-foco-text flex items-center gap-2">
                 <i data-lucide="calendar-sync" class="w-4 h-4 text-foco-accent"></i>
-                Google Agenda dentro do FinFoco
+                Google Agenda dentro do Norte
             </h2>
 
             <div>
@@ -71,7 +71,7 @@
                 <p class="text-xs text-foco-muted mb-2">
                     No Google Agenda (computador): <strong>Configurações → sua agenda →
                     Integrar agenda → Endereço secreto no formato iCal</strong>. Cole aqui e
-                    seus eventos do Google aparecem na agenda do FinFoco.
+                    seus eventos do Google aparecem na agenda do Norte.
                 </p>
                 <input type="url" id="google_ics_url" name="google_ics_url" maxlength="500"
                        value="{{ old('google_ics_url', $googleIcsUrl) }}"

@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>FinFoco — @yield('title', 'Painel')</title>
+    <title>Norte — @yield('title', 'Painel')</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icon.svg">
     <meta name="theme-color" content="#6366F1">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="FinFoco">
+    <meta name="apple-mobile-web-app-title" content="Norte">
 
     {{-- Tema: aplica antes do primeiro paint pra não piscar --}}
     <script>
@@ -217,6 +217,7 @@
             ['route'=>'agenda.index',  'pat'=>'agenda*',    'icon'=>'calendar-days',   'label'=>'Agenda',   'kbd'=>'A'],
             ['route'=>'foco.index',    'pat'=>'foco*',      'icon'=>'zap',             'label'=>'Hiperfoco','kbd'=>'F'],
             ['route'=>'routines.index','pat'=>'routines*',  'icon'=>'repeat',          'label'=>'Rotinas',  'kbd'=>'R'],
+            ['route'=>'conquistas.index','pat'=>'conquistas*','icon'=>'award',         'label'=>'Conquistas','kbd'=>'Q'],
         ];
         $navDinheiro = [
             ['route'=>'transactions.create','pat'=>'transactions*','icon'=>'plus-circle', 'label'=>'Lançar',   'kbd'=>'L'],
@@ -235,12 +236,10 @@
         <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-6 h-16 shrink-0"
            style="border-bottom:1px solid #F3F3FB">
             <svg width="28" height="28" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="32" cy="32" r="26" fill="none" stroke="#E0DFFA" stroke-width="5"/>
-                <circle cx="32" cy="32" r="16" fill="none" stroke="#6366F1" stroke-width="5"/>
-                <circle cx="32" cy="32" r="7" fill="#22C55E"/>
+                <circle cx="32" cy="32" r="26" fill="none" stroke="#6366F1" stroke-width="4.5"/><path d="M32 16 L40 42.5 L32 37.5 L24 42.5 Z" fill="#6366F1"/>
             </svg>
             <span class="font-bold text-lg tracking-tight">
-                <span style="color:#1E1B4B">Fin</span><span style="color:#6366F1">Foco</span>
+                <span style="color:#1E1B4B">Norte</span>
             </span>
         </a>
 
@@ -328,12 +327,10 @@
         <div class="px-4 h-14 flex items-center justify-between">
             <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
                 <svg width="26" height="26" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="32" cy="32" r="26" fill="none" stroke="#E0DFFA" stroke-width="5"/>
-                    <circle cx="32" cy="32" r="16" fill="none" stroke="#6366F1" stroke-width="5"/>
-                    <circle cx="32" cy="32" r="7" fill="#22C55E"/>
+                    <circle cx="32" cy="32" r="26" fill="none" stroke="#6366F1" stroke-width="4.5"/><path d="M32 16 L40 42.5 L32 37.5 L24 42.5 Z" fill="#6366F1"/>
                 </svg>
                 <span class="font-bold text-base tracking-tight">
-                    <span style="color:#1E1B4B">Fin</span><span style="color:#6366F1">Foco</span>
+                    <span style="color:#1E1B4B">Norte</span>
                 </span>
             </a>
 
@@ -400,6 +397,7 @@
             <div class="grid grid-cols-3 gap-3">
                 @foreach([
                     ['route'=>'routines.index',   'icon'=>'repeat',      'label'=>'Rotinas'],
+                    ['route'=>'conquistas.index', 'icon'=>'award',       'label'=>'Conquistas'],
                     ['route'=>'bills.index',      'icon'=>'receipt',     'label'=>'Contas'],
                     ['route'=>'history.index',    'icon'=>'clock',       'label'=>'Histórico'],
                     ['route'=>'reports.index',    'icon'=>'bar-chart-3', 'label'=>'Relatórios'],
@@ -472,7 +470,7 @@
             <ul class="space-y-2.5 text-sm">
                 @foreach([
                     ['P', 'Painel'], ['A', 'Agenda'], ['S', 'Agenda da semana'],
-                    ['F', 'Modo Hiperfoco'], ['R', 'Rotinas'], ['L', 'Lançar entrada/saída'],
+                    ['F', 'Modo Hiperfoco'], ['R', 'Rotinas'], ['Q', 'Conquistas'], ['L', 'Lançar entrada/saída'],
                     ['C', 'Contas'], ['H', 'Histórico'], ['E', 'Modo escuro/claro'], ['?', 'Esta ajuda'],
                 ] as [$tecla, $acao])
                 <li class="flex items-center justify-between">
@@ -513,6 +511,7 @@
                 s: '{{ route('agenda.semana') }}',
                 f: '{{ route('foco.index') }}',
                 r: '{{ route('routines.index') }}',
+                q: '{{ route('conquistas.index') }}',
                 l: '{{ route('transactions.create') }}',
                 c: '{{ route('bills.index') }}',
                 h: '{{ route('history.index') }}',

@@ -24,7 +24,7 @@ class AvisoVencimentos extends Mailable
         if ($this->vencemHoje->isNotEmpty())   $partes[] = $this->vencemHoje->count() . ' vence(m) hoje';
         if ($this->vencemAmanha->isNotEmpty()) $partes[] = $this->vencemAmanha->count() . ' vence(m) amanhã';
 
-        return new Envelope(subject: 'FinFoco — Contas: ' . implode(', ', $partes));
+        return new Envelope(subject: 'Norte — Contas: ' . implode(', ', $partes));
     }
 
     public function content(): Content

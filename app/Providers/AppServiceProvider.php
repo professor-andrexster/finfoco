@@ -75,12 +75,12 @@ class AppServiceProvider extends ServiceProvider
             $url = route('password.reset', ['token' => $token, 'email' => $notifiable->getEmailForPasswordReset()]);
 
             return (new MailMessage)
-                ->subject('FinFoco — Redefinir sua senha')
+                ->subject('Norte — Redefinir sua senha')
                 ->greeting('Olá!')
-                ->line('Recebemos um pedido pra redefinir a senha da sua conta no FinFoco.')
+                ->line('Recebemos um pedido pra redefinir a senha da sua conta no Norte.')
                 ->action('Criar nova senha', $url)
                 ->line('O link vale por 60 minutos. Se não foi você, ignore este e-mail — nada muda.')
-                ->salutation('Equipe FinFoco');
+                ->salutation('Equipe Norte');
         });
 
         // Backup diário disparado pelo tráfego: a Hostinger compartilhada não dá

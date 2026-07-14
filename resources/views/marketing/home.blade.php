@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     {{-- ─── SEO ─────────────────────────────────────────────────────────── --}}
-    <title>FinFoco — O app que transforma seu TDAH em superpoder</title>
+    <title>Norte — O app que transforma seu TDAH em superpoder</title>
     <meta name="description" content="App para TDAH em português: agenda visual contra a cegueira temporal, Modo Hiperfoco, rotinas com sequência, micro-passos e finanças anti-impulso. Feito por quem tem TDAH. Teste grátis 7 dias.">
     <meta name="keywords" content="app para TDAH, aplicativo TDAH, agenda para TDAH, hiperfoco, rotinas TDAH, organização TDAH, cegueira temporal, controle financeiro TDAH, app TDAH português, TDAH adulto">
     <link rel="canonical" href="https://finfoco.nexialabs.com.br/">
@@ -15,19 +15,19 @@
     {{-- Open Graph --}}
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://finfoco.nexialabs.com.br/">
-    <meta property="og:site_name" content="FinFoco">
-    <meta property="og:title" content="FinFoco — O app que transforma seu TDAH em superpoder">
+    <meta property="og:site_name" content="Norte">
+    <meta property="og:title" content="Norte — O app que transforma seu TDAH em superpoder">
     <meta property="og:description" content="Agenda visual, Modo Hiperfoco, rotinas com sequência e finanças anti-impulso. Feito por quem tem TDAH, para cérebros com TDAH. Teste grátis 7 dias.">
     <meta property="og:image" content="https://finfoco.nexialabs.com.br/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:type" content="image/png">
-    <meta property="og:image:alt" content="FinFoco — o app que transforma seu TDAH em superpoder">
+    <meta property="og:image:alt" content="Norte — o app que transforma seu TDAH em superpoder">
     <meta property="og:locale" content="pt_BR">
 
     {{-- Twitter Card --}}
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="FinFoco — O app que transforma seu TDAH em superpoder">
+    <meta name="twitter:title" content="Norte — O app que transforma seu TDAH em superpoder">
     <meta name="twitter:description" content="Agenda visual, Modo Hiperfoco, rotinas com sequência e finanças anti-impulso. Feito por quem tem TDAH. Teste grátis 7 dias.">
     <meta name="twitter:image" content="https://finfoco.nexialabs.com.br/og-image.png">
 
@@ -42,7 +42,7 @@
     {
         "@context": "https://schema.org",
         "@type": "WebApplication",
-        "name": "FinFoco",
+        "name": "Norte",
         "url": "https://finfoco.nexialabs.com.br/",
         "description": "Assistente completo para pessoas com TDAH: agenda visual contra a cegueira temporal, Modo Hiperfoco, rotinas com sequência, micro-passos e controle financeiro anti-impulso. Em português, feito por quem tem TDAH.",
         "applicationCategory": "LifestyleApplication",
@@ -68,10 +68,10 @@
         "mainEntity": [
             {
                 "@type": "Question",
-                "name": "O que é o FinFoco?",
+                "name": "O que é o Norte?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "O FinFoco é um app para TDAH em português que reúne agenda visual, Modo Hiperfoco, rotinas com sequência, micro-passos e controle financeiro anti-impulso num só lugar — tudo desenhado para baixa carga cognitiva."
+                    "text": "O Norte é um app para TDAH em português que reúne agenda visual, Modo Hiperfoco, rotinas com sequência, micro-passos e controle financeiro anti-impulso num só lugar — tudo desenhado para baixa carga cognitiva."
                 }
             },
             {
@@ -79,7 +79,7 @@
                 "name": "TDAH é mesmo um superpoder?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "TDAH traz desafios reais — não romantizamos isso. Mas pesquisas associam o cérebro TDAH a mais criatividade, pensamento divergente e capacidade de hiperfoco. O FinFoco segura os desafios (memória, tempo, impulso) para que essas forças apareçam."
+                    "text": "TDAH traz desafios reais — não romantizamos isso. Mas pesquisas associam o cérebro TDAH a mais criatividade, pensamento divergente e capacidade de hiperfoco. O Norte segura os desafios (memória, tempo, impulso) para que essas forças apareçam."
                 }
             },
             {
@@ -87,7 +87,7 @@
                 "name": "Funciona com o Google Agenda?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Sim. Cada usuário tem um link secreto que o Google Agenda assina: seus compromissos do FinFoco aparecem automaticamente lá, sem instalar nada."
+                    "text": "Sim. Cada usuário tem um link secreto que o Google Agenda assina: seus compromissos do Norte aparecem automaticamente lá, sem instalar nada."
                 }
             },
             {
@@ -95,12 +95,12 @@
                 "name": "Preciso de diagnóstico de TDAH para usar?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Não. O FinFoco foi projetado para o cérebro TDAH, mas qualquer pessoa que se sente sobrecarregada por apps complicados se beneficia da mesma simplicidade. O FinFoco não é ferramenta médica e não substitui tratamento."
+                    "text": "Não. O Norte foi projetado para o cérebro TDAH, mas qualquer pessoa que se sente sobrecarregada por apps complicados se beneficia da mesma simplicidade. O Norte não é ferramenta médica e não substitui tratamento."
                 }
             },
             {
                 "@type": "Question",
-                "name": "Quanto custa o FinFoco?",
+                "name": "Quanto custa o Norte?",
                 "acceptedAnswer": {
                     "@type": "Answer",
                     "text": "R$ 19,98 por mês, com 7 dias de teste grátis sem cartão de crédito. Cancele quando quiser, direto no app."
@@ -119,7 +119,7 @@
                 "name": "Funciona no celular?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Sim. O FinFoco é um app web responsivo: funciona no navegador do celular, tablet e computador, sem precisar instalar nada."
+                    "text": "Sim. O Norte é um app web responsivo: funciona no navegador do celular, tablet e computador, sem precisar instalar nada."
                 }
             }
         ]
@@ -173,9 +173,9 @@
     {{-- ─── Cabeçalho ───────────────────────────────────────────────────── --}}
     <header class="border-b border-foco-border">
         <nav aria-label="Navegação principal" class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="/" class="flex items-center gap-2" aria-label="FinFoco — página inicial">
-                <img src="/logo.svg" alt="Logotipo do FinFoco" width="32" height="32" class="w-8 h-8">
-                <span class="text-xl font-bold">Fin<span class="text-foco-accent">Foco</span></span>
+            <a href="/" class="flex items-center gap-2" aria-label="Norte — página inicial">
+                <img src="/logo.svg" alt="Logotipo do Norte" width="32" height="32" class="w-8 h-8">
+                <span class="text-xl font-bold">Norte</span>
             </a>
             <div class="flex items-center gap-3">
                 @auth
@@ -214,9 +214,9 @@
                 <span class="text-foco-accent">É um superpoder sem manual.</span>
             </h1>
             <p class="text-lg text-foco-muted max-w-2xl mx-auto mt-6">
-                O FinFoco é o manual: agenda visual que combate a cegueira temporal, Modo Hiperfoco,
-                rotinas com sequência, tarefas quebradas em micro-passos e finanças anti-impulso.
-                Tudo num app só, em português, sem sobrecarga.
+                O Norte é o manual: agenda visual que combate a cegueira temporal, rotinas com
+                sequência, Modo Hiperfoco, conquistas que provam sua constância e finanças
+                anti-impulso. Tudo num sistema só, em português, sem sobrecarga.
             </p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
                 <a href="{{ auth()->check() ? route('dashboard') : route('register') }}"
@@ -240,7 +240,7 @@
                 <p class="text-foco-muted max-w-2xl mx-auto mt-4">
                     Pesquisas recentes associam o TDAH a mais criatividade, pensamento divergente e capacidade
                     de hiperfoco — e mostram que quem usa essas forças vive melhor. O problema nunca foi o motor.
-                    Foi a falta de equipamento. O FinFoco equipa cada força:
+                    Foi a falta de equipamento. O Norte equipa cada força:
                 </p>
                 <div class="grid sm:grid-cols-2 gap-6 mt-10 text-left">
                     <article class="card p-6">
@@ -277,7 +277,7 @@
                     </article>
                 </div>
                 <p class="text-xs text-foco-muted max-w-xl mx-auto mt-8">
-                    TDAH traz desafios reais e o FinFoco não substitui diagnóstico nem tratamento.
+                    TDAH traz desafios reais e o Norte não substitui diagnóstico nem tratamento.
                     Nossa aposta: com as ferramentas certas, as forças aparecem.
                 </p>
             </div>
@@ -358,6 +358,11 @@
                     <p class="text-foco-muted text-sm mt-2">Hábitos por dia da semana com check de 1 clique. A sequência cresce e o dia pendente não te pune.</p>
                 </article>
                 <article class="card p-6">
+                    <i data-lucide="award" class="w-7 h-7 text-foco-accent mb-3" aria-hidden="true"></i>
+                    <h3 class="font-bold">Conquistas e constância</h3>
+                    <p class="text-foco-muted text-sm mt-2">Mapa de constância, sequências e marcos que mostram o que você já construiu — dopamina adulta.</p>
+                </article>
+                <article class="card p-6">
                     <i data-lucide="calendar-sync" class="w-7 h-7 text-foco-accent mb-3" aria-hidden="true"></i>
                     <h3 class="font-bold">Google Agenda integrado</h3>
                     <p class="text-foco-muted text-sm mt-2">Um link secreto e seus compromissos aparecem no Google Agenda automaticamente. Sem instalar nada.</p>
@@ -414,31 +419,31 @@
                 <div class="space-y-4 mt-10">
                     <details class="card p-5">
                         <summary class="flex items-center justify-between font-bold">
-                            O que é o FinFoco?
+                            O que é o Norte?
                             <i data-lucide="chevron-down" class="w-5 h-5 faq-chevron shrink-0" aria-hidden="true"></i>
                         </summary>
-                        <p class="text-foco-muted text-sm mt-3">O FinFoco é um app para TDAH em português que reúne agenda visual, Modo Hiperfoco, rotinas com sequência, micro-passos e controle financeiro anti-impulso num só lugar — tudo desenhado para baixa carga cognitiva.</p>
+                        <p class="text-foco-muted text-sm mt-3">O Norte é um app para TDAH em português que reúne agenda visual, Modo Hiperfoco, rotinas com sequência, micro-passos e controle financeiro anti-impulso num só lugar — tudo desenhado para baixa carga cognitiva.</p>
                     </details>
                     <details class="card p-5">
                         <summary class="flex items-center justify-between font-bold">
                             TDAH é mesmo um superpoder?
                             <i data-lucide="chevron-down" class="w-5 h-5 faq-chevron shrink-0" aria-hidden="true"></i>
                         </summary>
-                        <p class="text-foco-muted text-sm mt-3">TDAH traz desafios reais — não romantizamos isso. Mas pesquisas associam o cérebro TDAH a mais criatividade, pensamento divergente e capacidade de hiperfoco. O FinFoco segura os desafios (memória, tempo, impulso) para que essas forças apareçam.</p>
+                        <p class="text-foco-muted text-sm mt-3">TDAH traz desafios reais — não romantizamos isso. Mas pesquisas associam o cérebro TDAH a mais criatividade, pensamento divergente e capacidade de hiperfoco. O Norte segura os desafios (memória, tempo, impulso) para que essas forças apareçam.</p>
                     </details>
                     <details class="card p-5">
                         <summary class="flex items-center justify-between font-bold">
                             Funciona com o Google Agenda?
                             <i data-lucide="chevron-down" class="w-5 h-5 faq-chevron shrink-0" aria-hidden="true"></i>
                         </summary>
-                        <p class="text-foco-muted text-sm mt-3">Sim. Cada usuário tem um link secreto que o Google Agenda assina: seus compromissos do FinFoco aparecem automaticamente lá, sem instalar nada.</p>
+                        <p class="text-foco-muted text-sm mt-3">Sim. Cada usuário tem um link secreto que o Google Agenda assina: seus compromissos do Norte aparecem automaticamente lá, sem instalar nada.</p>
                     </details>
                     <details class="card p-5">
                         <summary class="flex items-center justify-between font-bold">
                             Preciso de diagnóstico de TDAH para usar?
                             <i data-lucide="chevron-down" class="w-5 h-5 faq-chevron shrink-0" aria-hidden="true"></i>
                         </summary>
-                        <p class="text-foco-muted text-sm mt-3">Não. O FinFoco foi projetado para o cérebro TDAH, mas qualquer pessoa que se sente sobrecarregada por apps complicados se beneficia da mesma simplicidade. O FinFoco não é ferramenta médica e não substitui tratamento.</p>
+                        <p class="text-foco-muted text-sm mt-3">Não. O Norte foi projetado para o cérebro TDAH, mas qualquer pessoa que se sente sobrecarregada por apps complicados se beneficia da mesma simplicidade. O Norte não é ferramenta médica e não substitui tratamento.</p>
                     </details>
                     <details class="card p-5">
                         <summary class="flex items-center justify-between font-bold">
@@ -459,7 +464,7 @@
                             Funciona no celular?
                             <i data-lucide="chevron-down" class="w-5 h-5 faq-chevron shrink-0" aria-hidden="true"></i>
                         </summary>
-                        <p class="text-foco-muted text-sm mt-3">Sim. O FinFoco é um app web responsivo: funciona no navegador do celular, tablet e computador, sem precisar instalar nada.</p>
+                        <p class="text-foco-muted text-sm mt-3">Sim. O Norte é um app web responsivo: funciona no navegador do celular, tablet e computador, sem precisar instalar nada.</p>
                     </details>
                 </div>
             </div>
@@ -484,7 +489,7 @@
         <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-foco-muted">
             <p class="flex items-center gap-2">
                 <img src="/logo.svg" alt="" width="20" height="20" class="w-5 h-5" aria-hidden="true">
-                © {{ date('Y') }} FinFoco — o app que transforma seu TDAH em superpoder.
+                © {{ date('Y') }} Norte — o app que transforma seu TDAH em superpoder.
             </p>
             <nav aria-label="Links do rodapé" class="flex items-center gap-6">
                 <a href="#superpoderes" class="hover:text-foco-text">Superpoderes</a>

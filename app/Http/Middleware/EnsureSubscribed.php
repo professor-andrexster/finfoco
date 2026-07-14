@@ -21,6 +21,6 @@ class EnsureSubscribed
         }
 
         return redirect()->route('billing.index')
-            ->with('erro', 'Seu período gratuito acabou. Assine para continuar usando o FinFoco.');
+            ->with('erro', 'Seu período gratuito acabou. Assine para continuar usando o Norte.');
     }
 }

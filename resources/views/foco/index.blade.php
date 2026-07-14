@@ -30,21 +30,29 @@
         },
         tique() {
             this.restante--;
-            document.title = this.relogio + ' — Hiperfoco | FinFoco';
+            document.title = this.relogio + ' — Hiperfoco | Norte';
             if (this.restante <= 0) this.terminar();
         },
         terminar() {
             clearInterval(this.timer);
             this.etapa = 'fim';
-            document.title = 'Sessão concluída | FinFoco';
+            document.title = 'Sessão concluída | Norte';
             if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification('Hiperfoco completo', { body: this.tarefa + ' — ' + this.minutos + ' minutos de foco.', icon: '/icon.svg' });
             }
+            fetch('{{ route('foco.sessao') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                },
+                body: JSON.stringify({ titulo: this.tarefa, minutos: this.minutos }),
+            }).catch(() => {});
         },
         parar() {
             clearInterval(this.timer);
             this.etapa = 'escolha';
-            document.title = 'FinFoco — Modo Hiperfoco';
+            document.title = 'Norte — Modo Hiperfoco';
         },
         escolherSugestao(s) {
             this.tarefa = s.titulo;

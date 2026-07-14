@@ -1,8 +1,8 @@
 {
-    "name": "FinFoco — Controle financeiro para mente ativa",
-    "short_name": "FinFoco",
-    "description": "Controlador financeiro pessoal com baixa carga cognitiva.",
-    "start_url": "/",
+    "name": "Norte — seu dia no controle",
+    "short_name": "Norte",
+    "description": "Sistema para pessoas com TDAH: agenda visual, rotinas com sequência, hiperfoco, conquistas e finanças — com baixa carga cognitiva.",
+    "start_url": "/painel",
     "display": "standalone",
     "background_color": "#FFFFFF",
     "theme_color": "#6366F1",

@@ -94,7 +94,7 @@
 <div class="card p-5 mb-6" style="border-top:3px solid #6366F1">
     <p class="text-sm font-semibold text-foco-text mb-1 flex items-center gap-2">
         <i data-lucide="rocket" class="w-4 h-4 text-foco-accent"></i>
-        Bem-vindo ao FinFoco! Comece por aqui:
+        Bem-vindo ao Norte! Comece por aqui:
     </p>
     <p class="text-xs text-foco-muted mb-4">Três passos e o sistema começa a trabalhar pra você.</p>
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -132,22 +132,19 @@
     @foreach($avisos as $aviso)
     @if($aviso['tipo'] !== 'success')
     @php
-        $borderColor = $aviso['tipo'] === 'danger' ? '#DC2626' : '#D97706';
-        $bgColor     = $aviso['tipo'] === 'danger' ? '#FEF2F2' : '#FFFBEB';
-        $textColor   = $aviso['tipo'] === 'danger' ? '#DC2626' : '#D97706';
+        // Sóbrio: card neutro, a cor de significado fica só no ponto
+        $corPonto = $aviso['tipo'] === 'danger' ? 'var(--c-saida)' : 'var(--c-alerta)';
     @endphp
     @if($aviso['link'])
     <a href="{{ $aviso['link'] }}"
-       class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
-       style="background:{{ $bgColor }}; color:{{ $textColor }}; border-left: 3px solid {{ $borderColor }}">
-        <i data-lucide="{{ $aviso['icone'] }}" class="w-4 h-4 shrink-0"></i>
+       class="card card-hover flex items-center gap-3 px-4 py-3 text-sm font-medium text-foco-text">
+        <span class="w-2 h-2 rounded-full shrink-0" style="background:{{ $corPonto }}"></span>
         <span class="flex-1">{{ $aviso['mensagem'] }}</span>
-        <i data-lucide="arrow-right" class="w-3.5 h-3.5 shrink-0 opacity-60"></i>
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5 shrink-0 text-foco-muted"></i>
     </a>
     @else
-    <div class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium"
-         style="background:{{ $bgColor }}; color:{{ $textColor }}; border-left: 3px solid {{ $borderColor }}">
-        <i data-lucide="{{ $aviso['icone'] }}" class="w-4 h-4 shrink-0"></i>
+    <div class="card flex items-center gap-3 px-4 py-3 text-sm font-medium text-foco-text">
+        <span class="w-2 h-2 rounded-full shrink-0" style="background:{{ $corPonto }}"></span>
         <span>{{ $aviso['mensagem'] }}</span>
     </div>
     @endif

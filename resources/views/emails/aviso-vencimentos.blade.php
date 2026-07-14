@@ -6,7 +6,7 @@
 
     <div style="text-align:center;margin-bottom:24px">
         <span style="font-size:24px;font-weight:800">
-            <span style="color:#1E1B4B">Fin</span><span style="color:#6366F1">Foco</span>
+            <span style="color:#1E1B4B">Norte</span>
         </span>
     </div>
 
@@ -66,7 +66,7 @@
     </div>
 
     <p style="text-align:center;font-size:12px;color:#9794B8;margin-top:20px">
-        Você recebe este aviso porque tem contas vencendo no FinFoco.<br>
+        Você recebe este aviso porque tem contas vencendo no Norte.<br>
         {{ config('app.url') }}
     </p>
 </div>

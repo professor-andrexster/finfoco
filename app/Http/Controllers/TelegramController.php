@@ -63,10 +63,10 @@ class TelegramController extends Controller
                 Setting::where('user_id', $userId)->where('chave', 'telegram_connect_token')->delete();
 
                 $telegram->enviar((string) $chatId,
-                    "✅ <b>Telegram conectado ao FinFoco!</b>\nSeus alertas de compromissos e rotinas vão chegar aqui.");
+                    "✅ <b>Telegram conectado ao Norte!</b>\nSeus alertas de compromissos e rotinas vão chegar aqui.");
             } else {
                 $telegram->enviar((string) $chatId,
-                    'Não achei esse código. Abra o FinFoco → Configurações → "Conectar Telegram" e tente de novo.');
+                    'Não achei esse código. Abra o Norte → Configurações → "Conectar Telegram" e tente de novo.');
             }
         }
 

@@ -65,9 +65,9 @@ class EnviarAlertas extends Command
             }
 
             foreach ($mensagens as $m) {
-                $push->enviarParaUsuario($userId, 'FinFoco — chegou a hora', $m, '/agenda');
+                $push->enviarParaUsuario($userId, 'Norte — chegou a hora', $m, '/agenda');
                 if ($chat = $chatsTelegram->get($userId)) {
-                    $telegram->enviar($chat, "<b>FinFoco</b>\n{$m}");
+                    $telegram->enviar($chat, "<b>Norte</b>\n{$m}");
                 }
                 $enviados++;
             }
