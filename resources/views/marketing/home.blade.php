@@ -214,6 +214,77 @@
         .cta-seta i { transition: transform .2s ease; }
         .cta-seta:hover i { transform: translateX(3px); }
 
+        /* ── Prévia do app (mockup animado) ─────────────────────────────── */
+        .frame-browser {
+            border-radius: 18px;
+            box-shadow: 0 24px 60px rgba(30,27,75,.16), 0 0 0 1px rgba(99,102,241,.1);
+            overflow: hidden;
+            animation: flutuar 7s ease-in-out infinite alternate;
+        }
+        .frame-browser .frame-top {
+            display: flex; align-items: center; gap: 6px;
+            padding: 10px 14px; background: #F7F7FD; border-bottom: 1px solid #E4E4F0;
+        }
+        .frame-browser .frame-top i { width: 9px; height: 9px; border-radius: 99px; display: block; }
+        .frame-phone {
+            width: 272px;
+            border-radius: 38px;
+            border: 9px solid #1E1B4B;
+            box-shadow: 0 24px 60px rgba(30,27,75,.22);
+            overflow: hidden;
+            position: relative;
+            animation: flutuar 7s ease-in-out infinite alternate;
+        }
+        .frame-phone::before {
+            content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 90px; height: 16px; background: #1E1B4B; border-radius: 0 0 12px 12px; z-index: 2;
+        }
+        @keyframes flutuar { to { transform: translateY(-8px); } }
+
+        .anima-barra { width: 38%; animation: crescerBarra 5.5s ease-in-out infinite alternate; }
+        @keyframes crescerBarra { to { width: 64%; } }
+
+        .anima-pulso { animation: pulsoAgora 2.4s ease-in-out infinite; }
+        @keyframes pulsoAgora {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,.35); }
+            50%      { box-shadow: 0 0 0 5px rgba(99,102,241,0); }
+        }
+
+        .anima-check { animation: marcarCheck 5.5s ease-in-out infinite; box-shadow: inset 0 0 0 1.5px #E4E4F0; }
+        .anima-check svg { opacity: 0; animation: aparecerCheck 5.5s ease-in-out infinite; }
+        @keyframes marcarCheck {
+            0%, 44%  { background: transparent; }
+            52%, 88% { background: #16A34A; box-shadow: inset 0 0 0 0 transparent; }
+            96%, 100%{ background: transparent; }
+        }
+        @keyframes aparecerCheck {
+            0%, 44%  { opacity: 0; transform: scale(.4); }
+            52%, 88% { opacity: 1; transform: scale(1); }
+            96%, 100%{ opacity: 0; }
+        }
+        .anima-quadrado { animation: acender 5.5s ease-in-out infinite; }
+        @keyframes acender {
+            0%, 44%  { background: rgba(99,102,241,.18); }
+            60%, 100%{ background: rgba(99,102,241,1); }
+        }
+
+        /* ── Carrossel de cards no celular (desliza como app) ───────────── */
+        @media (max-width: 639px) {
+            .fileira-mobile {
+                display: flex !important; gap: 14px !important;
+                overflow-x: auto; scroll-snap-type: x mandatory;
+                margin-left: -16px !important; margin-right: -16px !important;
+                padding: 4px 16px 14px !important;
+                scrollbar-width: none;
+            }
+            .fileira-mobile::-webkit-scrollbar { display: none; }
+            .fileira-mobile > * { min-width: 82%; scroll-snap-align: center; }
+        }
+
+        /* CTA fixo no celular */
+        #cta-mobile { transform: translateY(110%); transition: transform .3s ease; }
+        #cta-mobile.visivel { transform: translateY(0); }
+
         /* Revelação no scroll (aplicada via JS, com stagger) */
         .reveal {
             opacity: 0;
@@ -226,6 +297,10 @@
         @media (prefers-reduced-motion: reduce) {
             .reveal { opacity: 1; transform: none; transition: none; }
             .card, .card:hover { transform: none; transition: none; }
+            .frame-browser, .frame-phone, .anima-barra, .anima-pulso,
+            .anima-check, .anima-check svg, .anima-quadrado { animation: none !important; }
+            .anima-check svg { opacity: 1; }
+            .anima-check { background: #16A34A; box-shadow: none; }
             html { scroll-behavior: auto; }
         }
     </style>
@@ -265,35 +340,56 @@
     </header>
 
     <main>
-        {{-- ─── Hero ────────────────────────────────────────────────────── --}}
-        <section aria-labelledby="hero-titulo" class="relative max-w-5xl mx-auto px-4 pt-16 pb-20 text-center">
+        {{-- ─── Hero: 2 colunas no desktop, app em moldura de celular no mobile ── --}}
+        <section aria-labelledby="hero-titulo" class="relative max-w-6xl mx-auto px-4 pt-12 lg:pt-20 pb-16 lg:pb-24">
             <div class="hero-glow" aria-hidden="true"></div>
-            <p class="inline-flex items-center gap-2 bg-foco-surface border border-foco-border text-foco-accent text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
-                <i data-lucide="zap" class="w-4 h-4" aria-hidden="true"></i>
-                Feito por quem tem TDAH, para cérebros com TDAH
-            </p>
-            <h1 id="hero-titulo" class="text-4xl md:text-5xl font-bold leading-tight max-w-3xl mx-auto">
-                Seu TDAH não é defeito.<br>
-                <span class="gradient-text">É um superpoder sem manual.</span>
-            </h1>
-            <p class="text-lg text-foco-muted max-w-2xl mx-auto mt-6">
-                O Norte é o manual: agenda visual que combate a cegueira temporal, rotinas com
-                sequência, Modo Hiperfoco, conquistas que provam sua constância e finanças
-                anti-impulso. Tudo num sistema só, em português, sem sobrecarga.
-            </p>
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-                <a href="{{ auth()->check() ? route('dashboard') : route('register') }}"
-                   class="bg-foco-accent hover:bg-indigo-600 text-white text-lg font-bold px-8 py-4 rounded-xl transition-colors inline-flex items-center gap-2 w-full sm:w-auto justify-center">
-                    <i data-lucide="rocket" class="w-5 h-5" aria-hidden="true"></i>
-                    @auth Abrir meu painel @else Começar teste grátis de 7 dias @endauth
-                </a>
-                <a href="#superpoderes"
-                   class="cta-seta text-foco-accent font-semibold text-lg px-6 py-4 inline-flex items-center gap-2">
-                    Conhecer meus superpoderes
-                    <i data-lucide="arrow-down" class="w-5 h-5" aria-hidden="true"></i>
-                </a>
+
+            <div class="lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 lg:items-center">
+                <div class="text-center lg:text-left" id="hero-conteudo">
+                    <p class="inline-flex items-center gap-2 bg-foco-surface border border-foco-border text-foco-accent text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
+                        <i data-lucide="zap" class="w-4 h-4" aria-hidden="true"></i>
+                        Feito por quem tem TDAH, para cérebros com TDAH
+                    </p>
+                    <h1 id="hero-titulo" class="text-4xl md:text-5xl font-bold leading-tight">
+                        Seu TDAH não é defeito.<br>
+                        <span class="gradient-text">É um superpoder sem manual.</span>
+                    </h1>
+                    <p class="text-lg text-foco-muted mt-6 max-w-2xl mx-auto lg:mx-0">
+                        O Norte é o manual: agenda visual que combate a cegueira temporal, rotinas com
+                        sequência, Modo Hiperfoco, conquistas que provam sua constância e finanças
+                        anti-impulso. Tudo num sistema só, em português, sem sobrecarga.
+                    </p>
+                    <div class="flex flex-col sm:flex-row items-center lg:justify-start justify-center gap-4 mt-10">
+                        <a href="{{ auth()->check() ? route('dashboard') : route('register') }}"
+                           class="bg-foco-accent hover:bg-indigo-600 text-white text-lg font-bold px-8 py-4 rounded-xl transition-colors inline-flex items-center gap-2 w-full sm:w-auto justify-center">
+                            <i data-lucide="rocket" class="w-5 h-5" aria-hidden="true"></i>
+                            @auth Abrir meu painel @else Começar teste grátis de 7 dias @endauth
+                        </a>
+                        <a href="#superpoderes"
+                           class="cta-seta text-foco-accent font-semibold text-lg px-6 py-4 inline-flex items-center gap-2">
+                            Ver superpoderes
+                            <i data-lucide="arrow-down" class="w-5 h-5" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                    <p class="text-sm text-foco-muted mt-4">Sem cartão de crédito no teste. Cancele quando quiser.</p>
+                </div>
+
+                {{-- Prévia do app: navegador no desktop, celular no mobile --}}
+                <div class="mt-12 lg:mt-0">
+                    <div class="hidden lg:block frame-browser" aria-hidden="true">
+                        <div class="frame-top">
+                            <i style="background:#F87171"></i><i style="background:#FBBF24"></i><i style="background:#34D399"></i>
+                            <span class="text-[10px] text-foco-muted ml-2 px-3 py-0.5 rounded-md bg-white border border-foco-border">finfoco.nexialabs.com.br/agenda</span>
+                        </div>
+                        @include('marketing.partials.mockup')
+                    </div>
+                    <div class="lg:hidden frame-phone mx-auto" aria-hidden="true">
+                        <div class="pt-5">
+                            @include('marketing.partials.mockup')
+                        </div>
+                    </div>
+                </div>
             </div>
-            <p class="text-sm text-foco-muted mt-4">Sem cartão de crédito no teste. Cancele quando quiser.</p>
         </section>
 
         {{-- ─── Superpoderes ────────────────────────────────────────────── --}}
@@ -305,7 +401,7 @@
                     de hiperfoco — e mostram que quem usa essas forças vive melhor. O problema nunca foi o motor.
                     Foi a falta de equipamento. O Norte equipa cada força:
                 </p>
-                <div class="grid sm:grid-cols-2 gap-6 mt-10 text-left">
+                <div class="fileira-mobile grid sm:grid-cols-2 gap-6 mt-10 text-left">
                     <article class="card p-6">
                         <i data-lucide="zap" class="w-8 h-8 text-foco-accent mb-3" aria-hidden="true"></i>
                         <h3 class="font-bold text-lg">Hiperfoco</h3>
@@ -353,7 +449,7 @@
                 Quem tem TDAH não falha por preguiça — falha porque as ferramentas comuns exigem memória,
                 noção de tempo e atenção demais. Cada barreira tem uma resposta:
             </p>
-            <div class="grid sm:grid-cols-2 gap-6 mt-10">
+            <div class="fileira-mobile grid sm:grid-cols-2 gap-6 mt-10">
                 <article class="card p-6">
                     <i data-lucide="clock" class="w-7 h-7 text-foco-alerta mb-3" aria-hidden="true"></i>
                     <h3 class="font-bold">Cegueira temporal → linha do AGORA</h3>
@@ -404,7 +500,7 @@
         {{-- ─── Recursos ────────────────────────────────────────────────── --}}
         <section aria-labelledby="recursos-titulo" class="max-w-5xl mx-auto px-4 py-20">
             <h2 id="recursos-titulo" class="text-3xl font-bold text-center">Um assistente completo para o dia a dia com TDAH</h2>
-            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
+            <div class="fileira-mobile grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
                 <article class="card p-6">
                     <i data-lucide="calendar-days" class="w-7 h-7 text-foco-accent mb-3" aria-hidden="true"></i>
                     <h3 class="font-bold">Agenda com linha do AGORA</h3>
@@ -569,8 +665,19 @@
         </section>
     </main>
 
+    {{-- CTA fixo no celular: aparece depois que o hero sai da tela --}}
+    @guest
+    <div id="cta-mobile" class="sm:hidden fixed bottom-0 inset-x-0 z-40 px-4 pt-3"
+         style="background:rgba(255,255,255,.9); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-top:1px solid #E4E4F0; padding-bottom: calc(env(safe-area-inset-bottom) + 12px)">
+        <a href="{{ route('register') }}"
+           class="block bg-foco-accent text-white text-center font-bold text-base py-3.5 rounded-xl">
+            Começar teste grátis de 7 dias
+        </a>
+    </div>
+    @endguest
+
     {{-- ─── Rodapé ──────────────────────────────────────────────────────── --}}
-    <footer class="border-t border-foco-border py-10">
+    <footer class="border-t border-foco-border py-10 @guest pb-28 sm:pb-10 @endguest">
         <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-foco-muted">
             <p class="flex items-center gap-2">
                 <img src="/logo.svg" alt="" width="20" height="20" class="w-5 h-5" aria-hidden="true">
@@ -596,6 +703,15 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (window.lucide) lucide.createIcons();
+
+            // CTA fixo no celular: entra quando o hero sai da tela
+            const ctaMobile = document.getElementById('cta-mobile');
+            const heroConteudo = document.getElementById('hero-conteudo');
+            if (ctaMobile && heroConteudo && 'IntersectionObserver' in window) {
+                new IntersectionObserver((es) => {
+                    es.forEach(e => ctaMobile.classList.toggle('visivel', !e.isIntersecting));
+                }).observe(heroConteudo);
+            }
 
             // Revelação no scroll com stagger — desativada se o usuário prefere menos movimento
             if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
